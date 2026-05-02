@@ -20,9 +20,9 @@ run:
     - builtin
   # Default is true. Enables skipping of files:
   skip-files:
-    - "*.pb.go"
-    - ".*_test.go"
-    - ".*_string.go"
+    - ".*\\.pb\\.go"
+    - ".*_test\\.go"
+    - ".*_string\\.go"
 
 # output configuration options
 output:
@@ -152,13 +152,11 @@ issues:
   fix: false
   # Exclude issue by regexps.
   exclude:
-    - "SA1019:"
+    - "SA1019"
+    - "funlen"
   # Exclude files by regexps.
   exclude-files:
-    - "zz_generated.*\.go$"
-  # Exclude rules by regexps.
-  exclude-rules:
-    - "funlen"
+    - "zz_generated.*\\.go$"
 
 severity:
   default-severity: error
