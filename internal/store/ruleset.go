@@ -411,7 +411,4 @@ func (s *RuleSetStore) EnsureIndex(ctx context.Context) error {
 	return nil
 }
 
-// bsonObjectIDFromHex converts a hex string to bson.ObjectID.
-func bsonObjectIDFromHex(hex string) (bson.ObjectID, error) {
-	return bson.ObjectIDFromHex(hex)
-}
+
