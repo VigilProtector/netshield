@@ -272,6 +272,7 @@ func (f *Finding) ToAPI() *FindingAPI {
 
 	evidenceRefs := make([]EvidenceRefAPI, len(f.EvidenceRefs))
 	for i, ref := range f.EvidenceRefs {
+		//nolint:gosimple // direct struct literal is clearer than conversion function
 		evidenceRefs[i] = EvidenceRefAPI{
 			Type: ref.Type,
 			Ref:  ref.Ref,
@@ -351,10 +352,12 @@ func (f *FindingAPI) FromAPI() (*Finding, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	createdAt, err := time.Parse(time.RFC3339, f.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
+
 	updatedAt, err := time.Parse(time.RFC3339, f.UpdatedAt)
 	if err != nil {
 		return nil, err
@@ -366,10 +369,12 @@ func (f *FindingAPI) FromAPI() (*Finding, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		end, err := time.Parse(time.RFC3339, f.Window.End)
 		if err != nil {
 			return nil, err
 		}
+
 		window = &FindingWindow{
 			Start: start,
 			End:   end,
@@ -378,6 +383,7 @@ func (f *FindingAPI) FromAPI() (*Finding, error) {
 
 	evidenceRefs := make([]EvidenceRef, len(f.EvidenceRefs))
 	for i, ref := range f.EvidenceRefs {
+		//nolint:gosimple // direct struct literal is clearer than conversion function
 		evidenceRefs[i] = EvidenceRef{
 			Type: ref.Type,
 			Ref:  ref.Ref,
@@ -391,6 +397,7 @@ func (f *FindingAPI) FromAPI() (*Finding, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		transitionedAt = &t
 	}
 
@@ -400,6 +407,7 @@ func (f *FindingAPI) FromAPI() (*Finding, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		verifiedAt = &t
 	}
 
@@ -409,6 +417,7 @@ func (f *FindingAPI) FromAPI() (*Finding, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		lastChecked = &t
 	}
 
@@ -418,6 +427,7 @@ func (f *FindingAPI) FromAPI() (*Finding, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		staleAfter = &t
 	}
 

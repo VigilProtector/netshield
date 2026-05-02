@@ -96,12 +96,12 @@ const (
 	DetectionEventTypePolicyViolation DetectionEventType = "policy_violation"
 	// DetectionEventTypeFlow indicates a flow event.
 	DetectionEventTypeFlow DetectionEventType = "flow"
-	// DetectionEventTypeDns indicates a DNS event.
-	DetectionEventTypeDns DetectionEventType = "dns"
-	// DetectionEventTypeHttp indicates an HTTP event.
-	DetectionEventTypeHttp DetectionEventType = "http"
-	// DetectionEventTypeTls indicates a TLS event.
-	DetectionEventTypeTls DetectionEventType = "tls"
+	// DetectionEventTypeDNS indicates a DNS event.
+	DetectionEventTypeDNS DetectionEventType = "dns"
+	// DetectionEventTypeHTTP indicates an HTTP event.
+	DetectionEventTypeHTTP DetectionEventType = "http"
+	// DetectionEventTypeTLS indicates a TLS event.
+	DetectionEventTypeTLS DetectionEventType = "tls"
 	// DetectionEventTypeFile indicates a file event.
 	DetectionEventTypeFile DetectionEventType = "file"
 )
@@ -122,9 +122,14 @@ const (
 
 // IsDetectionEvent returns true if the event type should be routed to NetShield.
 // Implements NH-SG-009: Phase-1-Scope: nur alert/anomaly an NetShield.
+// Only alert, anomaly, lateral_movement, and policy_violation are considered detection events.
+// Other event types (flow, dns, http, tls, file) are not routed to NetShield.
 func (e DetectionEventType) IsDetectionEvent() bool {
-	switch e {
-	case DetectionEventTypeAlert, DetectionEventTypeAnomaly, DetectionEventTypeLateralMovement, DetectionEventTypePolicyViolation:
+	switch e { //nolint:exhaustive
+	case DetectionEventTypeAlert,
+		DetectionEventTypeAnomaly,
+		DetectionEventTypeLateralMovement,
+		DetectionEventTypePolicyViolation:
 		return true
 	default:
 		return false
@@ -189,10 +194,12 @@ func (d *DetectionAPI) FromAPI() (*Detection, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	createdAt, err := time.Parse(time.RFC3339, d.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
+
 	updatedAt, err := time.Parse(time.RFC3339, d.UpdatedAt)
 	if err != nil {
 		return nil, err
@@ -266,18 +273,23 @@ func CreateFindingFromDetection(d *Detection, defconID, assetID string) *Finding
 	if d.SourceIP != "" {
 		attributes["sourceIp"] = d.SourceIP
 	}
+
 	if d.DestIP != "" {
 		attributes["destIp"] = d.DestIP
 	}
+
 	if d.Proto != "" {
 		attributes["proto"] = d.Proto
 	}
+
 	if d.Action != "" {
 		attributes["action"] = d.Action
 	}
+
 	if d.Signature != "" {
 		attributes["signature"] = d.Signature
 	}
+
 	if d.Category != "" {
 		attributes["category"] = d.Category
 	}
@@ -327,9 +339,10 @@ func mapSeverity(severity RuleSeverity) FindingSeverity {
 		return FindingSeverityMedium
 	case RuleSeverityLow:
 		return FindingSeverityLow
-	default:
+	case RuleSeverityInformational:
 		return FindingSeverityInfo
 	}
+	return FindingSeverityInfo
 }
 
 // mapConfidenceToFloat maps ConfidenceLevel to float64.
@@ -341,14 +354,18 @@ func mapConfidenceToFloat(confidence ConfidenceLevel) float64 {
 		return 0.6
 	case ConfidenceLow:
 		return 0.3
-	default:
+	case ConfidenceUnknown:
 		return 0.0
 	}
+	return 0.0
 }
 
 // mapDetectionTypeToFindingType maps DetectionEventType to FindingType.
+// Only alert, anomaly, lateral_movement, and policy_violation are expected as DetectionEventType values
+// in NetShield. Other types (flow, dns, http, tls, file) are not routed to NetShield
+// but we handle them gracefully if they appear.
 func mapDetectionTypeToFindingType(eventType DetectionEventType) FindingType {
-	switch eventType {
+	switch eventType { //nolint:exhaustive
 	case DetectionEventTypeAlert:
 		return FindingTypeKnownAttackPatternDetected
 	case DetectionEventTypeAnomaly:
@@ -357,7 +374,7 @@ func mapDetectionTypeToFindingType(eventType DetectionEventType) FindingType {
 		return FindingTypeLateralMovementSuspected
 	case DetectionEventTypePolicyViolation:
 		return FindingTypeNetworkPolicyViolationDetected
-	default:
-		return FindingTypeKnownAttackPatternDetected
 	}
+	// Default for non-detection events (flow, dns, http, tls, file) that shouldn't reach here
+	return FindingTypeKnownAttackPatternDetected
 }

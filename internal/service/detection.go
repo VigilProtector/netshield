@@ -123,11 +123,10 @@ type FlowContext struct {
 
 // DetectionService implements business logic for detection operations.
 type DetectionService struct {
-	store         DetectionStorer
-	findingStore  FindingStorer
-	flowSeeker    FlowSeekerClient
-	logger        logr.Logger
-	correlationID string
+	store        DetectionStorer
+	findingStore FindingStorer
+	flowSeeker   FlowSeekerClient
+	logger       logr.Logger
 }
 
 // NewDetectionService creates a new DetectionService.

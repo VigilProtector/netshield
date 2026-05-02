@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	"go.mongodb.org/mongo-driver/v2/bson"
 
 	"vigilprotector.io/netshield/internal/models"
 	"vigilprotector.io/vp-lib/ironchronicle"
@@ -614,8 +613,4 @@ func (s *SensorService) emitSensorAuditEventWithMeta(
 	ironchronicle.Emit(ctx, event)
 }
 
-// bsonObjectIDFromString is a helper to convert string to bson.ObjectID.
-// Used for store operations that need MongoDB _id.
-func bsonObjectIDFromString(id string) (bson.ObjectID, error) {
-	return bson.ObjectIDFromHex(id)
-}
+
