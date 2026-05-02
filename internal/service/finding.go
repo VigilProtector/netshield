@@ -176,12 +176,12 @@ func (s *FindingService) Create(
 	}
 
 	// Validate finding type
-	if !s.isValidFindingType(finding.FindingType) {
+	if !s.IsValidFindingType(finding.FindingType) {
 		return nil, fmt.Errorf("invalid finding type %q: %w", finding.FindingType, ErrInvalidFindingType)
 	}
 
 	// Validate severity
-	if !s.isValidSeverity(finding.Severity) {
+	if !s.IsValidSeverity(finding.Severity) {
 		return nil, fmt.Errorf("invalid severity %q: %w", finding.Severity, ErrInvalidSeverity)
 	}
 
@@ -189,7 +189,7 @@ func (s *FindingService) Create(
 	if finding.Lifecycle.Status == "" {
 		finding.Lifecycle.Status = models.FindingLifecycleStatusOpen
 	}
-	if !s.isValidLifecycleStatus(finding.Lifecycle.Status) {
+	if !s.IsValidLifecycleStatus(finding.Lifecycle.Status) {
 		return nil, fmt.Errorf("invalid lifecycle status %q: %w", finding.Lifecycle.Status, ErrInvalidLifecycleTransition)
 	}
 
@@ -197,7 +197,7 @@ func (s *FindingService) Create(
 	if finding.Verification.Status == "" {
 		finding.Verification.Status = models.FindingVerificationStatusUnverified
 	}
-	if !s.isValidVerificationStatus(finding.Verification.Status) {
+	if !s.IsValidVerificationStatus(finding.Verification.Status) {
 		return nil, fmt.Errorf("invalid verification status %q: %w", finding.Verification.Status, ErrInvalidVerificationStatus)
 	}
 
@@ -205,7 +205,7 @@ func (s *FindingService) Create(
 	if finding.Freshness.Status == "" {
 		finding.Freshness.Status = models.FindingFreshnessStatusFresh
 	}
-	if !s.isValidFreshnessStatus(finding.Freshness.Status) {
+	if !s.IsValidFreshnessStatus(finding.Freshness.Status) {
 		return nil, fmt.Errorf("invalid freshness status %q: %w", finding.Freshness.Status, ErrInvalidFreshnessStatus)
 	}
 
@@ -256,7 +256,7 @@ func (s *FindingService) UpdateLifecycle(
 		"status", req.Status)
 
 	// Validate new status
-	if !s.isValidLifecycleStatus(req.Status) {
+	if !s.IsValidLifecycleStatus(req.Status) {
 		return nil, fmt.Errorf("invalid lifecycle status %q: %w", req.Status, ErrInvalidLifecycleTransition)
 	}
 
@@ -270,7 +270,7 @@ func (s *FindingService) UpdateLifecycle(
 	}
 
 	// Validate transition
-	if !s.isValidLifecycleTransition(finding.Lifecycle.Status, req.Status) {
+	if !s.IsValidLifecycleTransition(finding.Lifecycle.Status, req.Status) {
 		return nil, fmt.Errorf("invalid transition from %q to %q: %w", finding.Lifecycle.Status, req.Status, ErrInvalidLifecycleTransition)
 	}
 
@@ -319,7 +319,7 @@ func (s *FindingService) UpdateVerification(
 		"status", req.Status)
 
 	// Validate new status
-	if !s.isValidVerificationStatus(req.Status) {
+	if !s.IsValidVerificationStatus(req.Status) {
 		return nil, fmt.Errorf("invalid verification status %q: %w", req.Status, ErrInvalidVerificationStatus)
 	}
 
@@ -474,7 +474,7 @@ func (s *FindingService) GetByType(
 	logger.V(vplogging.LogLevelVerbose).Info("getting findings by type", "findingType", findingType)
 
 	// Validate finding type
-	if !s.isValidFindingType(findingType) {
+	if !s.IsValidFindingType(findingType) {
 		return nil, fmt.Errorf("invalid finding type %q: %w", findingType, ErrInvalidFindingType)
 	}
 
@@ -503,8 +503,8 @@ func (s *FindingService) GetStale(
 	return response, nil
 }
 
-// isValidFindingType checks if a finding type is valid.
-func (s *FindingService) isValidFindingType(findingType models.FindingType) bool {
+// IsValidFindingType checks if a finding type is valid.
+func (s *FindingService) IsValidFindingType(findingType models.FindingType) bool {
 	switch findingType {
 	case models.FindingTypeKnownAttackPatternDetected,
 		models.FindingTypeLateralMovementSuspected,
@@ -517,8 +517,8 @@ func (s *FindingService) isValidFindingType(findingType models.FindingType) bool
 	}
 }
 
-// isValidSeverity checks if a severity is valid.
-func (s *FindingService) isValidSeverity(severity models.FindingSeverity) bool {
+// IsValidSeverity checks if a severity is valid.
+func (s *FindingService) IsValidSeverity(severity models.FindingSeverity) bool {
 	switch severity {
 	case models.FindingSeverityCritical,
 		models.FindingSeverityHigh,
@@ -531,8 +531,8 @@ func (s *FindingService) isValidSeverity(severity models.FindingSeverity) bool {
 	}
 }
 
-// isValidLifecycleStatus checks if a lifecycle status is valid.
-func (s *FindingService) isValidLifecycleStatus(status models.FindingLifecycleStatus) bool {
+// IsValidLifecycleStatus checks if a lifecycle status is valid.
+func (s *FindingService) IsValidLifecycleStatus(status models.FindingLifecycleStatus) bool {
 	switch status {
 	case models.FindingLifecycleStatusOpen,
 		models.FindingLifecycleStatusResolved,
@@ -543,13 +543,13 @@ func (s *FindingService) isValidLifecycleStatus(status models.FindingLifecycleSt
 	}
 }
 
-// isValidLifecycleTransition checks if a lifecycle transition is valid.
+// IsValidLifecycleTransition checks if a lifecycle transition is valid.
 // Valid transitions per VL-FC-001:
 //
 //	open -> resolved
 //	open -> closed
 //	resolved -> closed
-func (s *FindingService) isValidLifecycleTransition(
+func (s *FindingService) IsValidLifecycleTransition(
 	from, to models.FindingLifecycleStatus,
 ) bool {
 	// Can always transition to same state (idempotent)
@@ -571,8 +571,8 @@ func (s *FindingService) isValidLifecycleTransition(
 	}
 }
 
-// isValidVerificationStatus checks if a verification status is valid.
-func (s *FindingService) isValidVerificationStatus(status models.FindingVerificationStatus) bool {
+// IsValidVerificationStatus checks if a verification status is valid.
+func (s *FindingService) IsValidVerificationStatus(status models.FindingVerificationStatus) bool {
 	switch status {
 	case models.FindingVerificationStatusUnverified,
 		models.FindingVerificationStatusVerified,
@@ -583,8 +583,8 @@ func (s *FindingService) isValidVerificationStatus(status models.FindingVerifica
 	}
 }
 
-// isValidFreshnessStatus checks if a freshness status is valid.
-func (s *FindingService) isValidFreshnessStatus(status models.FindingFreshnessStatus) bool {
+// IsValidFreshnessStatus checks if a freshness status is valid.
+func (s *FindingService) IsValidFreshnessStatus(status models.FindingFreshnessStatus) bool {
 	switch status {
 	case models.FindingFreshnessStatusFresh,
 		models.FindingFreshnessStatusStale:

@@ -97,6 +97,7 @@ type FlowContext struct {
 	// SourceIP is the source IP address.
 	SourceIP string
 	// DestIP is the destination IP address.
+	DestIP string
 	// Proto is the protocol.
 	Proto string
 	// SourcePort is the source port.

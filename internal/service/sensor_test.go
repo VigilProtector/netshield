@@ -54,6 +54,21 @@ func (m *mockVigilNetClient) GetDefconName(ctx context.Context, defconID string)
 	return m.getDefconNameFunc(ctx, defconID)
 }
 
+// Helper to create a test sensor
+func newTestSensor(picketID string) *models.Sensor {
+	now := time.Now().UTC()
+	return &models.Sensor{
+		PicketID:   picketID,
+		DefconID:   "defcon-1",
+		Status:     models.SensorStatusActive,
+		Health:     models.SensorHealthHealthy,
+		RuleVersion: "v1.0.0",
+		CreatedAt:   now,
+		UpdatedAt:   now,
+		LastSeen:    now,
+	}
+}
+
 func TestSensorService_List(t *testing.T) {
 	t.Parallel()
 
@@ -500,6 +515,251 @@ func TestSensorService_MarkStale(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 				assert.Equal(t, tc.expectedCount, count)
+			}
+		})
+	}
+}
+
+func TestSensorService_UpdateLastSeen(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	logger := logr.Discard()
+	subject := &types.Subject{Type: "human", ID: "test-user"}
+
+	testSensor := newTestSensor("sensor-1")
+	testSensor.PicketID = "picket-1"
+
+	testCases := []struct {
+		name           string
+		picketID       string
+		storeSensor    *models.Sensor
+		storeErr       error
+		updateErr      error
+		expectedError  bool
+	}{
+		{
+			name:          "successful update last seen",
+			picketID:      "picket-1",
+			storeSensor:   testSensor,
+			storeErr:      nil,
+			updateErr:     nil,
+			expectedError: false,
+		},
+		{
+			name:          "sensor not found",
+			picketID:      "picket-not-found",
+			storeSensor:   nil,
+			storeErr:      nil,
+			updateErr:     nil,
+			expectedError: true,
+		},
+		{
+			name:          "store error on get",
+			picketID:      "picket-1",
+			storeSensor:   nil,
+			storeErr:      errors.New("get error"),
+			updateErr:     nil,
+			expectedError: true,
+		},
+		{
+			name:          "store error on update",
+			picketID:      "picket-1",
+			storeSensor:   testSensor,
+			storeErr:      nil,
+			updateErr:     errors.New("update error"),
+			expectedError: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			store := &mockSensorStore{
+				getByPicketIDFunc: func(ctx context.Context, picketID string) (*models.Sensor, error) {
+					return tc.storeSensor, tc.storeErr
+				},
+				updateFunc: func(ctx context.Context, sensor *models.Sensor) error {
+					return tc.updateErr
+				},
+			}
+
+			svc := service.NewSensorService(store, nil, logger)
+
+			result, err := svc.UpdateLastSeen(ctx, logger, subject, tc.picketID)
+
+			if tc.expectedError {
+				require.Error(t, err)
+				assert.Nil(t, result)
+			} else {
+				require.NoError(t, err)
+				assert.NotNil(t, result)
+				assert.Equal(t, tc.picketID, result.PicketID)
+				assert.False(t, result.LastSeen.IsZero())
+			}
+		})
+	}
+}
+
+func TestSensorService_UpdateRuleVersion(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	logger := logr.Discard()
+	subject := &types.Subject{Type: "human", ID: "test-user"}
+
+	testSensor := newTestSensor("sensor-1")
+	testSensor.PicketID = "picket-1"
+
+	testCases := []struct {
+		name           string
+		picketID       string
+		version        string
+		storeSensor    *models.Sensor
+		storeErr       error
+		updateErr      error
+		expectedError  bool
+	}{
+		{
+			name:          "successful update rule version",
+			picketID:      "picket-1",
+			version:       "v1.2.3",
+			storeSensor:   testSensor,
+			storeErr:      nil,
+			updateErr:     nil,
+			expectedError: false,
+		},
+		{
+			name:          "sensor not found",
+			picketID:      "picket-not-found",
+			version:       "v1.2.3",
+			storeSensor:   nil,
+			storeErr:      nil,
+			updateErr:     nil,
+			expectedError: true,
+		},
+		{
+			name:          "store error on get",
+			picketID:      "picket-1",
+			version:       "v1.2.3",
+			storeSensor:   nil,
+			storeErr:      errors.New("get error"),
+			updateErr:     nil,
+			expectedError: true,
+		},
+		{
+			name:          "store error on update",
+			picketID:      "picket-1",
+			version:       "v1.2.3",
+			storeSensor:   testSensor,
+			storeErr:      nil,
+			updateErr:     errors.New("update error"),
+			expectedError: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			store := &mockSensorStore{
+				getByPicketIDFunc: func(ctx context.Context, picketID string) (*models.Sensor, error) {
+					return tc.storeSensor, tc.storeErr
+				},
+				updateFunc: func(ctx context.Context, sensor *models.Sensor) error {
+					return tc.updateErr
+				},
+			}
+
+			svc := service.NewSensorService(store, nil, logger)
+
+			result, err := svc.UpdateRuleVersion(ctx, logger, subject, tc.picketID, tc.version)
+
+			if tc.expectedError {
+				require.Error(t, err)
+				assert.Nil(t, result)
+			} else {
+				require.NoError(t, err)
+				assert.NotNil(t, result)
+				assert.Equal(t, tc.picketID, result.PicketID)
+				assert.Equal(t, tc.version, result.RuleVersion)
+			}
+		})
+	}
+}
+
+func TestSensorService_GetSensorsByDefcon(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	logger := logr.Discard()
+	subject := &types.Subject{Type: "human", ID: "test-user"}
+
+	testSensors := []*models.Sensor{newTestSensor("sensor-1")}
+
+	testCases := []struct {
+		name          string
+		defconID      string
+		storeSensors  []*models.Sensor
+		storeErr      error
+		expectedCount int
+		expectedError bool
+	}{
+		{
+			name:         "successful get sensors by defcon",
+			defconID:     "defcon-1",
+			storeSensors: testSensors,
+			storeErr:     nil,
+			expectedCount: 1,
+			expectedError: false,
+		},
+		{
+			name:          "store error",
+			defconID:      "defcon-1",
+			storeSensors:  nil,
+			storeErr:      errors.New("store error"),
+			expectedCount: 0,
+			expectedError: true,
+		},
+		{
+			name:         "no sensors found",
+			defconID:     "defcon-not-found",
+			storeSensors: []*models.Sensor{},
+			storeErr:     nil,
+			expectedCount: 0,
+			expectedError: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			store := &mockSensorStore{
+				getByDefconIDFunc: func(ctx context.Context, defconID string) ([]*models.Sensor, error) {
+					return tc.storeSensors, tc.storeErr
+				},
+			}
+
+			// Mock VigilNetClient
+			vigilNetClient := &mockVigilNetClient{
+				getDefconNameFunc: func(ctx context.Context, defconID string) (string, error) {
+					return "Test Defcon", nil
+				},
+			}
+
+			svc := service.NewSensorService(store, vigilNetClient, logger)
+
+			result, err := svc.GetSensorsByDefcon(ctx, logger, subject, tc.defconID)
+
+			if tc.expectedError {
+				require.Error(t, err)
+				assert.Nil(t, result)
+			} else {
+				require.NoError(t, err)
+				assert.NotNil(t, result)
+				assert.Len(t, result, tc.expectedCount)
 			}
 		})
 	}

@@ -4,6 +4,7 @@ package service_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -875,4 +876,155 @@ func TestFindingService_GetStale(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestFindingService_isValidLifecycleTransition(t *testing.T) {
+	t.Parallel()
+
+	logger := logr.Discard()
+
+	svc := service.NewFindingService(nil, logger)
+
+	// Test valid transitions
+	validTransitions := []struct {
+		from models.FindingLifecycleStatus
+		to   models.FindingLifecycleStatus
+	}{
+		{models.FindingLifecycleStatusOpen, models.FindingLifecycleStatusResolved},
+		{models.FindingLifecycleStatusOpen, models.FindingLifecycleStatusClosed},
+		{models.FindingLifecycleStatusResolved, models.FindingLifecycleStatusClosed},
+		{models.FindingLifecycleStatusOpen, models.FindingLifecycleStatusOpen},
+		{models.FindingLifecycleStatusResolved, models.FindingLifecycleStatusResolved},
+		{models.FindingLifecycleStatusClosed, models.FindingLifecycleStatusClosed},
+	}
+
+	for _, tc := range validTransitions {
+		t.Run(fmt.Sprintf("valid_%s_to_%s", tc.from, tc.to), func(t *testing.T) {
+			t.Parallel()
+			assert.True(t, svc.IsValidLifecycleTransition(tc.from, tc.to))
+		})
+	}
+
+	// Test invalid transitions
+	invalidTransitions := []struct {
+		from models.FindingLifecycleStatus
+		to   models.FindingLifecycleStatus
+	}{
+		{models.FindingLifecycleStatusClosed, models.FindingLifecycleStatusOpen},
+		{models.FindingLifecycleStatusClosed, models.FindingLifecycleStatusResolved},
+		{models.FindingLifecycleStatusResolved, models.FindingLifecycleStatusOpen},
+		{models.FindingLifecycleStatusClosed, models.FindingLifecycleStatusClosed}, // This is valid (same state)
+	}
+
+	for _, tc := range invalidTransitions {
+		t.Run(fmt.Sprintf("invalid_%s_to_%s", tc.from, tc.to), func(t *testing.T) {
+			t.Parallel()
+			// Skip the valid same-state transition
+			if tc.from == tc.to {
+				t.Skip("Same state transition is valid")
+			}
+			assert.False(t, svc.IsValidLifecycleTransition(tc.from, tc.to))
+		})
+	}
+}
+
+func TestFindingService_ValidationFunctions(t *testing.T) {
+	t.Parallel()
+
+	logger := logr.Discard()
+
+	svc := service.NewFindingService(nil, logger)
+
+	// Test isValidFindingType
+	t.Run("isValidFindingType", func(t *testing.T) {
+		t.Parallel()
+
+		validTypes := []models.FindingType{
+			models.FindingTypeKnownAttackPatternDetected,
+			models.FindingTypeLateralMovementSuspected,
+			models.FindingTypeNetworkPolicyViolationDetected,
+			models.FindingTypeConfigDriftUnauthorized,
+			models.FindingTypeConfigBaselineMissing,
+		}
+
+		for _, ft := range validTypes {
+			assert.True(t, svc.IsValidFindingType(ft), "expected %s to be valid", ft)
+		}
+
+		// Test invalid type
+		assert.False(t, svc.IsValidFindingType("invalid_type"))
+	})
+
+	// Test isValidSeverity
+	t.Run("isValidSeverity", func(t *testing.T) {
+		t.Parallel()
+
+		validSeverities := []models.FindingSeverity{
+			models.FindingSeverityCritical,
+			models.FindingSeverityHigh,
+			models.FindingSeverityMedium,
+			models.FindingSeverityLow,
+			models.FindingSeverityInfo,
+		}
+
+		for _, s := range validSeverities {
+			assert.True(t, svc.IsValidSeverity(s), "expected %s to be valid", s)
+		}
+
+		// Test invalid severity
+		assert.False(t, svc.IsValidSeverity("invalid_severity"))
+	})
+
+	// Test isValidLifecycleStatus
+	t.Run("isValidLifecycleStatus", func(t *testing.T) {
+		t.Parallel()
+
+		validStatuses := []models.FindingLifecycleStatus{
+			models.FindingLifecycleStatusOpen,
+			models.FindingLifecycleStatusResolved,
+			models.FindingLifecycleStatusClosed,
+		}
+
+		for _, s := range validStatuses {
+			assert.True(t, svc.IsValidLifecycleStatus(s), "expected %s to be valid", s)
+		}
+
+		// Test invalid status
+		assert.False(t, svc.IsValidLifecycleStatus("invalid_status"))
+	})
+
+	// Test isValidVerificationStatus
+	t.Run("isValidVerificationStatus", func(t *testing.T) {
+		t.Parallel()
+
+		validStatuses := []models.FindingVerificationStatus{
+			models.FindingVerificationStatusUnverified,
+			models.FindingVerificationStatusVerified,
+			models.FindingVerificationStatusFalsePositive,
+		}
+
+		for _, s := range validStatuses {
+			assert.True(t, svc.IsValidVerificationStatus(s), "expected %s to be valid", s)
+		}
+
+		// Test invalid status
+		assert.False(t, svc.IsValidVerificationStatus("invalid_status"))
+	})
+
+	// Test isValidFreshnessStatus
+	t.Run("isValidFreshnessStatus", func(t *testing.T) {
+		t.Parallel()
+
+		validStatuses := []models.FindingFreshnessStatus{
+			models.FindingFreshnessStatusFresh,
+			models.FindingFreshnessStatusStale,
+		}
+
+		for _, s := range validStatuses {
+			assert.True(t, svc.IsValidFreshnessStatus(s), "expected %s to be valid", s)
+		}
+
+		// Test invalid status
+		assert.False(t, svc.IsValidFreshnessStatus("invalid_status"))
+	})
 }
