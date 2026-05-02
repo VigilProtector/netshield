@@ -32,8 +32,14 @@ type Detection struct {
 	Message      string             `bson:"message" json:"message"`
 	RawEvent     string             `bson:"rawEvent,omitempty" json:"rawEvent,omitempty"`
 	EvidenceRefs []string           `bson:"evidenceRefs,omitempty" json:"evidenceRefs,omitempty"`
-	CreatedAt    time.Time          `bson:"createdAt" json:"createdAt"`
-	UpdatedAt    time.Time          `bson:"updatedAt" json:"updatedAt"`
+	// AssetID is the asset ID for the source IP (enriched from FlowSeeker).
+	// Part of NH-CC-001..004: Context-Correlation-Input-Adapter.
+	AssetID string `bson:"assetId,omitempty" json:"assetId,omitempty"`
+	// DefconID is the Defcon ID for the source IP (enriched from FlowSeeker).
+	// Part of NH-CC-001..004: Context-Correlation-Input-Adapter.
+	DefconID  string    `bson:"defconId,omitempty" json:"defconId,omitempty"`
+	CreatedAt time.Time `bson:"createdAt" json:"createdAt"`
+	UpdatedAt time.Time `bson:"updatedAt" json:"updatedAt"`
 }
 
 // DetectionAPI represents a detection for API responses.
@@ -59,8 +65,12 @@ type DetectionAPI struct {
 	Message      string   `json:"message"`
 	RawEvent     string   `json:"rawEvent,omitempty"`
 	EvidenceRefs []string `json:"evidenceRefs,omitempty"`
-	CreatedAt    string   `json:"createdAt"`
-	UpdatedAt    string   `json:"updatedAt"`
+	// AssetID is the asset ID for the source IP (enriched from FlowSeeker).
+	AssetID string `json:"assetId,omitempty"`
+	// DefconID is the Defcon ID for the source IP (enriched from FlowSeeker).
+	DefconID  string `json:"defconId,omitempty"`
+	CreatedAt string `json:"createdAt"`
+	UpdatedAt string `json:"updatedAt"`
 }
 
 // DetectionListResponse wraps a list of detections for API responses.
@@ -166,6 +176,8 @@ func (d *Detection) ToAPI() *DetectionAPI {
 		Message:      d.Message,
 		RawEvent:     d.RawEvent,
 		EvidenceRefs: d.EvidenceRefs,
+		AssetID:      d.AssetID,
+		DefconID:     d.DefconID,
 		CreatedAt:    d.CreatedAt.Format(time.RFC3339),
 		UpdatedAt:    d.UpdatedAt.Format(time.RFC3339),
 	}
@@ -208,6 +220,8 @@ func (d *DetectionAPI) FromAPI() (*Detection, error) {
 		Message:      d.Message,
 		RawEvent:     d.RawEvent,
 		EvidenceRefs: d.EvidenceRefs,
+		AssetID:      d.AssetID,
+		DefconID:     d.DefconID,
 		CreatedAt:    createdAt,
 		UpdatedAt:    updatedAt,
 	}, nil
