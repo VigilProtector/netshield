@@ -30,8 +30,6 @@ var (
 	ErrInvalidSource = errors.New("invalid rule set source")
 	// ErrInvalidScopeType is returned when an invalid scope type is provided.
 	ErrInvalidScopeType = errors.New("invalid scope type")
-	// ErrInvalidSeverity is returned when an invalid severity is provided.
-	ErrInvalidSeverity = errors.New("invalid rule severity")
 )
 
 // RuleSetStorer defines the interface for ruleset persistence operations.
