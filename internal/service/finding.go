@@ -74,6 +74,14 @@ type FindingServiceInterface interface {
 	UpdateVerification(ctx context.Context, logger logr.Logger, subject *types.Subject, findingID string, req models.UpdateFindingVerificationRequest) (*models.Finding, error)
 	// MarkStale marks findings as stale based on freshness thresholds.
 	MarkStale(ctx context.Context, logger logr.Logger, subject *types.Subject, staleAfter time.Duration) (int, error)
+	// GetByAsset returns findings for a specific asset.
+	GetByAsset(ctx context.Context, logger logr.Logger, subject *types.Subject, assetID string, opts models.ListFindingsOptions) (*models.FindingListResponse, error)
+	// GetByDefcon returns findings for a specific Defcon.
+	GetByDefcon(ctx context.Context, logger logr.Logger, subject *types.Subject, defconID string, opts models.ListFindingsOptions) (*models.FindingListResponse, error)
+	// GetByType returns findings of a specific type.
+	GetByType(ctx context.Context, logger logr.Logger, subject *types.Subject, findingType models.FindingType, opts models.ListFindingsOptions) (*models.FindingListResponse, error)
+	// GetStale returns findings that are stale.
+	GetStale(ctx context.Context, logger logr.Logger, subject *types.Subject, opts models.ListFindingsOptions) (*models.FindingListResponse, error)
 }
 
 // FindingService implements business logic for finding operations.
