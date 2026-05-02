@@ -1,0 +1,53 @@
+name: Test
+
+on:
+  push:
+    branches: [main, "feature/*", "fix/*", "refactor/*", "chore/*"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.0"
+          cache: true
+          cache-dependency-path: go.sum
+        id: go
+
+      - name: Install dependencies
+        run: |
+          export PATH="/home/tofi/go/go1.26.0/bin:$PATH"
+          export GOPRIVATE="vigilprotector.io,github.com"
+          go mod download
+          go mod tidy
+
+      - name: Run Linter
+        run: |
+          export PATH="/home/tofi/go/go1.26.0/bin:$PATH"
+          go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+          golangci-lint run --config .golangci.yaml ./...
+
+      - name: Run Tests with Race Detector
+        run: |
+          export PATH="/home/tofi/go/go1.26.0/bin:$PATH"
+          go test -v -race -coverprofile=coverage.out ./...
+
+      - name: Upload Coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.out
+          retention-days: 7

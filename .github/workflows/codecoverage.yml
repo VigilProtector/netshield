@@ -1,0 +1,53 @@
+name: Code Coverage
+
+on:
+  workflow_dispatch:
+
+jobs:
+  coverage:
+    name: Run Coverage
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.0"
+
+      - name: Install dependencies
+        run: |
+          export PATH="/home/tofi/go/go1.26.0/bin:$PATH"
+          export GOPRIVATE="vigilprotector.io,github.com"
+          go mod download
+          go mod tidy
+
+      - name: Run tests with coverage
+        run: |
+          export PATH="/home/tofi/go/go1.26.0/bin:$PATH"
+          go test -v -race -covermode=atomic -coverprofile=coverage.out ./...
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: coverage.out
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+
+      - name: Check coverage threshold
+        run: |
+          # Extract coverage percentage from coverage.out
+          COVERAGE=$(go tool cover -func=coverage.out | tail -1 | awk '{print $3}' | tr -d '%')
+          echo "Current coverage: ${COVERAGE}%"
+          
+          # Check if coverage is at least 85%
+          if (( $(echo "$COVERAGE < 85" | bc -l) )); then
+            echo "::error::Coverage is below 85% (${COVERAGE}%)"
+            exit 1
+          else
+            echo "::notice::Coverage is above 85% (${COVERAGE}%)"
+          fi
