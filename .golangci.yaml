@@ -1,0 +1,165 @@
+# This file contains the configuration for golangci-lint.
+# The configuration is based on the VigilProtector platform standard.
+# See: https://github.com/golangci/golangci-lint
+
+run:
+  # Timeout for analysis, e.g. 30s, 5m.
+  timeout: 5m
+  # Exit code when at least one issue was found.
+  issues-exit-code: 1
+  # Include test files or not.
+  tests: true
+  # Default is true. Enables skipping of directories:
+  #   vendor$, third_party$, testdata$, examples$, Godeps$, builtin$
+  skip-dirs:
+    - vendor
+    - third_party
+    - testdata
+    - examples
+    - Godeps
+    - builtin
+  # Default is true. Enables skipping of files:
+  skip-files:
+    - "*.pb.go"
+    - ".*_test.go"
+    - ".*_string.go"
+
+# output configuration options
+output:
+  # colored-line-number|line-number|json|tab|checkstyle|code-climate|junit-xml|html
+  format: colored-line-number
+  # Print lines of code with issue.
+  print-issued-lines: true
+  # Print linter name in the end of each output line.
+  print-linter-name: true
+
+# All available settings of specific linters.
+linters:
+  # Disable all linters.
+  disable-all: true
+  # Enable specific linters.
+  enable:
+    - bodyclose
+    - deadcode
+    - depguard
+    - dogsled
+    - dupl
+    - errcheck
+    - exhaustive
+    - exportloopref
+    - funlen
+    - gochecknoinits
+    - goconst
+    - gocyclo
+    - godot
+    - gofmt
+    - goimports
+    - gomnd
+    - goprintffuncname
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - lll
+    - misspell
+    - nakedret
+    - nolintlint
+    - rowserrcheck
+    - sqlclosecheck
+    - staticcheck
+    - structcheck
+    - stylecheck
+    - typecheck
+    - unconvert
+    - unused
+    - varcheck
+    - whitespace
+    - wsl
+
+linters-settings:
+  # Settings for depguard
+  depguard:
+    list-type: blacklist
+    packages:
+      - github.com/gin-gonic/gin
+      - github.com/go-logr/logr
+      - go.mongodb.org/mongo-driver/v2
+      - k8s.io/apimachinery
+      - vigilprotector.io/vigilnet
+      - vigilprotector.io/vp-lib
+    packages-with-error-message:
+      - github.com/gin-gonic/gin: "Allowed. Part of platform baseline."
+      - github.com/go-logr/logr: "Allowed. Part of platform baseline."
+      - go.mongodb.org/mongo-driver/v2: "Allowed. Part of platform baseline."
+      - k8s.io/apimachinery: "Allowed. Part of platform baseline."
+      - vigilprotector.io/vigilnet: "Allowed. Cross-BC dependency."
+      - vigilprotector.io/vp-lib: "Allowed. Platform library."
+
+  # Settings for dupl
+  dupl:
+    threshold: 150
+
+  # Settings for funlen
+  funlen:
+    lines: 100
+    statements: 50
+
+  # Settings for gocyclo
+  gocyclo:
+    min-complexity: 15
+
+  # Settings for goconst
+  goconst:
+    min-len: 3
+    min-occurrences: 3
+
+  # Settings for gofmt
+  gofmt:
+    simplify: true
+
+  # Settings for goimports
+  goimports:
+    local-prefixes: vigilprotector.io/netshield
+
+  # Settings for lll
+  lll:
+    line-length: 120
+    tab-length: 4
+
+  # Settings for nolintlint
+  nolintlint:
+    allow-leading-space: false
+    allow-unused: false
+    require-explanation: true
+    require-specific: true
+
+issues:
+  # Maximum issues count per one linter.
+  max-per-linter: 0
+  # Maximum count of issues with the same text.
+  max-same-issues: 0
+  # Show only new issues: if there are unstaged changes or untracked files,
+  # only the issues appearing in those changes/files will be shown (filtering by git).
+  new: false
+  # Don't filter issues by git. Same as `new: false`.
+  new-from-rev: ""
+  # Don't filter issues by git. Same as `new: false`.
+  new-from-patch: ""
+  # Show only new issues created after git revision `NEWS_FROM_REV`
+  # Same as `new-from-rev`.
+  since: ""
+  # Fix found absolute path or absolute path with base.
+  fix: false
+  # Exclude issue by regexps.
+  exclude:
+    - "SA1019:"
+  # Exclude files by regexps.
+  exclude-files:
+    - "zz_generated.*\.go$"
+  # Exclude rules by regexps.
+  exclude-rules:
+    - "funlen: line is too long"
+
+severity:
+  default-severity: error
+  case-severity: 0
