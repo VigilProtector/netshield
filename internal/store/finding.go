@@ -758,5 +758,3 @@ func (s *FindingStore) EnsureIndex(ctx context.Context) error {
 
 	return nil
 }
-
-

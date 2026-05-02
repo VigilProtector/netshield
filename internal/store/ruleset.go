@@ -410,5 +410,3 @@ func (s *RuleSetStore) EnsureIndex(ctx context.Context) error {
 
 	return nil
 }
-
-

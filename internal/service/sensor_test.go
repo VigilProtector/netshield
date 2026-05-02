@@ -18,10 +18,10 @@ import (
 
 // mockSensorStore implements service.SensorStorer interface for testing.
 type mockSensorStore struct {
-	listFunc        func(ctx context.Context, opts models.ListSensorsOptions) (*models.SensorListResponse, error)
+	listFunc          func(ctx context.Context, opts models.ListSensorsOptions) (*models.SensorListResponse, error)
 	getByPicketIDFunc func(ctx context.Context, picketID string) (*models.Sensor, error)
-	createFunc      func(ctx context.Context, sensor *models.Sensor) error
-	updateFunc      func(ctx context.Context, sensor *models.Sensor) error
+	createFunc        func(ctx context.Context, sensor *models.Sensor) error
+	updateFunc        func(ctx context.Context, sensor *models.Sensor) error
 	getByDefconIDFunc func(ctx context.Context, defconID string) ([]*models.Sensor, error)
 }
 
@@ -181,35 +181,35 @@ func TestSensorService_Get(t *testing.T) {
 	}
 
 	testCases := []struct {
-		name         string
-		picketID    string
-		storeSensor  *models.Sensor
-		storeErr    error
-		expectedNil  bool
+		name          string
+		picketID      string
+		storeSensor   *models.Sensor
+		storeErr      error
+		expectedNil   bool
 		expectedError bool
 	}{
 		{
-			name:         "successful get",
-			picketID:    "picket-1",
-			storeSensor:  testSensor,
-			storeErr:     nil,
-			expectedNil:  false,
+			name:          "successful get",
+			picketID:      "picket-1",
+			storeSensor:   testSensor,
+			storeErr:      nil,
+			expectedNil:   false,
 			expectedError: false,
 		},
 		{
-			name:         "sensor not found",
-			picketID:    "picket-1",
-			storeSensor:  nil,
-			storeErr:     nil,
-			expectedNil:  true,
+			name:          "sensor not found",
+			picketID:      "picket-1",
+			storeSensor:   nil,
+			storeErr:      nil,
+			expectedNil:   true,
 			expectedError: true,
 		},
 		{
-			name:         "store error",
-			picketID:    "picket-1",
-			storeSensor:  nil,
-			storeErr:     errors.New("store error"),
-			expectedNil:  true,
+			name:          "store error",
+			picketID:      "picket-1",
+			storeSensor:   nil,
+			storeErr:      errors.New("store error"),
+			expectedNil:   true,
 			expectedError: true,
 		},
 	}
@@ -258,8 +258,8 @@ func TestSensorService_Register(t *testing.T) {
 	subject := &types.Subject{Type: "human", ID: "test-user"}
 
 	testSensor := &models.Sensor{
-		PicketID:  "picket-1",
-		DefconID:  "defcon-1",
+		PicketID: "picket-1",
+		DefconID: "defcon-1",
 		// Status and Health are empty to test default setting in Register
 		CreatedAt: time.Now().UTC(),
 		UpdatedAt: time.Now().UTC(),
@@ -346,47 +346,47 @@ func TestSensorService_UpdateStatus(t *testing.T) {
 
 	testCases := []struct {
 		name          string
-		picketID     string
-		status       models.SensorStatus
+		picketID      string
+		status        models.SensorStatus
 		storeSensor   *models.Sensor
-		storeErr     error
+		storeErr      error
 		updateErr     error
 		expectedError bool
 	}{
 		{
-			name:        "successful status update",
-			picketID:    "picket-1",
-			status:      models.SensorStatusDegraded,
-			storeSensor: testSensor,
-			storeErr:    nil,
-			updateErr:    nil,
+			name:          "successful status update",
+			picketID:      "picket-1",
+			status:        models.SensorStatusDegraded,
+			storeSensor:   testSensor,
+			storeErr:      nil,
+			updateErr:     nil,
 			expectedError: false,
 		},
 		{
-			name:        "sensor not found",
-			picketID:    "picket-1",
-			status:      models.SensorStatusDegraded,
-			storeSensor: nil,
-			storeErr:    nil,
-			updateErr:    nil,
+			name:          "sensor not found",
+			picketID:      "picket-1",
+			status:        models.SensorStatusDegraded,
+			storeSensor:   nil,
+			storeErr:      nil,
+			updateErr:     nil,
 			expectedError: true,
 		},
 		{
-			name:        "store error on get",
-			picketID:    "picket-1",
-			status:      models.SensorStatusDegraded,
-			storeSensor: nil,
-			storeErr:    errors.New("store error"),
-			updateErr:    nil,
+			name:          "store error on get",
+			picketID:      "picket-1",
+			status:        models.SensorStatusDegraded,
+			storeSensor:   nil,
+			storeErr:      errors.New("store error"),
+			updateErr:     nil,
 			expectedError: true,
 		},
 		{
-			name:        "store error on update",
-			picketID:    "picket-1",
-			status:      models.SensorStatusDegraded,
-			storeSensor: testSensor,
-			storeErr:    nil,
-			updateErr:    errors.New("update error"),
+			name:          "store error on update",
+			picketID:      "picket-1",
+			status:        models.SensorStatusDegraded,
+			storeSensor:   testSensor,
+			storeErr:      nil,
+			updateErr:     errors.New("update error"),
 			expectedError: true,
 		},
 	}
@@ -463,8 +463,8 @@ func TestSensorService_MarkStale(t *testing.T) {
 				Limit:      0,
 				Offset:     0,
 			},
-			storeListErr: nil,
-			updateErr:    nil,
+			storeListErr:  nil,
+			updateErr:     nil,
 			expectedCount: 1, // Only activeSensor should be marked stale
 			expectedError: false,
 		},

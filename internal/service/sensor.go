@@ -612,5 +612,3 @@ func (s *SensorService) emitSensorAuditEventWithMeta(
 
 	ironchronicle.Emit(ctx, event)
 }
-
-

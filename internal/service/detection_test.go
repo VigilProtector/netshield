@@ -18,17 +18,17 @@ import (
 
 // mockDetectionStore implements service.DetectionStorer interface for testing.
 type mockDetectionStore struct {
-	listFunc               func(ctx context.Context, opts models.ListDetectionsOptions) (*models.DetectionListResponse, error)
-	getByIDFunc            func(ctx context.Context, detectionID string) (*models.Detection, error)
-	getByDetectionIDFunc   func(ctx context.Context, detectionID string) (*models.Detection, error)
-	createFunc             func(ctx context.Context, detection *models.Detection) error
-	updateFunc             func(ctx context.Context, detection *models.Detection) error
-	deleteFunc             func(ctx context.Context, id string) error
-	getBySensorIDFunc      func(ctx context.Context, sensorID string, opts models.ListDetectionsOptions) (*models.DetectionListResponse, error)
-	getByPicketIDFunc      func(ctx context.Context, picketID string, opts models.ListDetectionsOptions) (*models.DetectionListResponse, error)
-	getByRuleSetIDFunc     func(ctx context.Context, ruleSetID string, opts models.ListDetectionsOptions) (*models.DetectionListResponse, error)
-	getByRuleIDFunc        func(ctx context.Context, ruleID string, opts models.ListDetectionsOptions) (*models.DetectionListResponse, error)
-	getUnprocessedFunc     func(ctx context.Context, opts models.ListDetectionsOptions) (*models.DetectionListResponse, error)
+	listFunc             func(ctx context.Context, opts models.ListDetectionsOptions) (*models.DetectionListResponse, error)
+	getByIDFunc          func(ctx context.Context, detectionID string) (*models.Detection, error)
+	getByDetectionIDFunc func(ctx context.Context, detectionID string) (*models.Detection, error)
+	createFunc           func(ctx context.Context, detection *models.Detection) error
+	updateFunc           func(ctx context.Context, detection *models.Detection) error
+	deleteFunc           func(ctx context.Context, id string) error
+	getBySensorIDFunc    func(ctx context.Context, sensorID string, opts models.ListDetectionsOptions) (*models.DetectionListResponse, error)
+	getByPicketIDFunc    func(ctx context.Context, picketID string, opts models.ListDetectionsOptions) (*models.DetectionListResponse, error)
+	getByRuleSetIDFunc   func(ctx context.Context, ruleSetID string, opts models.ListDetectionsOptions) (*models.DetectionListResponse, error)
+	getByRuleIDFunc      func(ctx context.Context, ruleID string, opts models.ListDetectionsOptions) (*models.DetectionListResponse, error)
+	getUnprocessedFunc   func(ctx context.Context, opts models.ListDetectionsOptions) (*models.DetectionListResponse, error)
 }
 
 func (m *mockDetectionStore) List(ctx context.Context, opts models.ListDetectionsOptions) (*models.DetectionListResponse, error) {
@@ -133,27 +133,27 @@ func (m *mockFlowSeekerClient) GetFlowContext(ctx context.Context, srcIP, dstIP 
 func newTestDetection(detectionID string) *models.Detection {
 	now := time.Now().UTC()
 	return &models.Detection{
-		DetectionID:  detectionID,
-		SensorID:     "sensor-1",
-		PicketID:     "picket-1",
-		RuleSetID:    "ruleset-1",
-		RuleID:       "rule-1",
-		EventType:    models.DetectionEventTypeAlert,
-		Timestamp:    now,
-		SourceIP:     "192.168.1.1",
-		DestIP:       "10.0.0.1",
-		SourcePort:   12345,
-		DestPort:     80,
-		Proto:        "TCP",
-		Action:       "allowed",
-		Category:     "malware",
-		Severity:     models.RuleSeverityHigh,
-		Message:      "Test detection",
-		Confidence:   models.ConfidenceHigh,
-		AssetID:      "asset-1",
-		DefconID:     "defcon-1",
-		CreatedAt:    now,
-		UpdatedAt:    now,
+		DetectionID: detectionID,
+		SensorID:    "sensor-1",
+		PicketID:    "picket-1",
+		RuleSetID:   "ruleset-1",
+		RuleID:      "rule-1",
+		EventType:   models.DetectionEventTypeAlert,
+		Timestamp:   now,
+		SourceIP:    "192.168.1.1",
+		DestIP:      "10.0.0.1",
+		SourcePort:  12345,
+		DestPort:    80,
+		Proto:       "TCP",
+		Action:      "allowed",
+		Category:    "malware",
+		Severity:    models.RuleSeverityHigh,
+		Message:     "Test detection",
+		Confidence:  models.ConfidenceHigh,
+		AssetID:     "asset-1",
+		DefconID:    "defcon-1",
+		CreatedAt:   now,
+		UpdatedAt:   now,
 	}
 }
 
@@ -178,8 +178,8 @@ func TestDetectionService_List(t *testing.T) {
 		expectedError bool
 	}{
 		{
-			name:   "successful list with no filter",
-			opts:   models.ListDetectionsOptions{},
+			name: "successful list with no filter",
+			opts: models.ListDetectionsOptions{},
 			storeList: &models.DetectionListResponse{
 				Items:      testDetections,
 				TotalCount: 2,
@@ -191,8 +191,8 @@ func TestDetectionService_List(t *testing.T) {
 			expectedError: false,
 		},
 		{
-			name:   "successful list with sensor filter",
-			opts:   models.ListDetectionsOptions{Filter: models.DetectionFilter{SensorID: "sensor-1"}},
+			name: "successful list with sensor filter",
+			opts: models.ListDetectionsOptions{Filter: models.DetectionFilter{SensorID: "sensor-1"}},
 			storeList: &models.DetectionListResponse{
 				Items:      testDetections,
 				TotalCount: 2,
@@ -204,10 +204,10 @@ func TestDetectionService_List(t *testing.T) {
 			expectedError: false,
 		},
 		{
-			name:         "store error",
-			opts:         models.ListDetectionsOptions{},
-			storeList:    nil,
-			storeListErr: errors.New("store error"),
+			name:          "store error",
+			opts:          models.ListDetectionsOptions{},
+			storeList:     nil,
+			storeListErr:  errors.New("store error"),
 			expectedCount: 0,
 			expectedError: true,
 		},
@@ -250,33 +250,33 @@ func TestDetectionService_Get(t *testing.T) {
 
 	testCases := []struct {
 		name           string
-		detectionID   string
+		detectionID    string
 		storeDetection *models.Detection
-		storeErr      error
+		storeErr       error
 		expectedNil    bool
 		expectedError  bool
 	}{
 		{
 			name:           "successful get",
-			detectionID:   "detection-1",
+			detectionID:    "detection-1",
 			storeDetection: testDetection,
-			storeErr:      nil,
+			storeErr:       nil,
 			expectedNil:    false,
 			expectedError:  false,
 		},
 		{
 			name:           "detection not found",
-			detectionID:   "detection-1",
+			detectionID:    "detection-1",
 			storeDetection: nil,
-			storeErr:      nil,
+			storeErr:       nil,
 			expectedNil:    true,
 			expectedError:  true,
 		},
 		{
 			name:           "store error",
-			detectionID:   "detection-1",
+			detectionID:    "detection-1",
 			storeDetection: nil,
-			storeErr:      errors.New("store error"),
+			storeErr:       errors.New("store error"),
 			expectedNil:    true,
 			expectedError:  true,
 		},
@@ -329,19 +329,19 @@ func TestDetectionService_Create(t *testing.T) {
 	testCases := []struct {
 		name          string
 		detection     *models.Detection
-		storeErr     error
+		storeErr      error
 		expectedError bool
 	}{
 		{
 			name:          "successful create",
 			detection:     testDetection,
-			storeErr:     nil,
+			storeErr:      nil,
 			expectedError: false,
 		},
 		{
 			name:          "store error",
 			detection:     testDetection,
-			storeErr:     errors.New("store error"),
+			storeErr:      errors.New("store error"),
 			expectedError: true,
 		},
 	}
@@ -386,44 +386,44 @@ func TestDetectionService_MarkAsProcessed(t *testing.T) {
 	testDetection := newTestDetection("detection-1")
 
 	testCases := []struct {
-		name          string
-		detectionID   string
+		name           string
+		detectionID    string
 		storeDetection *models.Detection
-		storeErr      error
+		storeErr       error
 		updateErr      error
-		expectedError bool
+		expectedError  bool
 	}{
 		{
-			name:          "successful mark as processed",
-			detectionID:   "detection-1",
+			name:           "successful mark as processed",
+			detectionID:    "detection-1",
 			storeDetection: testDetection,
-			storeErr:      nil,
+			storeErr:       nil,
 			updateErr:      nil,
-			expectedError: false,
+			expectedError:  false,
 		},
 		{
-			name:          "detection not found",
-			detectionID:   "detection-1",
+			name:           "detection not found",
+			detectionID:    "detection-1",
 			storeDetection: nil,
-			storeErr:      nil,
+			storeErr:       nil,
 			updateErr:      nil,
-			expectedError: true,
+			expectedError:  true,
 		},
 		{
-			name:          "store error on get",
-			detectionID:   "detection-1",
+			name:           "store error on get",
+			detectionID:    "detection-1",
 			storeDetection: nil,
-			storeErr:      errors.New("get error"),
+			storeErr:       errors.New("get error"),
 			updateErr:      nil,
-			expectedError: true,
+			expectedError:  true,
 		},
 		{
-			name:          "store error on update",
-			detectionID:   "detection-1",
+			name:           "store error on update",
+			detectionID:    "detection-1",
 			storeDetection: testDetection,
-			storeErr:      nil,
+			storeErr:       nil,
 			updateErr:      errors.New("update error"),
-			expectedError: true,
+			expectedError:  true,
 		},
 	}
 
@@ -464,7 +464,7 @@ func TestDetectionService_GetBySensorID(t *testing.T) {
 
 	testCases := []struct {
 		name          string
-		sensorID     string
+		sensorID      string
 		opts          models.ListDetectionsOptions
 		storeList     *models.DetectionListResponse
 		storeListErr  error
@@ -472,9 +472,9 @@ func TestDetectionService_GetBySensorID(t *testing.T) {
 		expectedError bool
 	}{
 		{
-			name:   "successful get by sensor",
+			name:     "successful get by sensor",
 			sensorID: "sensor-1",
-			opts:   models.ListDetectionsOptions{},
+			opts:     models.ListDetectionsOptions{},
 			storeList: &models.DetectionListResponse{
 				Items:      testDetections,
 				TotalCount: 1,
@@ -486,11 +486,11 @@ func TestDetectionService_GetBySensorID(t *testing.T) {
 			expectedError: false,
 		},
 		{
-			name:         "store error",
-			sensorID:     "sensor-1",
-			opts:        models.ListDetectionsOptions{},
-			storeList:    nil,
-			storeListErr: errors.New("store error"),
+			name:          "store error",
+			sensorID:      "sensor-1",
+			opts:          models.ListDetectionsOptions{},
+			storeList:     nil,
+			storeListErr:  errors.New("store error"),
 			expectedCount: 0,
 			expectedError: true,
 		},
@@ -533,7 +533,7 @@ func TestDetectionService_GetByPicketID(t *testing.T) {
 
 	testCases := []struct {
 		name          string
-		picketID     string
+		picketID      string
 		opts          models.ListDetectionsOptions
 		storeList     *models.DetectionListResponse
 		storeListErr  error
@@ -541,9 +541,9 @@ func TestDetectionService_GetByPicketID(t *testing.T) {
 		expectedError bool
 	}{
 		{
-			name:   "successful get by picket",
+			name:     "successful get by picket",
 			picketID: "picket-1",
-			opts:   models.ListDetectionsOptions{},
+			opts:     models.ListDetectionsOptions{},
 			storeList: &models.DetectionListResponse{
 				Items:      testDetections,
 				TotalCount: 1,
@@ -555,11 +555,11 @@ func TestDetectionService_GetByPicketID(t *testing.T) {
 			expectedError: false,
 		},
 		{
-			name:         "store error",
-			picketID:     "picket-1",
-			opts:        models.ListDetectionsOptions{},
-			storeList:    nil,
-			storeListErr: errors.New("store error"),
+			name:          "store error",
+			picketID:      "picket-1",
+			opts:          models.ListDetectionsOptions{},
+			storeList:     nil,
+			storeListErr:  errors.New("store error"),
 			expectedCount: 0,
 			expectedError: true,
 		},
@@ -602,7 +602,7 @@ func TestDetectionService_GetByRuleSetID(t *testing.T) {
 
 	testCases := []struct {
 		name          string
-		ruleSetID    string
+		ruleSetID     string
 		opts          models.ListDetectionsOptions
 		storeList     *models.DetectionListResponse
 		storeListErr  error
@@ -610,9 +610,9 @@ func TestDetectionService_GetByRuleSetID(t *testing.T) {
 		expectedError bool
 	}{
 		{
-			name:   "successful get by ruleset",
+			name:      "successful get by ruleset",
 			ruleSetID: "ruleset-1",
-			opts:   models.ListDetectionsOptions{},
+			opts:      models.ListDetectionsOptions{},
 			storeList: &models.DetectionListResponse{
 				Items:      testDetections,
 				TotalCount: 1,
@@ -624,11 +624,11 @@ func TestDetectionService_GetByRuleSetID(t *testing.T) {
 			expectedError: false,
 		},
 		{
-			name:         "store error",
-			ruleSetID:    "ruleset-1",
-			opts:        models.ListDetectionsOptions{},
-			storeList:    nil,
-			storeListErr: errors.New("store error"),
+			name:          "store error",
+			ruleSetID:     "ruleset-1",
+			opts:          models.ListDetectionsOptions{},
+			storeList:     nil,
+			storeListErr:  errors.New("store error"),
 			expectedCount: 0,
 			expectedError: true,
 		},
@@ -671,7 +671,7 @@ func TestDetectionService_GetByRuleID(t *testing.T) {
 
 	testCases := []struct {
 		name          string
-		ruleID       string
+		ruleID        string
 		opts          models.ListDetectionsOptions
 		storeList     *models.DetectionListResponse
 		storeListErr  error
@@ -693,11 +693,11 @@ func TestDetectionService_GetByRuleID(t *testing.T) {
 			expectedError: false,
 		},
 		{
-			name:         "store error",
-			ruleID:       "rule-1",
-			opts:        models.ListDetectionsOptions{},
-			storeList:    nil,
-			storeListErr: errors.New("store error"),
+			name:          "store error",
+			ruleID:        "rule-1",
+			opts:          models.ListDetectionsOptions{},
+			storeList:     nil,
+			storeListErr:  errors.New("store error"),
 			expectedCount: 0,
 			expectedError: true,
 		},
@@ -747,8 +747,8 @@ func TestDetectionService_GetUnprocessed(t *testing.T) {
 		expectedError bool
 	}{
 		{
-			name:   "successful get unprocessed",
-			opts:   models.ListDetectionsOptions{},
+			name: "successful get unprocessed",
+			opts: models.ListDetectionsOptions{},
 			storeList: &models.DetectionListResponse{
 				Items:      testDetections,
 				TotalCount: 1,
@@ -760,10 +760,10 @@ func TestDetectionService_GetUnprocessed(t *testing.T) {
 			expectedError: false,
 		},
 		{
-			name:         "store error",
-			opts:         models.ListDetectionsOptions{},
-			storeList:    nil,
-			storeListErr: errors.New("store error"),
+			name:          "store error",
+			opts:          models.ListDetectionsOptions{},
+			storeList:     nil,
+			storeListErr:  errors.New("store error"),
 			expectedCount: 0,
 			expectedError: true,
 		},

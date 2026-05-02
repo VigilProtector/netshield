@@ -18,14 +18,14 @@ import (
 
 // mockRuleSetStore implements service.RuleSetStorer interface for testing.
 type mockRuleSetStore struct {
-	listFunc          func(ctx context.Context, opts models.RuleSetFilter) (*models.RuleSetListResponse, error)
-	getByIDFunc       func(ctx context.Context, id string) (*models.RuleSet, error)
-	getByNameFunc     func(ctx context.Context, name string) (*models.RuleSet, error)
-	getDefaultFunc    func(ctx context.Context) (*models.RuleSet, error)
-	createFunc        func(ctx context.Context, ruleset *models.RuleSet) error
-	updateFunc        func(ctx context.Context, ruleset *models.RuleSet) error
-	deleteFunc        func(ctx context.Context, id string) error
-	getByScopeFunc    func(ctx context.Context, scopeType models.ScopeType, defconID, namespace string) ([]*models.RuleSet, error)
+	listFunc       func(ctx context.Context, opts models.RuleSetFilter) (*models.RuleSetListResponse, error)
+	getByIDFunc    func(ctx context.Context, id string) (*models.RuleSet, error)
+	getByNameFunc  func(ctx context.Context, name string) (*models.RuleSet, error)
+	getDefaultFunc func(ctx context.Context) (*models.RuleSet, error)
+	createFunc     func(ctx context.Context, ruleset *models.RuleSet) error
+	updateFunc     func(ctx context.Context, ruleset *models.RuleSet) error
+	deleteFunc     func(ctx context.Context, id string) error
+	getByScopeFunc func(ctx context.Context, scopeType models.ScopeType, defconID, namespace string) ([]*models.RuleSet, error)
 }
 
 func (m *mockRuleSetStore) List(ctx context.Context, opts models.RuleSetFilter) (*models.RuleSetListResponse, error) {
@@ -62,12 +62,12 @@ func (m *mockRuleSetStore) GetByScope(ctx context.Context, scopeType models.Scop
 
 // mockRuleStore implements service.RuleStorer interface for testing.
 type mockRuleStore struct {
-	listFunc        func(ctx context.Context, opts models.ListRulesOptions) (*models.RuleListResponse, error)
-	getByIDFunc     func(ctx context.Context, id string) (*models.Rule, error)
-	getByRuleIDFunc func(ctx context.Context, ruleID string) (*models.Rule, error)
-	createFunc      func(ctx context.Context, rule *models.Rule) error
-	updateFunc      func(ctx context.Context, rule *models.Rule) error
-	deleteFunc      func(ctx context.Context, id string) error
+	listFunc         func(ctx context.Context, opts models.ListRulesOptions) (*models.RuleListResponse, error)
+	getByIDFunc      func(ctx context.Context, id string) (*models.Rule, error)
+	getByRuleIDFunc  func(ctx context.Context, ruleID string) (*models.Rule, error)
+	createFunc       func(ctx context.Context, rule *models.Rule) error
+	updateFunc       func(ctx context.Context, rule *models.Rule) error
+	deleteFunc       func(ctx context.Context, id string) error
 	getByRuleIDsFunc func(ctx context.Context, ruleIDs []string) ([]*models.Rule, error)
 }
 
@@ -139,12 +139,12 @@ func TestRuleSetService_List(t *testing.T) {
 	}
 
 	testCases := []struct {
-		name           string
-		filter         models.RuleSetFilter
-		storeList      *models.RuleSetListResponse
-		storeListErr   error
-		expectedCount  int
-		expectedError  bool
+		name          string
+		filter        models.RuleSetFilter
+		storeList     *models.RuleSetListResponse
+		storeListErr  error
+		expectedCount int
+		expectedError bool
 	}{
 		{
 			name:   "successful list with no filter",
@@ -186,10 +186,10 @@ func TestRuleSetService_List(t *testing.T) {
 			expectedError: false,
 		},
 		{
-			name:         "store error",
-			filter:       models.RuleSetFilter{},
-			storeList:    nil,
-			storeListErr: errors.New("store error"),
+			name:          "store error",
+			filter:        models.RuleSetFilter{},
+			storeList:     nil,
+			storeListErr:  errors.New("store error"),
 			expectedCount: 0,
 			expectedError: true,
 		},
@@ -244,35 +244,35 @@ func TestRuleSetService_Get(t *testing.T) {
 	}
 
 	testCases := []struct {
-		name         string
-		id           string
-		storeRuleSet *models.RuleSet
-		storeErr    error
-		expectedNil  bool
+		name          string
+		id            string
+		storeRuleSet  *models.RuleSet
+		storeErr      error
+		expectedNil   bool
 		expectedError bool
 	}{
 		{
-			name:         "successful get",
-			id:           "rule-set-1",
-			storeRuleSet: testRuleSet,
-			storeErr:     nil,
-			expectedNil:  false,
+			name:          "successful get",
+			id:            "rule-set-1",
+			storeRuleSet:  testRuleSet,
+			storeErr:      nil,
+			expectedNil:   false,
 			expectedError: false,
 		},
 		{
-			name:         "rule set not found",
-			id:           "rule-set-1",
-			storeRuleSet: nil,
-			storeErr:     nil,
-			expectedNil:  true,
+			name:          "rule set not found",
+			id:            "rule-set-1",
+			storeRuleSet:  nil,
+			storeErr:      nil,
+			expectedNil:   true,
 			expectedError: true,
 		},
 		{
-			name:         "store error",
-			id:           "rule-set-1",
-			storeRuleSet: nil,
-			storeErr:     errors.New("store error"),
-			expectedNil:  true,
+			name:          "store error",
+			id:            "rule-set-1",
+			storeRuleSet:  nil,
+			storeErr:      errors.New("store error"),
+			expectedNil:   true,
 			expectedError: true,
 		},
 	}
@@ -321,15 +321,15 @@ func TestRuleSetService_Create(t *testing.T) {
 	subject := &types.Subject{Type: "human", ID: "test-user"}
 
 	testCases := []struct {
-		name           string
-		req            models.CreateRuleSetRequest
-		storeGetByName *models.RuleSet
-		storeGetByNameErr error
-		storeGetDefault *models.RuleSet
+		name               string
+		req                models.CreateRuleSetRequest
+		storeGetByName     *models.RuleSet
+		storeGetByNameErr  error
+		storeGetDefault    *models.RuleSet
 		storeGetDefaultErr error
-		storeCreateErr error
-		expectedError  bool
-		expectDefault  bool
+		storeCreateErr     error
+		expectedError      bool
+		expectDefault      bool
 	}{
 		{
 			name: "successful create - ET Open with no existing default",
@@ -346,13 +346,13 @@ func TestRuleSetService_Create(t *testing.T) {
 					Type: "global",
 				},
 			},
-			storeGetByName:    nil,
-			storeGetByNameErr: nil,
-			storeGetDefault:   nil,
+			storeGetByName:     nil,
+			storeGetByNameErr:  nil,
+			storeGetDefault:    nil,
 			storeGetDefaultErr: nil,
-			storeCreateErr:    nil,
-			expectedError:     false,
-			expectDefault:     true,
+			storeCreateErr:     nil,
+			expectedError:      false,
+			expectDefault:      true,
 		},
 		{
 			name: "successful create - ET Open with existing default",
@@ -376,9 +376,9 @@ func TestRuleSetService_Create(t *testing.T) {
 				Source: models.RuleSetSourceETOpen,
 			},
 			storeGetDefaultErr: nil,
-			storeCreateErr:    nil,
-			expectedError:     false,
-			expectDefault:     false,
+			storeCreateErr:     nil,
+			expectedError:      false,
+			expectDefault:      false,
 		},
 		{
 			name: "successful create - custom ruleset",
@@ -396,13 +396,13 @@ func TestRuleSetService_Create(t *testing.T) {
 					DefconIDs: []string{"defcon-1"},
 				},
 			},
-			storeGetByName:    nil,
-			storeGetByNameErr: nil,
-			storeGetDefault:   nil,
+			storeGetByName:     nil,
+			storeGetByNameErr:  nil,
+			storeGetDefault:    nil,
 			storeGetDefaultErr: nil,
-			storeCreateErr:    nil,
-			expectedError:     false,
-			expectDefault:     false,
+			storeCreateErr:     nil,
+			expectedError:      false,
+			expectDefault:      false,
 		},
 		{
 			name: "error - missing name",
@@ -410,13 +410,13 @@ func TestRuleSetService_Create(t *testing.T) {
 				Version: "1.0.0",
 				Source:  string(models.RuleSetSourceETOpen),
 			},
-			storeGetByName:    nil,
-			storeGetByNameErr: nil,
-			storeGetDefault:   nil,
+			storeGetByName:     nil,
+			storeGetByNameErr:  nil,
+			storeGetDefault:    nil,
 			storeGetDefaultErr: nil,
-			storeCreateErr:    nil,
-			expectedError:     true,
-			expectDefault:     false,
+			storeCreateErr:     nil,
+			expectedError:      true,
+			expectDefault:      false,
 		},
 		{
 			name: "error - invalid source",
@@ -424,13 +424,13 @@ func TestRuleSetService_Create(t *testing.T) {
 				Name:   "Invalid Source",
 				Source: "invalid-source",
 			},
-			storeGetByName:    nil,
-			storeGetByNameErr: nil,
-			storeGetDefault:   nil,
+			storeGetByName:     nil,
+			storeGetByNameErr:  nil,
+			storeGetDefault:    nil,
 			storeGetDefaultErr: nil,
-			storeCreateErr:    nil,
-			expectedError:     true,
-			expectDefault:     false,
+			storeCreateErr:     nil,
+			expectedError:      true,
+			expectDefault:      false,
 		},
 		{
 			name: "error - already exists",
@@ -441,12 +441,12 @@ func TestRuleSetService_Create(t *testing.T) {
 			storeGetByName: &models.RuleSet{
 				Name: "Existing",
 			},
-			storeGetByNameErr: nil,
-			storeGetDefault:   nil,
+			storeGetByNameErr:  nil,
+			storeGetDefault:    nil,
 			storeGetDefaultErr: nil,
-			storeCreateErr:    nil,
-			expectedError:     true,
-			expectDefault:     false,
+			storeCreateErr:     nil,
+			expectedError:      true,
+			expectDefault:      false,
 		},
 		{
 			name: "error - store get by name error",
@@ -454,13 +454,13 @@ func TestRuleSetService_Create(t *testing.T) {
 				Name:   "New",
 				Source: string(models.RuleSetSourceETOpen),
 			},
-			storeGetByName:    nil,
-			storeGetByNameErr: errors.New("store error"),
-			storeGetDefault:   nil,
+			storeGetByName:     nil,
+			storeGetByNameErr:  errors.New("store error"),
+			storeGetDefault:    nil,
 			storeGetDefaultErr: nil,
-			storeCreateErr:    nil,
-			expectedError:     true,
-			expectDefault:     false,
+			storeCreateErr:     nil,
+			expectedError:      true,
+			expectDefault:      false,
 		},
 		{
 			name: "error - store create error",
@@ -468,13 +468,13 @@ func TestRuleSetService_Create(t *testing.T) {
 				Name:   "New",
 				Source: string(models.RuleSetSourceETOpen),
 			},
-			storeGetByName:    nil,
-			storeGetByNameErr: nil,
-			storeGetDefault:   nil,
+			storeGetByName:     nil,
+			storeGetByNameErr:  nil,
+			storeGetDefault:    nil,
 			storeGetDefaultErr: nil,
-			storeCreateErr:    errors.New("create error"),
-			expectedError:     true,
-			expectDefault:     false,
+			storeCreateErr:     errors.New("create error"),
+			expectedError:      true,
+			expectDefault:      false,
 		},
 	}
 
@@ -545,20 +545,20 @@ func TestRuleSetService_Update(t *testing.T) {
 	}
 
 	testCases := []struct {
-		name          string
-		id            string
-		req           models.UpdateRuleSetRequest
-		storeRuleSet  *models.RuleSet
+		name            string
+		id              string
+		req             models.UpdateRuleSetRequest
+		storeRuleSet    *models.RuleSet
 		storeRuleSetErr error
-		storeUpdateErr error
-		expectedError bool
-		expectName    string
-		expectVersion string
-		expectEnabled bool
+		storeUpdateErr  error
+		expectedError   bool
+		expectName      string
+		expectVersion   string
+		expectEnabled   bool
 	}{
 		{
-			name:         "successful update - all fields",
-			id:           "rule-set-1",
+			name: "successful update - all fields",
+			id:   "rule-set-1",
 			req: models.UpdateRuleSetRequest{
 				Name:        "Updated Rules",
 				Version:     "2.0.0",
@@ -574,62 +574,62 @@ func TestRuleSetService_Update(t *testing.T) {
 			},
 			storeRuleSet:    newExistingRuleSet(),
 			storeRuleSetErr: nil,
-			storeUpdateErr:   nil,
+			storeUpdateErr:  nil,
 			expectedError:   false,
 			expectName:      "Updated Rules",
 			expectVersion:   "2.0.0",
 			expectEnabled:   false,
 		},
 		{
-			name:         "successful update - partial fields",
-			id:           "rule-set-1",
+			name: "successful update - partial fields",
+			id:   "rule-set-1",
 			req: models.UpdateRuleSetRequest{
 				Version: "2.0.0",
 			},
 			storeRuleSet:    newExistingRuleSet(),
 			storeRuleSetErr: nil,
-			storeUpdateErr:   nil,
+			storeUpdateErr:  nil,
 			expectedError:   false,
 			expectName:      "Existing Rules",
 			expectVersion:   "2.0.0",
 			expectEnabled:   true,
 		},
 		{
-			name:         "error - rule set not found",
-			id:           "rule-set-1",
-			req:           models.UpdateRuleSetRequest{},
+			name:            "error - rule set not found",
+			id:              "rule-set-1",
+			req:             models.UpdateRuleSetRequest{},
 			storeRuleSet:    nil,
 			storeRuleSetErr: nil,
-			storeUpdateErr:   nil,
+			storeUpdateErr:  nil,
 			expectedError:   true,
 		},
 		{
-			name:         "error - store get error",
-			id:           "rule-set-1",
-			req:           models.UpdateRuleSetRequest{},
+			name:            "error - store get error",
+			id:              "rule-set-1",
+			req:             models.UpdateRuleSetRequest{},
 			storeRuleSet:    nil,
 			storeRuleSetErr: errors.New("get error"),
-			storeUpdateErr:   nil,
+			storeUpdateErr:  nil,
 			expectedError:   true,
 		},
 		{
-			name:         "error - store update error",
-			id:           "rule-set-1",
-			req:           models.UpdateRuleSetRequest{},
+			name:            "error - store update error",
+			id:              "rule-set-1",
+			req:             models.UpdateRuleSetRequest{},
 			storeRuleSet:    newExistingRuleSet(),
 			storeRuleSetErr: nil,
-			storeUpdateErr:   errors.New("update error"),
+			storeUpdateErr:  errors.New("update error"),
 			expectedError:   true,
 		},
 		{
-			name:         "error - invalid source",
-			id:           "rule-set-1",
+			name: "error - invalid source",
+			id:   "rule-set-1",
 			req: models.UpdateRuleSetRequest{
 				Source: "invalid-source",
 			},
 			storeRuleSet:    newExistingRuleSet(),
 			storeRuleSetErr: nil,
-			storeUpdateErr:   nil,
+			storeUpdateErr:  nil,
 			expectedError:   true,
 		},
 	}
@@ -674,64 +674,64 @@ func TestRuleSetService_Delete(t *testing.T) {
 	subject := &types.Subject{Type: "human", ID: "test-user"}
 
 	defaultRuleSet := &models.RuleSet{
-		Name:    "ET Open Baseline",
-		Source:  models.RuleSetSourceETOpen,
+		Name:      "ET Open Baseline",
+		Source:    models.RuleSetSourceETOpen,
 		IsDefault: true,
 	}
 
 	nonDefaultRuleSet := &models.RuleSet{
-		Name:    "Custom Rules",
-		Source:  models.RuleSetSourceCustom,
+		Name:      "Custom Rules",
+		Source:    models.RuleSetSourceCustom,
 		IsDefault: false,
 	}
 
 	testCases := []struct {
-		name          string
-		id            string
-		storeRuleSet  *models.RuleSet
+		name            string
+		id              string
+		storeRuleSet    *models.RuleSet
 		storeRuleSetErr error
-		storeDeleteErr error
-		expectedError bool
+		storeDeleteErr  error
+		expectedError   bool
 	}{
 		{
-			name:         "successful delete - non-default",
-			id:           "rule-set-1",
-			storeRuleSet: nonDefaultRuleSet,
+			name:            "successful delete - non-default",
+			id:              "rule-set-1",
+			storeRuleSet:    nonDefaultRuleSet,
 			storeRuleSetErr: nil,
 			storeDeleteErr:  nil,
-			expectedError:  false,
+			expectedError:   false,
 		},
 		{
-			name:         "error - delete default rule set",
-			id:           "rule-set-1",
-			storeRuleSet: defaultRuleSet,
+			name:            "error - delete default rule set",
+			id:              "rule-set-1",
+			storeRuleSet:    defaultRuleSet,
 			storeRuleSetErr: nil,
 			storeDeleteErr:  nil,
-			expectedError:  true,
+			expectedError:   true,
 		},
 		{
-			name:         "error - rule set not found",
-			id:           "rule-set-1",
-			storeRuleSet: nil,
+			name:            "error - rule set not found",
+			id:              "rule-set-1",
+			storeRuleSet:    nil,
 			storeRuleSetErr: nil,
 			storeDeleteErr:  nil,
-			expectedError:  true,
+			expectedError:   true,
 		},
 		{
-			name:         "error - store get error",
-			id:           "rule-set-1",
+			name:            "error - store get error",
+			id:              "rule-set-1",
 			storeRuleSet:    nil,
 			storeRuleSetErr: errors.New("get error"),
 			storeDeleteErr:  nil,
-			expectedError:  true,
+			expectedError:   true,
 		},
 		{
-			name:         "error - store delete error",
-			id:           "rule-set-1",
-			storeRuleSet: nonDefaultRuleSet,
+			name:            "error - store delete error",
+			id:              "rule-set-1",
+			storeRuleSet:    nonDefaultRuleSet,
 			storeRuleSetErr: nil,
 			storeDeleteErr:  errors.New("delete error"),
-			expectedError:  true,
+			expectedError:   true,
 		},
 	}
 
@@ -774,9 +774,9 @@ func TestRuleSetService_Enable(t *testing.T) {
 	// Helper to create a fresh disabled rule set for each test case
 	newDisabledRuleSet := func() *models.RuleSet {
 		return &models.RuleSet{
-			Name:    "Custom Rules",
-			Enabled: false,
-			Source:  models.RuleSetSourceCustom,
+			Name:      "Custom Rules",
+			Enabled:   false,
+			Source:    models.RuleSetSourceCustom,
 			IsDefault: false,
 		}
 	}
@@ -784,63 +784,63 @@ func TestRuleSetService_Enable(t *testing.T) {
 	// Helper to create a fresh enabled rule set for each test case
 	newEnabledRuleSet := func() *models.RuleSet {
 		return &models.RuleSet{
-			Name:    "Custom Rules",
-			Enabled: true,
-			Source:  models.RuleSetSourceCustom,
+			Name:      "Custom Rules",
+			Enabled:   true,
+			Source:    models.RuleSetSourceCustom,
 			IsDefault: false,
 		}
 	}
 
 	testCases := []struct {
-		name          string
-		id            string
-		storeRuleSet  *models.RuleSet
+		name            string
+		id              string
+		storeRuleSet    *models.RuleSet
 		storeRuleSetErr error
-		storeUpdateErr error
-		expectedError bool
-		expectEnabled bool
+		storeUpdateErr  error
+		expectedError   bool
+		expectEnabled   bool
 	}{
 		{
-			name:         "successful enable",
-			id:           "rule-set-1",
-			storeRuleSet: newDisabledRuleSet(),
+			name:            "successful enable",
+			id:              "rule-set-1",
+			storeRuleSet:    newDisabledRuleSet(),
 			storeRuleSetErr: nil,
 			storeUpdateErr:  nil,
-			expectedError:  false,
-			expectEnabled:  true,
+			expectedError:   false,
+			expectEnabled:   true,
 		},
 		{
-			name:         "already enabled",
-			id:           "rule-set-1",
-			storeRuleSet: newEnabledRuleSet(),
+			name:            "already enabled",
+			id:              "rule-set-1",
+			storeRuleSet:    newEnabledRuleSet(),
 			storeRuleSetErr: nil,
 			storeUpdateErr:  nil,
-			expectedError:  false,
-			expectEnabled:  true,
+			expectedError:   false,
+			expectEnabled:   true,
 		},
 		{
-			name:         "error - rule set not found",
-			id:           "rule-set-1",
-			storeRuleSet: nil,
+			name:            "error - rule set not found",
+			id:              "rule-set-1",
+			storeRuleSet:    nil,
 			storeRuleSetErr: nil,
 			storeUpdateErr:  nil,
-			expectedError:  true,
+			expectedError:   true,
 		},
 		{
-			name:         "error - store get error",
-			id:           "rule-set-1",
+			name:            "error - store get error",
+			id:              "rule-set-1",
 			storeRuleSet:    nil,
 			storeRuleSetErr: errors.New("get error"),
 			storeUpdateErr:  nil,
-			expectedError:  true,
+			expectedError:   true,
 		},
 		{
-			name:         "error - store update error",
-			id:           "rule-set-1",
-			storeRuleSet: newDisabledRuleSet(),
+			name:            "error - store update error",
+			id:              "rule-set-1",
+			storeRuleSet:    newDisabledRuleSet(),
 			storeRuleSetErr: nil,
 			storeUpdateErr:  errors.New("update error"),
-			expectedError:  true,
+			expectedError:   true,
 		},
 	}
 
@@ -883,9 +883,9 @@ func TestRuleSetService_Disable(t *testing.T) {
 	// Helper to create a fresh enabled rule set for each test case
 	newEnabledRuleSet := func() *models.RuleSet {
 		return &models.RuleSet{
-			Name:    "Custom Rules",
-			Enabled: true,
-			Source:  models.RuleSetSourceCustom,
+			Name:      "Custom Rules",
+			Enabled:   true,
+			Source:    models.RuleSetSourceCustom,
 			IsDefault: false,
 		}
 	}
@@ -893,9 +893,9 @@ func TestRuleSetService_Disable(t *testing.T) {
 	// Helper to create a fresh disabled rule set for each test case
 	newDisabledRuleSet := func() *models.RuleSet {
 		return &models.RuleSet{
-			Name:    "Custom Rules",
-			Enabled: false,
-			Source:  models.RuleSetSourceCustom,
+			Name:      "Custom Rules",
+			Enabled:   false,
+			Source:    models.RuleSetSourceCustom,
 			IsDefault: false,
 		}
 	}
@@ -903,71 +903,71 @@ func TestRuleSetService_Disable(t *testing.T) {
 	// Helper to create a fresh default rule set for each test case
 	newDefaultRuleSet := func() *models.RuleSet {
 		return &models.RuleSet{
-			Name:    "ET Open Baseline",
-			Enabled: true,
-			Source:  models.RuleSetSourceETOpen,
+			Name:      "ET Open Baseline",
+			Enabled:   true,
+			Source:    models.RuleSetSourceETOpen,
 			IsDefault: true,
 		}
 	}
 
 	testCases := []struct {
-		name          string
-		id            string
-		storeRuleSet  *models.RuleSet
+		name            string
+		id              string
+		storeRuleSet    *models.RuleSet
 		storeRuleSetErr error
-		storeUpdateErr error
-		expectedError bool
-		expectEnabled bool
+		storeUpdateErr  error
+		expectedError   bool
+		expectEnabled   bool
 	}{
 		{
-			name:         "successful disable",
-			id:           "rule-set-1",
-			storeRuleSet: newEnabledRuleSet(),
+			name:            "successful disable",
+			id:              "rule-set-1",
+			storeRuleSet:    newEnabledRuleSet(),
 			storeRuleSetErr: nil,
 			storeUpdateErr:  nil,
-			expectedError:  false,
-			expectEnabled:  false,
+			expectedError:   false,
+			expectEnabled:   false,
 		},
 		{
-			name:         "already disabled",
-			id:           "rule-set-1",
-			storeRuleSet: newDisabledRuleSet(),
+			name:            "already disabled",
+			id:              "rule-set-1",
+			storeRuleSet:    newDisabledRuleSet(),
 			storeRuleSetErr: nil,
 			storeUpdateErr:  nil,
-			expectedError:  false,
-			expectEnabled:  false,
+			expectedError:   false,
+			expectEnabled:   false,
 		},
 		{
-			name:         "error - disable default rule set",
-			id:           "rule-set-1",
-			storeRuleSet: newDefaultRuleSet(),
+			name:            "error - disable default rule set",
+			id:              "rule-set-1",
+			storeRuleSet:    newDefaultRuleSet(),
 			storeRuleSetErr: nil,
 			storeUpdateErr:  nil,
-			expectedError:  true,
+			expectedError:   true,
 		},
 		{
-			name:         "error - rule set not found",
-			id:           "rule-set-1",
-			storeRuleSet: nil,
+			name:            "error - rule set not found",
+			id:              "rule-set-1",
+			storeRuleSet:    nil,
 			storeRuleSetErr: nil,
 			storeUpdateErr:  nil,
-			expectedError:  true,
+			expectedError:   true,
 		},
 		{
-			name:         "error - store get error",
-			id:           "rule-set-1",
+			name:            "error - store get error",
+			id:              "rule-set-1",
 			storeRuleSet:    nil,
 			storeRuleSetErr: errors.New("get error"),
 			storeUpdateErr:  nil,
-			expectedError:  true,
+			expectedError:   true,
 		},
 		{
-			name:         "error - store update error",
-			id:           "rule-set-1",
-			storeRuleSet: newEnabledRuleSet(),
+			name:            "error - store update error",
+			id:              "rule-set-1",
+			storeRuleSet:    newEnabledRuleSet(),
 			storeRuleSetErr: nil,
 			storeUpdateErr:  errors.New("update error"),
-			expectedError:  true,
+			expectedError:   true,
 		},
 	}
 
@@ -1028,28 +1028,28 @@ func TestRuleSetService_GetDefault(t *testing.T) {
 	testCases := []struct {
 		name          string
 		storeDefault  *models.RuleSet
-		storeErr     error
+		storeErr      error
 		expectedNil   bool
 		expectedError bool
 	}{
 		{
-			name:         "successful get default",
-			storeDefault: defaultRuleSet,
-			storeErr:     nil,
+			name:          "successful get default",
+			storeDefault:  defaultRuleSet,
+			storeErr:      nil,
 			expectedNil:   false,
 			expectedError: false,
 		},
 		{
-			name:         "default not found",
-			storeDefault: nil,
-			storeErr:     nil,
+			name:          "default not found",
+			storeDefault:  nil,
+			storeErr:      nil,
 			expectedNil:   true,
 			expectedError: true,
 		},
 		{
-			name:         "store error",
-			storeDefault: nil,
-			storeErr:     errors.New("store error"),
+			name:          "store error",
+			storeDefault:  nil,
+			storeErr:      errors.New("store error"),
 			expectedNil:   true,
 			expectedError: true,
 		},
@@ -1117,54 +1117,54 @@ func TestRuleSetService_Render(t *testing.T) {
 	}
 
 	testCases := []struct {
-		name          string
-		id            string
-		storeRuleSet  *models.RuleSet
+		name            string
+		id              string
+		storeRuleSet    *models.RuleSet
 		storeRuleSetErr error
-		storeRules    []*models.Rule
-		storeRulesErr error
-		expectedError bool
-		expectOutput  bool
+		storeRules      []*models.Rule
+		storeRulesErr   error
+		expectedError   bool
+		expectOutput    bool
 	}{
 		{
-			name:         "successful render with enabled rules",
-			id:           "rule-set-1",
-			storeRuleSet: ruleSet,
+			name:            "successful render with enabled rules",
+			id:              "rule-set-1",
+			storeRuleSet:    ruleSet,
 			storeRuleSetErr: nil,
-			storeRules:    rules,
-			storeRulesErr: nil,
-			expectedError: false,
-			expectOutput:  true,
+			storeRules:      rules,
+			storeRulesErr:   nil,
+			expectedError:   false,
+			expectOutput:    true,
 		},
 		{
-			name:         "error - rule set not found",
-			id:           "rule-set-1",
-			storeRuleSet: nil,
+			name:            "error - rule set not found",
+			id:              "rule-set-1",
+			storeRuleSet:    nil,
 			storeRuleSetErr: nil,
-			storeRules:    nil,
-			storeRulesErr: nil,
-			expectedError: true,
-			expectOutput:  false,
+			storeRules:      nil,
+			storeRulesErr:   nil,
+			expectedError:   true,
+			expectOutput:    false,
 		},
 		{
-			name:         "error - store get rule set error",
-			id:           "rule-set-1",
+			name:            "error - store get rule set error",
+			id:              "rule-set-1",
 			storeRuleSet:    nil,
 			storeRuleSetErr: errors.New("get error"),
-			storeRules:    nil,
-			storeRulesErr: nil,
-			expectedError: true,
-			expectOutput:  false,
+			storeRules:      nil,
+			storeRulesErr:   nil,
+			expectedError:   true,
+			expectOutput:    false,
 		},
 		{
-			name:         "error - store get rules error",
-			id:           "rule-set-1",
-			storeRuleSet: ruleSet,
+			name:            "error - store get rules error",
+			id:              "rule-set-1",
+			storeRuleSet:    ruleSet,
 			storeRuleSetErr: nil,
-			storeRules:    nil,
-			storeRulesErr: errors.New("get rules error"),
-			expectedError: true,
-			expectOutput:  false,
+			storeRules:      nil,
+			storeRulesErr:   errors.New("get rules error"),
+			expectedError:   true,
+			expectOutput:    false,
 		},
 	}
 
@@ -1230,14 +1230,14 @@ func TestRuleSetService_GetRuleSetsByScope(t *testing.T) {
 	}
 
 	testCases := []struct {
-		name           string
-		scopeType      models.ScopeType
-		defconID       string
-		namespace      string
-		storeRuleSets  []*models.RuleSet
-		storeErr       error
-		expectedCount  int
-		expectedError  bool
+		name          string
+		scopeType     models.ScopeType
+		defconID      string
+		namespace     string
+		storeRuleSets []*models.RuleSet
+		storeErr      error
+		expectedCount int
+		expectedError bool
 	}{
 		{
 			name:          "successful get by global scope",

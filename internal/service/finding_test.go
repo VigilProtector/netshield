@@ -18,16 +18,16 @@ import (
 
 // mockFindingStore implements service.FindingStorer interface for testing.
 type mockFindingStore struct {
-	listFunc               func(ctx context.Context, opts models.ListFindingsOptions) (*models.FindingListResponse, error)
-	getByIDFunc            func(ctx context.Context, findingID string) (*models.Finding, error)
-	getByFindingIDFunc     func(ctx context.Context, findingID string) (*models.Finding, error)
-	createFunc             func(ctx context.Context, finding *models.Finding) error
-	updateFunc             func(ctx context.Context, finding *models.Finding) error
-	deleteFunc             func(ctx context.Context, id string) error
-	getByAssetIDFunc       func(ctx context.Context, assetID string, opts models.ListFindingsOptions) (*models.FindingListResponse, error)
-	getByDefconIDFunc      func(ctx context.Context, defconID string, opts models.ListFindingsOptions) (*models.FindingListResponse, error)
-	getByFindingTypeFunc   func(ctx context.Context, findingType models.FindingType, opts models.ListFindingsOptions) (*models.FindingListResponse, error)
-	getStaleFunc           func(ctx context.Context, opts models.ListFindingsOptions) (*models.FindingListResponse, error)
+	listFunc             func(ctx context.Context, opts models.ListFindingsOptions) (*models.FindingListResponse, error)
+	getByIDFunc          func(ctx context.Context, findingID string) (*models.Finding, error)
+	getByFindingIDFunc   func(ctx context.Context, findingID string) (*models.Finding, error)
+	createFunc           func(ctx context.Context, finding *models.Finding) error
+	updateFunc           func(ctx context.Context, finding *models.Finding) error
+	deleteFunc           func(ctx context.Context, id string) error
+	getByAssetIDFunc     func(ctx context.Context, assetID string, opts models.ListFindingsOptions) (*models.FindingListResponse, error)
+	getByDefconIDFunc    func(ctx context.Context, defconID string, opts models.ListFindingsOptions) (*models.FindingListResponse, error)
+	getByFindingTypeFunc func(ctx context.Context, findingType models.FindingType, opts models.ListFindingsOptions) (*models.FindingListResponse, error)
+	getStaleFunc         func(ctx context.Context, opts models.ListFindingsOptions) (*models.FindingListResponse, error)
 }
 
 func (m *mockFindingStore) List(ctx context.Context, opts models.ListFindingsOptions) (*models.FindingListResponse, error) {
@@ -112,8 +112,8 @@ func TestFindingService_List(t *testing.T) {
 		expectedError bool
 	}{
 		{
-			name:   "successful list with no filter",
-			opts:   models.ListFindingsOptions{},
+			name: "successful list with no filter",
+			opts: models.ListFindingsOptions{},
 			storeList: &models.FindingListResponse{
 				Items:      testFindings,
 				TotalCount: 2,
@@ -125,8 +125,8 @@ func TestFindingService_List(t *testing.T) {
 			expectedError: false,
 		},
 		{
-			name:   "successful list with asset filter",
-			opts:   models.ListFindingsOptions{Filter: models.FindingFilter{AssetID: "asset-1"}},
+			name: "successful list with asset filter",
+			opts: models.ListFindingsOptions{Filter: models.FindingFilter{AssetID: "asset-1"}},
 			storeList: &models.FindingListResponse{
 				Items:      testFindings[:1],
 				TotalCount: 1,
@@ -138,10 +138,10 @@ func TestFindingService_List(t *testing.T) {
 			expectedError: false,
 		},
 		{
-			name:         "store error",
-			opts:         models.ListFindingsOptions{},
-			storeList:    nil,
-			storeListErr: errors.New("store error"),
+			name:          "store error",
+			opts:          models.ListFindingsOptions{},
+			storeList:     nil,
+			storeListErr:  errors.New("store error"),
 			expectedCount: 0,
 			expectedError: true,
 		},
@@ -183,35 +183,35 @@ func TestFindingService_Get(t *testing.T) {
 	testFinding := newTestFinding("finding-1")
 
 	testCases := []struct {
-		name         string
-		findingID   string
-		storeFinding *models.Finding
-		storeErr    error
-		expectedNil  bool
+		name          string
+		findingID     string
+		storeFinding  *models.Finding
+		storeErr      error
+		expectedNil   bool
 		expectedError bool
 	}{
 		{
-			name:         "successful get",
-			findingID:    "finding-1",
-			storeFinding: testFinding,
-			storeErr:     nil,
-			expectedNil:  false,
+			name:          "successful get",
+			findingID:     "finding-1",
+			storeFinding:  testFinding,
+			storeErr:      nil,
+			expectedNil:   false,
 			expectedError: false,
 		},
 		{
-			name:         "finding not found",
-			findingID:    "finding-1",
-			storeFinding: nil,
-			storeErr:     nil,
-			expectedNil:  true,
+			name:          "finding not found",
+			findingID:     "finding-1",
+			storeFinding:  nil,
+			storeErr:      nil,
+			expectedNil:   true,
 			expectedError: true,
 		},
 		{
-			name:         "store error",
-			findingID:    "finding-1",
-			storeFinding: nil,
-			storeErr:     errors.New("store error"),
-			expectedNil:  true,
+			name:          "store error",
+			findingID:     "finding-1",
+			storeFinding:  nil,
+			storeErr:      errors.New("store error"),
+			expectedNil:   true,
 			expectedError: true,
 		},
 	}
@@ -263,19 +263,19 @@ func TestFindingService_Create(t *testing.T) {
 	testCases := []struct {
 		name          string
 		finding       *models.Finding
-		storeErr     error
+		storeErr      error
 		expectedError bool
 	}{
 		{
 			name:          "successful create",
 			finding:       testFinding,
-			storeErr:     nil,
+			storeErr:      nil,
 			expectedError: false,
 		},
 		{
 			name:          "store error",
 			finding:       testFinding,
-			storeErr:     errors.New("store error"),
+			storeErr:      errors.New("store error"),
 			expectedError: true,
 		},
 	}
@@ -335,48 +335,48 @@ func TestFindingService_UpdateLifecycle(t *testing.T) {
 
 	testCases := []struct {
 		name          string
-		findingID    string
+		findingID     string
 		req           models.UpdateFindingLifecycleRequest
 		storeFinding  *models.Finding
-		storeErr     error
+		storeErr      error
 		updateErr     error
 		expectedError bool
-		expectStatus models.FindingLifecycleStatus
+		expectStatus  models.FindingLifecycleStatus
 	}{
 		{
-			name:         "successful lifecycle update",
-			findingID:    "finding-1",
-			req:          models.UpdateFindingLifecycleRequest{Status: models.FindingLifecycleStatusOpen},
+			name:          "successful lifecycle update",
+			findingID:     "finding-1",
+			req:           models.UpdateFindingLifecycleRequest{Status: models.FindingLifecycleStatusOpen},
 			storeFinding:  newFinding(),
-			storeErr:     nil,
+			storeErr:      nil,
 			updateErr:     nil,
 			expectedError: false,
 			expectStatus:  models.FindingLifecycleStatusOpen,
 		},
 		{
-			name:         "finding not found",
-			findingID:    "finding-1",
-			req:          models.UpdateFindingLifecycleRequest{Status: models.FindingLifecycleStatusOpen},
+			name:          "finding not found",
+			findingID:     "finding-1",
+			req:           models.UpdateFindingLifecycleRequest{Status: models.FindingLifecycleStatusOpen},
 			storeFinding:  nil,
-			storeErr:     nil,
+			storeErr:      nil,
 			updateErr:     nil,
 			expectedError: true,
 		},
 		{
-			name:         "store error on get",
-			findingID:    "finding-1",
-			req:          models.UpdateFindingLifecycleRequest{Status: models.FindingLifecycleStatusOpen},
+			name:          "store error on get",
+			findingID:     "finding-1",
+			req:           models.UpdateFindingLifecycleRequest{Status: models.FindingLifecycleStatusOpen},
 			storeFinding:  nil,
-			storeErr:     errors.New("get error"),
+			storeErr:      errors.New("get error"),
 			updateErr:     nil,
 			expectedError: true,
 		},
 		{
-			name:         "store error on update",
-			findingID:    "finding-1",
-			req:          models.UpdateFindingLifecycleRequest{Status: models.FindingLifecycleStatusOpen},
+			name:          "store error on update",
+			findingID:     "finding-1",
+			req:           models.UpdateFindingLifecycleRequest{Status: models.FindingLifecycleStatusOpen},
 			storeFinding:  newFinding(),
-			storeErr:     nil,
+			storeErr:      nil,
 			updateErr:     errors.New("update error"),
 			expectedError: true,
 		},
@@ -419,14 +419,14 @@ func TestFindingService_UpdateVerification(t *testing.T) {
 
 	newFinding := func() *models.Finding {
 		return &models.Finding{
-			FindingID:   "finding-1",
-			FindingType: models.FindingTypeKnownAttackPatternDetected,
-			Severity:    models.FindingSeverityHigh,
-			AssetID:     "asset-1",
-			DefconID:    "defcon-1",
-			Title:       "Test Finding",
-			OccurredAt:  time.Now().UTC(),
-			Confidence:  0.95,
+			FindingID:    "finding-1",
+			FindingType:  models.FindingTypeKnownAttackPatternDetected,
+			Severity:     models.FindingSeverityHigh,
+			AssetID:      "asset-1",
+			DefconID:     "defcon-1",
+			Title:        "Test Finding",
+			OccurredAt:   time.Now().UTC(),
+			Confidence:   0.95,
 			Verification: models.FindingVerification{Status: models.FindingVerificationStatusUnverified},
 			CreatedAt:    time.Now().UTC(),
 			UpdatedAt:    time.Now().UTC(),
@@ -435,48 +435,48 @@ func TestFindingService_UpdateVerification(t *testing.T) {
 
 	testCases := []struct {
 		name          string
-		findingID    string
+		findingID     string
 		req           models.UpdateFindingVerificationRequest
 		storeFinding  *models.Finding
-		storeErr     error
+		storeErr      error
 		updateErr     error
 		expectedError bool
-		expectStatus models.FindingVerificationStatus
+		expectStatus  models.FindingVerificationStatus
 	}{
 		{
-			name:         "successful verification update",
-			findingID:    "finding-1",
-			req:          models.UpdateFindingVerificationRequest{Status: models.FindingVerificationStatusVerified},
+			name:          "successful verification update",
+			findingID:     "finding-1",
+			req:           models.UpdateFindingVerificationRequest{Status: models.FindingVerificationStatusVerified},
 			storeFinding:  newFinding(),
-			storeErr:     nil,
+			storeErr:      nil,
 			updateErr:     nil,
 			expectedError: false,
 			expectStatus:  models.FindingVerificationStatusVerified,
 		},
 		{
-			name:         "finding not found",
-			findingID:    "finding-1",
-			req:          models.UpdateFindingVerificationRequest{Status: models.FindingVerificationStatusVerified},
+			name:          "finding not found",
+			findingID:     "finding-1",
+			req:           models.UpdateFindingVerificationRequest{Status: models.FindingVerificationStatusVerified},
 			storeFinding:  nil,
-			storeErr:     nil,
+			storeErr:      nil,
 			updateErr:     nil,
 			expectedError: true,
 		},
 		{
-			name:         "store error on get",
-			findingID:    "finding-1",
-			req:          models.UpdateFindingVerificationRequest{Status: models.FindingVerificationStatusVerified},
+			name:          "store error on get",
+			findingID:     "finding-1",
+			req:           models.UpdateFindingVerificationRequest{Status: models.FindingVerificationStatusVerified},
 			storeFinding:  nil,
-			storeErr:     errors.New("get error"),
+			storeErr:      errors.New("get error"),
 			updateErr:     nil,
 			expectedError: true,
 		},
 		{
-			name:         "store error on update",
-			findingID:    "finding-1",
-			req:          models.UpdateFindingVerificationRequest{Status: models.FindingVerificationStatusVerified},
+			name:          "store error on update",
+			findingID:     "finding-1",
+			req:           models.UpdateFindingVerificationRequest{Status: models.FindingVerificationStatusVerified},
 			storeFinding:  newFinding(),
-			storeErr:     nil,
+			storeErr:      nil,
 			updateErr:     errors.New("update error"),
 			expectedError: true,
 		},
@@ -538,8 +538,8 @@ func TestFindingService_MarkStale(t *testing.T) {
 				StaleAfter:  &staleAfter,
 				LastChecked: &lastCheckedTime,
 			},
-			CreatedAt:   time.Now().UTC(),
-			UpdatedAt:   time.Now().UTC(),
+			CreatedAt: time.Now().UTC(),
+			UpdatedAt: time.Now().UTC(),
 		}
 	}
 
@@ -555,15 +555,15 @@ func TestFindingService_MarkStale(t *testing.T) {
 			name: "successful mark stale",
 			storeList: &models.FindingListResponse{
 				Items: []*models.Finding{
-					newFinding(-1 * time.Hour),   // Fresh
-					newFinding(-25 * time.Hour),  // Stale
+					newFinding(-1 * time.Hour),  // Fresh
+					newFinding(-25 * time.Hour), // Stale
 				},
 				TotalCount: 2,
 				Limit:      0,
 				Offset:     0,
 			},
-			storeListErr: nil,
-			updateErr:    nil,
+			storeListErr:  nil,
+			updateErr:     nil,
 			expectedCount: 1,
 			expectedError: false,
 		},
@@ -615,7 +615,7 @@ func TestFindingService_GetByAsset(t *testing.T) {
 
 	testCases := []struct {
 		name          string
-		assetID      string
+		assetID       string
 		opts          models.ListFindingsOptions
 		storeList     *models.FindingListResponse
 		storeListErr  error
@@ -623,9 +623,9 @@ func TestFindingService_GetByAsset(t *testing.T) {
 		expectedError bool
 	}{
 		{
-			name:   "successful get by asset",
+			name:    "successful get by asset",
 			assetID: "asset-1",
-			opts:   models.ListFindingsOptions{},
+			opts:    models.ListFindingsOptions{},
 			storeList: &models.FindingListResponse{
 				Items:      testFindings,
 				TotalCount: 1,
@@ -637,11 +637,11 @@ func TestFindingService_GetByAsset(t *testing.T) {
 			expectedError: false,
 		},
 		{
-			name:         "store error",
-			assetID:      "asset-1",
-			opts:        models.ListFindingsOptions{},
-			storeList:    nil,
-			storeListErr: errors.New("store error"),
+			name:          "store error",
+			assetID:       "asset-1",
+			opts:          models.ListFindingsOptions{},
+			storeList:     nil,
+			storeListErr:  errors.New("store error"),
 			expectedCount: 0,
 			expectedError: true,
 		},
@@ -684,7 +684,7 @@ func TestFindingService_GetByDefcon(t *testing.T) {
 
 	testCases := []struct {
 		name          string
-		defconID     string
+		defconID      string
 		opts          models.ListFindingsOptions
 		storeList     *models.FindingListResponse
 		storeListErr  error
@@ -692,9 +692,9 @@ func TestFindingService_GetByDefcon(t *testing.T) {
 		expectedError bool
 	}{
 		{
-			name:   "successful get by defcon",
+			name:     "successful get by defcon",
 			defconID: "defcon-1",
-			opts:   models.ListFindingsOptions{},
+			opts:     models.ListFindingsOptions{},
 			storeList: &models.FindingListResponse{
 				Items:      testFindings,
 				TotalCount: 1,
@@ -706,11 +706,11 @@ func TestFindingService_GetByDefcon(t *testing.T) {
 			expectedError: false,
 		},
 		{
-			name:         "store error",
-			defconID:     "defcon-1",
-			opts:        models.ListFindingsOptions{},
-			storeList:    nil,
-			storeListErr: errors.New("store error"),
+			name:          "store error",
+			defconID:      "defcon-1",
+			opts:          models.ListFindingsOptions{},
+			storeList:     nil,
+			storeListErr:  errors.New("store error"),
 			expectedCount: 0,
 			expectedError: true,
 		},
@@ -752,18 +752,18 @@ func TestFindingService_GetByType(t *testing.T) {
 	testFindings := []*models.Finding{newTestFinding("finding-1")}
 
 	testCases := []struct {
-		name           string
+		name          string
 		findingType   models.FindingType
-		opts           models.ListFindingsOptions
-		storeList      *models.FindingListResponse
-		storeListErr   error
-		expectedCount  int
-		expectedError  bool
+		opts          models.ListFindingsOptions
+		storeList     *models.FindingListResponse
+		storeListErr  error
+		expectedCount int
+		expectedError bool
 	}{
 		{
-			name:         "successful get by type",
-			findingType:  models.FindingTypeKnownAttackPatternDetected,
-			opts:         models.ListFindingsOptions{},
+			name:        "successful get by type",
+			findingType: models.FindingTypeKnownAttackPatternDetected,
+			opts:        models.ListFindingsOptions{},
 			storeList: &models.FindingListResponse{
 				Items:      testFindings,
 				TotalCount: 1,
@@ -775,11 +775,11 @@ func TestFindingService_GetByType(t *testing.T) {
 			expectedError: false,
 		},
 		{
-			name:         "store error",
-			findingType:  models.FindingTypeKnownAttackPatternDetected,
-			opts:         models.ListFindingsOptions{},
-			storeList:    nil,
-			storeListErr: errors.New("store error"),
+			name:          "store error",
+			findingType:   models.FindingTypeKnownAttackPatternDetected,
+			opts:          models.ListFindingsOptions{},
+			storeList:     nil,
+			storeListErr:  errors.New("store error"),
 			expectedCount: 0,
 			expectedError: true,
 		},
@@ -829,8 +829,8 @@ func TestFindingService_GetStale(t *testing.T) {
 		expectedError bool
 	}{
 		{
-			name:   "successful get stale",
-			opts:   models.ListFindingsOptions{},
+			name: "successful get stale",
+			opts: models.ListFindingsOptions{},
 			storeList: &models.FindingListResponse{
 				Items:      testFindings,
 				TotalCount: 1,
@@ -842,10 +842,10 @@ func TestFindingService_GetStale(t *testing.T) {
 			expectedError: false,
 		},
 		{
-			name:         "store error",
-			opts:         models.ListFindingsOptions{},
-			storeList:    nil,
-			storeListErr: errors.New("store error"),
+			name:          "store error",
+			opts:          models.ListFindingsOptions{},
+			storeList:     nil,
+			storeListErr:  errors.New("store error"),
 			expectedCount: 0,
 			expectedError: true,
 		},
