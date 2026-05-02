@@ -71,6 +71,16 @@ type DetectionServiceInterface interface {
 	ProcessDetection(ctx context.Context, logger logr.Logger, subject *types.Subject, detectionID string) (*models.Finding, error)
 	// MarkAsProcessed marks a detection as processed.
 	MarkAsProcessed(ctx context.Context, logger logr.Logger, subject *types.Subject, detectionID string) error
+	// GetBySensorID returns detections for a specific sensor.
+	GetBySensorID(ctx context.Context, logger logr.Logger, subject *types.Subject, sensorID string, opts models.ListDetectionsOptions) (*models.DetectionListResponse, error)
+	// GetByPicketID returns detections for a specific Picket.
+	GetByPicketID(ctx context.Context, logger logr.Logger, subject *types.Subject, picketID string, opts models.ListDetectionsOptions) (*models.DetectionListResponse, error)
+	// GetByRuleSetID returns detections for a specific rule set.
+	GetByRuleSetID(ctx context.Context, logger logr.Logger, subject *types.Subject, ruleSetID string, opts models.ListDetectionsOptions) (*models.DetectionListResponse, error)
+	// GetByRuleID returns detections for a specific rule.
+	GetByRuleID(ctx context.Context, logger logr.Logger, subject *types.Subject, ruleID string, opts models.ListDetectionsOptions) (*models.DetectionListResponse, error)
+	// GetUnprocessed returns detections that have not been processed yet.
+	GetUnprocessed(ctx context.Context, logger logr.Logger, subject *types.Subject, opts models.ListDetectionsOptions) (*models.DetectionListResponse, error)
 }
 
 // FlowSeekerClient defines the interface for FlowSeeker API operations.
@@ -485,6 +495,7 @@ func (s *DetectionService) GetByRuleSet(
 }
 
 // GetUnprocessed returns detections that have not been processed yet.
+// Implements DetectionServiceInterface.
 func (s *DetectionService) GetUnprocessed(
 	ctx context.Context,
 	logger logr.Logger,
@@ -634,4 +645,80 @@ func (s *DetectionService) emitDetectionAuditEventWithMeta(
 	}
 
 	ironchronicle.Emit(ctx, event)
+}
+
+// GetBySensorID returns detections for a specific sensor.
+// Implements DetectionServiceInterface.
+func (s *DetectionService) GetBySensorID(
+	ctx context.Context,
+	logger logr.Logger,
+	subject *types.Subject,
+	sensorID string,
+	opts models.ListDetectionsOptions,
+) (*models.DetectionListResponse, error) {
+	logger.V(vplogging.LogLevelVerbose).Info("getting detections by sensorId", "sensorId", sensorID)
+
+	response, err := s.store.GetBySensorID(ctx, sensorID, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get detections by sensor: %w", err)
+	}
+
+	return response, nil
+}
+
+// GetByPicketID returns detections for a specific Picket.
+// Implements DetectionServiceInterface.
+func (s *DetectionService) GetByPicketID(
+	ctx context.Context,
+	logger logr.Logger,
+	subject *types.Subject,
+	picketID string,
+	opts models.ListDetectionsOptions,
+) (*models.DetectionListResponse, error) {
+	logger.V(vplogging.LogLevelVerbose).Info("getting detections by picketId", "picketId", picketID)
+
+	response, err := s.store.GetByPicketID(ctx, picketID, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get detections by picket: %w", err)
+	}
+
+	return response, nil
+}
+
+// GetByRuleSetID returns detections for a specific rule set.
+// Implements DetectionServiceInterface.
+func (s *DetectionService) GetByRuleSetID(
+	ctx context.Context,
+	logger logr.Logger,
+	subject *types.Subject,
+	ruleSetID string,
+	opts models.ListDetectionsOptions,
+) (*models.DetectionListResponse, error) {
+	logger.V(vplogging.LogLevelVerbose).Info("getting detections by ruleSetId", "ruleSetId", ruleSetID)
+
+	response, err := s.store.GetByRuleSetID(ctx, ruleSetID, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get detections by ruleSet: %w", err)
+	}
+
+	return response, nil
+}
+
+// GetByRuleID returns detections for a specific rule.
+// Implements DetectionServiceInterface.
+func (s *DetectionService) GetByRuleID(
+	ctx context.Context,
+	logger logr.Logger,
+	subject *types.Subject,
+	ruleID string,
+	opts models.ListDetectionsOptions,
+) (*models.DetectionListResponse, error) {
+	logger.V(vplogging.LogLevelVerbose).Info("getting detections by ruleId", "ruleId", ruleID)
+
+	response, err := s.store.GetByRuleID(ctx, ruleID, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get detections by rule: %w", err)
+	}
+
+	return response, nil
 }
