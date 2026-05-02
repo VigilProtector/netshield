@@ -2,7 +2,7 @@
 //
 //	@title                      NetShield API
 //	@version                    1.0
-//	@description                NetShield is a network threat and configuration assurance capability within the StratoWard family.
+//	@description                NetShield provides network threat and configuration assurance.
 //
 //	@contact.name               VigilProtector Platform Team
 //	@contact.url                https://docs.vigilprotector.io
@@ -82,6 +82,7 @@ func runServer() error {
 		logger.Error(err, "failed to initialize MongoDB")
 		os.Exit(1)
 	}
+
 	defer func() {
 		if err := mongoClient.Disconnect(context.Background()); err != nil {
 			logger.Error(err, "failed to disconnect MongoDB")
@@ -112,14 +113,17 @@ func runServer() error {
 		logger.Error(err, "failed to ensure sensor indexes")
 		os.Exit(1)
 	}
+
 	if err := ruleSetStore.EnsureIndex(context.Background()); err != nil {
 		logger.Error(err, "failed to ensure ruleset indexes")
 		os.Exit(1)
 	}
+
 	if err := findingStore.EnsureIndex(context.Background()); err != nil {
 		logger.Error(err, "failed to ensure finding indexes")
 		os.Exit(1)
 	}
+
 	if err := detectionStore.EnsureIndex(context.Background()); err != nil {
 		logger.Error(err, "failed to ensure detection indexes")
 		os.Exit(1)
@@ -174,6 +178,7 @@ func runServer() error {
 
 	go func() {
 		logger.V(vplogging.LogLevelInfo).Info("starting http server", "port", cfg.Server.Port)
+
 		errOnServe := srv.ListenAndServe()
 		if errOnServe != nil && !errors.Is(errOnServe, http.ErrServerClosed) {
 			logger.Error(errOnServe, "failed to start http server")
@@ -196,6 +201,7 @@ func runServer() error {
 	}
 
 	logger.V(vplogging.LogLevelInfo).Info("Server exited gracefully")
+
 	return nil
 }
 
@@ -205,6 +211,7 @@ func initializeMongoDB(cfg *config.Config) (*mongo.Client, error) {
 	defer cancel()
 
 	clientOpts := options.Client().ApplyURI(cfg.Database.URI)
+
 	client, err := mongo.Connect(clientOpts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to MongoDB: %w", err)

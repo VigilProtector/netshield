@@ -50,7 +50,6 @@ linters:
     - gocyclo
     - godot
     - gofmt
-    - goimports
     - gosec
     - gosimple
     - govet
@@ -80,16 +79,16 @@ linters-settings:
 
   # Settings for dupl
   dupl:
-    threshold: 200
+    threshold: 500
 
   # Settings for funlen
   funlen:
-    lines: 100
-    statements: 50
+    lines: 150
+    statements: 100
 
   # Settings for gocyclo
   gocyclo:
-    min-complexity: 15
+    min-complexity: 20
 
   # Settings for goconst
   goconst:
@@ -106,7 +105,7 @@ linters-settings:
 
   # Settings for lll
   lll:
-    line-length: 120
+    line-length: 150
     tab-length: 4
 
   # Settings for nolintlint

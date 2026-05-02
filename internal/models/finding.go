@@ -364,6 +364,7 @@ func (f *FindingAPI) FromAPI() (*Finding, error) {
 	}
 
 	var window *FindingWindow
+
 	if f.Window != nil {
 		start, err := time.Parse(time.RFC3339, f.Window.Start)
 		if err != nil {
@@ -392,6 +393,7 @@ func (f *FindingAPI) FromAPI() (*Finding, error) {
 	}
 
 	var transitionedAt *time.Time
+
 	if f.Lifecycle.TransitionedAt != "" {
 		t, err := time.Parse(time.RFC3339, f.Lifecycle.TransitionedAt)
 		if err != nil {
@@ -402,6 +404,7 @@ func (f *FindingAPI) FromAPI() (*Finding, error) {
 	}
 
 	var verifiedAt *time.Time
+
 	if f.Verification.VerifiedAt != "" {
 		t, err := time.Parse(time.RFC3339, f.Verification.VerifiedAt)
 		if err != nil {
@@ -412,6 +415,7 @@ func (f *FindingAPI) FromAPI() (*Finding, error) {
 	}
 
 	var lastChecked *time.Time
+
 	if f.Freshness.LastChecked != "" {
 		t, err := time.Parse(time.RFC3339, f.Freshness.LastChecked)
 		if err != nil {
@@ -422,6 +426,7 @@ func (f *FindingAPI) FromAPI() (*Finding, error) {
 	}
 
 	var staleAfter *time.Time
+
 	if f.Freshness.StaleAfter != "" {
 		t, err := time.Parse(time.RFC3339, f.Freshness.StaleAfter)
 		if err != nil {

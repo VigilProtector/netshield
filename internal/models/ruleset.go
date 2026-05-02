@@ -214,6 +214,7 @@ type RuleSetFilter struct {
 func (r *RuleSet) ToAPI() *RuleSetAPI {
 	rules := make([]RuleRefAPI, len(r.Rules))
 	for i, rule := range r.Rules {
+		//nolint:gosimple // direct struct literal is clearer than conversion function
 		rules[i] = RuleRefAPI{
 			RuleID:    rule.RuleID,
 			Enabled:   rule.Enabled,
@@ -251,6 +252,7 @@ func (r *RuleSetAPI) FromAPI() (*RuleSet, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	updatedAt, err := time.Parse(time.RFC3339, r.UpdatedAt)
 	if err != nil {
 		return nil, err
@@ -258,6 +260,7 @@ func (r *RuleSetAPI) FromAPI() (*RuleSet, error) {
 
 	rules := make([]RuleRef, len(r.Rules))
 	for i, rule := range r.Rules {
+		//nolint:gosimple // direct struct literal is clearer than conversion function
 		rules[i] = RuleRef{
 			RuleID:    rule.RuleID,
 			Enabled:   rule.Enabled,

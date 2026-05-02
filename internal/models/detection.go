@@ -342,6 +342,7 @@ func mapSeverity(severity RuleSeverity) FindingSeverity {
 	case RuleSeverityInformational:
 		return FindingSeverityInfo
 	}
+
 	return FindingSeverityInfo
 }
 
@@ -357,6 +358,7 @@ func mapConfidenceToFloat(confidence ConfidenceLevel) float64 {
 	case ConfidenceUnknown:
 		return 0.0
 	}
+
 	return 0.0
 }
 
