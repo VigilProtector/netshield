@@ -10,57 +10,57 @@ import (
 // Detection represents a detected event from Suricata.
 // Part of the Detection-Pipeline (NH-CC-001, NH-LM-001).
 type Detection struct {
-	ID            bson.ObjectID     `bson:"_id,omitempty" json:"-"`
-	DetectionID  string            `bson:"detectionId" json:"detectionId"`
-	SensorID     string            `bson:"sensorId" json:"sensorId"`
-	PicketID     string            `bson:"picketId" json:"picketId"`
-	RuleSetID    string            `bson:"ruleSetId" json:"ruleSetId"`
-	RuleVersion   string            `bson:"ruleVersion" json:"ruleVersion"`
-	RuleID       string            `bson:"ruleId" json:"ruleId"`
+	ID           bson.ObjectID      `bson:"_id,omitempty" json:"-"`
+	DetectionID  string             `bson:"detectionId" json:"detectionId"`
+	SensorID     string             `bson:"sensorId" json:"sensorId"`
+	PicketID     string             `bson:"picketId" json:"picketId"`
+	RuleSetID    string             `bson:"ruleSetId" json:"ruleSetId"`
+	RuleVersion  string             `bson:"ruleVersion" json:"ruleVersion"`
+	RuleID       string             `bson:"ruleId" json:"ruleId"`
 	EventType    DetectionEventType `bson:"eventType" json:"eventType"`
-	Timestamp    time.Time         `bson:"timestamp" json:"timestamp"`
-	SourceIP     string            `bson:"sourceIp,omitempty" json:"sourceIp,omitempty"`
-	DestIP       string            `bson:"destIp,omitempty" json:"destIp,omitempty"`
-	SourcePort   int               `bson:"sourcePort,omitempty" json:"sourcePort,omitempty"`
-	DestPort     int               `bson:"destPort,omitempty" json:"destPort,omitempty"`
-	Proto        string            `bson:"proto,omitempty" json:"proto,omitempty"`
-	Action       string            `bson:"action,omitempty" json:"action,omitempty"`
-	Signature    string            `bson:"signature" json:"signature"`
-	Category     string            `bson:"category" json:"category"`
-	Severity     RuleSeverity      `bson:"severity" json:"severity"`
-	Confidence   ConfidenceLevel   `bson:"confidence" json:"confidence"`
-	Message      string            `bson:"message" json:"message"`
-	RawEvent     string            `bson:"rawEvent,omitempty" json:"rawEvent,omitempty"`
-	EvidenceRefs []string          `bson:"evidenceRefs,omitempty" json:"evidenceRefs,omitempty"`
-	CreatedAt    time.Time         `bson:"createdAt" json:"createdAt"`
-	UpdatedAt    time.Time         `bson:"updatedAt" json:"updatedAt"`
+	Timestamp    time.Time          `bson:"timestamp" json:"timestamp"`
+	SourceIP     string             `bson:"sourceIp,omitempty" json:"sourceIp,omitempty"`
+	DestIP       string             `bson:"destIp,omitempty" json:"destIp,omitempty"`
+	SourcePort   int                `bson:"sourcePort,omitempty" json:"sourcePort,omitempty"`
+	DestPort     int                `bson:"destPort,omitempty" json:"destPort,omitempty"`
+	Proto        string             `bson:"proto,omitempty" json:"proto,omitempty"`
+	Action       string             `bson:"action,omitempty" json:"action,omitempty"`
+	Signature    string             `bson:"signature" json:"signature"`
+	Category     string             `bson:"category" json:"category"`
+	Severity     RuleSeverity       `bson:"severity" json:"severity"`
+	Confidence   ConfidenceLevel    `bson:"confidence" json:"confidence"`
+	Message      string             `bson:"message" json:"message"`
+	RawEvent     string             `bson:"rawEvent,omitempty" json:"rawEvent,omitempty"`
+	EvidenceRefs []string           `bson:"evidenceRefs,omitempty" json:"evidenceRefs,omitempty"`
+	CreatedAt    time.Time          `bson:"createdAt" json:"createdAt"`
+	UpdatedAt    time.Time          `bson:"updatedAt" json:"updatedAt"`
 }
 
 // DetectionAPI represents a detection for API responses.
 type DetectionAPI struct {
-	DetectionID  string    `json:"detectionId"`
-	SensorID     string    `json:"sensorId"`
-	PicketID     string    `json:"picketId"`
-	RuleSetID    string    `json:"ruleSetId"`
-	RuleVersion   string    `json:"ruleVersion"`
-	RuleID       string    `json:"ruleId"`
-	EventType    string    `json:"eventType"`
-	Timestamp    string    `json:"timestamp"`
-	SourceIP     string    `json:"sourceIp,omitempty"`
-	DestIP       string    `json:"destIp,omitempty"`
-	SourcePort   int       `json:"sourcePort,omitempty"`
-	DestPort     int       `json:"destPort,omitempty"`
-	Proto        string    `json:"proto,omitempty"`
-	Action       string    `json:"action,omitempty"`
-	Signature    string    `json:"signature"`
-	Category     string    `json:"category"`
-	Severity     string    `json:"severity"`
-	Confidence   string    `json:"confidence"`
-	Message      string    `json:"message"`
-	RawEvent     string    `json:"rawEvent,omitempty"`
-	EvidenceRefs []string  `json:"evidenceRefs,omitempty"`
-	CreatedAt    string    `json:"createdAt"`
-	UpdatedAt    string    `json:"updatedAt"`
+	DetectionID  string   `json:"detectionId"`
+	SensorID     string   `json:"sensorId"`
+	PicketID     string   `json:"picketId"`
+	RuleSetID    string   `json:"ruleSetId"`
+	RuleVersion  string   `json:"ruleVersion"`
+	RuleID       string   `json:"ruleId"`
+	EventType    string   `json:"eventType"`
+	Timestamp    string   `json:"timestamp"`
+	SourceIP     string   `json:"sourceIp,omitempty"`
+	DestIP       string   `json:"destIp,omitempty"`
+	SourcePort   int      `json:"sourcePort,omitempty"`
+	DestPort     int      `json:"destPort,omitempty"`
+	Proto        string   `json:"proto,omitempty"`
+	Action       string   `json:"action,omitempty"`
+	Signature    string   `json:"signature"`
+	Category     string   `json:"category"`
+	Severity     string   `json:"severity"`
+	Confidence   string   `json:"confidence"`
+	Message      string   `json:"message"`
+	RawEvent     string   `json:"rawEvent,omitempty"`
+	EvidenceRefs []string `json:"evidenceRefs,omitempty"`
+	CreatedAt    string   `json:"createdAt"`
+	UpdatedAt    string   `json:"updatedAt"`
 }
 
 // DetectionListResponse wraps a list of detections for API responses.
@@ -123,14 +123,14 @@ func (e DetectionEventType) IsDetectionEvent() bool {
 
 // DetectionFilter defines filter options for listing detections.
 type DetectionFilter struct {
-	SensorID   string `json:"sensorId,omitempty"`
-	PicketID   string `json:"picketId,omitempty"`
-	RuleSetID  string `json:"ruleSetId,omitempty"`
-	RuleID     string `json:"ruleId,omitempty"`
-	EventType  string `json:"eventType,omitempty"`
-	Severity   string `json:"severity,omitempty"`
-	StartTime  string `json:"startTime,omitempty"`
-	EndTime    string `json:"endTime,omitempty"`
+	SensorID  string `json:"sensorId,omitempty"`
+	PicketID  string `json:"picketId,omitempty"`
+	RuleSetID string `json:"ruleSetId,omitempty"`
+	RuleID    string `json:"ruleId,omitempty"`
+	EventType string `json:"eventType,omitempty"`
+	Severity  string `json:"severity,omitempty"`
+	StartTime string `json:"startTime,omitempty"`
+	EndTime   string `json:"endTime,omitempty"`
 }
 
 // ListDetectionsOptions defines options for listing detections.
@@ -149,7 +149,7 @@ func (d *Detection) ToAPI() *DetectionAPI {
 		SensorID:     d.SensorID,
 		PicketID:     d.PicketID,
 		RuleSetID:    d.RuleSetID,
-		RuleVersion:   d.RuleVersion,
+		RuleVersion:  d.RuleVersion,
 		RuleID:       d.RuleID,
 		EventType:    string(d.EventType),
 		Timestamp:    d.Timestamp.Format(time.RFC3339),
@@ -191,7 +191,7 @@ func (d *DetectionAPI) FromAPI() (*Detection, error) {
 		SensorID:     d.SensorID,
 		PicketID:     d.PicketID,
 		RuleSetID:    d.RuleSetID,
-		RuleVersion:   d.RuleVersion,
+		RuleVersion:  d.RuleVersion,
 		RuleID:       d.RuleID,
 		EventType:    DetectionEventType(d.EventType),
 		Timestamp:    timestamp,
@@ -240,13 +240,13 @@ func CreateFindingFromDetection(d *Detection, defconID, assetID string) *Finding
 
 	// Create attributes
 	attributes := map[string]string{
-		"ruleId":       d.RuleID,
-		"ruleVersion":  d.RuleVersion,
-		"ruleSetId":    d.RuleSetID,
-		"sensorId":     d.SensorID,
-		"picketId":     d.PicketID,
-		"eventType":    string(d.EventType),
-		"confidence":   string(d.Confidence),
+		"ruleId":      d.RuleID,
+		"ruleVersion": d.RuleVersion,
+		"ruleSetId":   d.RuleSetID,
+		"sensorId":    d.SensorID,
+		"picketId":    d.PicketID,
+		"eventType":   string(d.EventType),
+		"confidence":  string(d.Confidence),
 	}
 
 	if d.SourceIP != "" {

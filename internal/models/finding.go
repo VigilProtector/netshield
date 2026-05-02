@@ -14,51 +14,51 @@ const FindingContractVersion = "2.0"
 // Finding represents a security finding emitted by NetShield.
 // Implements Finding Contract v2 as specified in VL-FC-001.
 type Finding struct {
-	ID            bson.ObjectID     `bson:"_id,omitempty" json:"-"`
-	FindingID     string            `bson:"findingId" json:"findingId"`
-	SchemaVersion string            `bson:"schemaVersion" json:"schemaVersion"`
-	FindingType   FindingType       `bson:"findingType" json:"findingType"`
-	SourceContext string            `bson:"sourceContext" json:"sourceContext"`
-	AssetID       string            `bson:"assetId,omitempty" json:"assetId,omitempty"`
-	DefconID      string            `bson:"defconId,omitempty" json:"defconId,omitempty"`
-	OccurredAt    time.Time         `bson:"occurredAt" json:"occurredAt"`
-	Window       *FindingWindow    `bson:"window,omitempty" json:"window,omitempty"`
-	Severity      FindingSeverity   `bson:"severity" json:"severity"`
-	Confidence    float64           `bson:"confidence" json:"confidence"`
-	Title         string            `bson:"title" json:"title"`
-	Description   string            `bson:"description,omitempty" json:"description,omitempty"`
-	Attributes    map[string]string `bson:"attributes,omitempty" json:"attributes,omitempty"`
-	EvidenceRefs  []EvidenceRef     `bson:"evidenceRefs" json:"evidenceRefs"`
+	ID            bson.ObjectID       `bson:"_id,omitempty" json:"-"`
+	FindingID     string              `bson:"findingId" json:"findingId"`
+	SchemaVersion string              `bson:"schemaVersion" json:"schemaVersion"`
+	FindingType   FindingType         `bson:"findingType" json:"findingType"`
+	SourceContext string              `bson:"sourceContext" json:"sourceContext"`
+	AssetID       string              `bson:"assetId,omitempty" json:"assetId,omitempty"`
+	DefconID      string              `bson:"defconId,omitempty" json:"defconId,omitempty"`
+	OccurredAt    time.Time           `bson:"occurredAt" json:"occurredAt"`
+	Window        *FindingWindow      `bson:"window,omitempty" json:"window,omitempty"`
+	Severity      FindingSeverity     `bson:"severity" json:"severity"`
+	Confidence    float64             `bson:"confidence" json:"confidence"`
+	Title         string              `bson:"title" json:"title"`
+	Description   string              `bson:"description,omitempty" json:"description,omitempty"`
+	Attributes    map[string]string   `bson:"attributes,omitempty" json:"attributes,omitempty"`
+	EvidenceRefs  []EvidenceRef       `bson:"evidenceRefs" json:"evidenceRefs"`
 	Correlation   *FindingCorrelation `bson:"correlation,omitempty" json:"correlation,omitempty"`
-	Lifecycle     FindingLifecycle  `bson:"lifecycle" json:"lifecycle"`
+	Lifecycle     FindingLifecycle    `bson:"lifecycle" json:"lifecycle"`
 	Verification  FindingVerification `bson:"verification" json:"verification"`
-	Freshness     FindingFreshness  `bson:"freshness" json:"freshness"`
-	CreatedAt     time.Time         `bson:"createdAt" json:"createdAt"`
-	UpdatedAt     time.Time         `bson:"updatedAt" json:"updatedAt"`
+	Freshness     FindingFreshness    `bson:"freshness" json:"freshness"`
+	CreatedAt     time.Time           `bson:"createdAt" json:"createdAt"`
+	UpdatedAt     time.Time           `bson:"updatedAt" json:"updatedAt"`
 }
 
 // FindingAPI represents a finding for API responses.
 type FindingAPI struct {
-	FindingID     string            `json:"findingId"`
-	SchemaVersion string            `json:"schemaVersion"`
-	FindingType   string            `json:"findingType"`
-	SourceContext string            `json:"sourceContext"`
-	AssetID       string            `json:"assetId,omitempty"`
-	DefconID      string            `json:"defconId,omitempty"`
-	OccurredAt    string            `json:"occurredAt"`
-	Window       *FindingWindowAPI  `json:"window,omitempty"`
-	Severity      string            `json:"severity"`
-	Confidence    float64           `json:"confidence"`
-	Title         string            `json:"title"`
-	Description   string            `json:"description,omitempty"`
-	Attributes    map[string]string `json:"attributes,omitempty"`
-	EvidenceRefs  []EvidenceRefAPI  `json:"evidenceRefs"`
+	FindingID     string                 `json:"findingId"`
+	SchemaVersion string                 `json:"schemaVersion"`
+	FindingType   string                 `json:"findingType"`
+	SourceContext string                 `json:"sourceContext"`
+	AssetID       string                 `json:"assetId,omitempty"`
+	DefconID      string                 `json:"defconId,omitempty"`
+	OccurredAt    string                 `json:"occurredAt"`
+	Window        *FindingWindowAPI      `json:"window,omitempty"`
+	Severity      string                 `json:"severity"`
+	Confidence    float64                `json:"confidence"`
+	Title         string                 `json:"title"`
+	Description   string                 `json:"description,omitempty"`
+	Attributes    map[string]string      `json:"attributes,omitempty"`
+	EvidenceRefs  []EvidenceRefAPI       `json:"evidenceRefs"`
 	Correlation   *FindingCorrelationAPI `json:"correlation,omitempty"`
-	Lifecycle     FindingLifecycleAPI `json:"lifecycle"`
+	Lifecycle     FindingLifecycleAPI    `json:"lifecycle"`
 	Verification  FindingVerificationAPI `json:"verification"`
-	Freshness     FindingFreshnessAPI `json:"freshness"`
-	CreatedAt     string            `json:"createdAt"`
-	UpdatedAt     string            `json:"updatedAt"`
+	Freshness     FindingFreshnessAPI    `json:"freshness"`
+	CreatedAt     string                 `json:"createdAt"`
+	UpdatedAt     string                 `json:"updatedAt"`
 }
 
 // FindingListResponse wraps a list of findings for API responses.
@@ -142,18 +142,18 @@ type FindingCorrelationAPI struct {
 // FindingLifecycle represents the lifecycle of a finding.
 // Implements VL-FC-001: Basis-Lifecycle open -> resolved -> closed.
 type FindingLifecycle struct {
-	Status      FindingLifecycleStatus `bson:"status" json:"status"`
-	TransitionedAt *time.Time          `bson:"transitionedAt,omitempty" json:"transitionedAt,omitempty"`
-	TransitionedBy string             `bson:"transitionedBy,omitempty" json:"transitionedBy,omitempty"`
-	Reason       string             `bson:"reason,omitempty" json:"reason,omitempty"`
+	Status         FindingLifecycleStatus `bson:"status" json:"status"`
+	TransitionedAt *time.Time             `bson:"transitionedAt,omitempty" json:"transitionedAt,omitempty"`
+	TransitionedBy string                 `bson:"transitionedBy,omitempty" json:"transitionedBy,omitempty"`
+	Reason         string                 `bson:"reason,omitempty" json:"reason,omitempty"`
 }
 
 // FindingLifecycleAPI represents lifecycle for API responses.
 type FindingLifecycleAPI struct {
-	Status      string `json:"status"`
+	Status         string `json:"status"`
 	TransitionedAt string `json:"transitionedAt,omitempty"`
 	TransitionedBy string `json:"transitionedBy,omitempty"`
-	Reason       string `json:"reason,omitempty"`
+	Reason         string `json:"reason,omitempty"`
 }
 
 // FindingLifecycleStatus represents the status of a finding lifecycle.
@@ -170,20 +170,20 @@ const (
 
 // FindingVerification represents verification information for a finding.
 type FindingVerification struct {
-	Status    FindingVerificationStatus `bson:"status" json:"status"`
+	Status     FindingVerificationStatus `bson:"status" json:"status"`
 	VerifiedAt *time.Time                `bson:"verifiedAt,omitempty" json:"verifiedAt,omitempty"`
-	VerifiedBy string                   `bson:"verifiedBy,omitempty" json:"verifiedBy,omitempty"`
-	Method    string                   `bson:"method,omitempty" json:"method,omitempty"`
-	Notes     string                   `bson:"notes,omitempty" json:"notes,omitempty"`
+	VerifiedBy string                    `bson:"verifiedBy,omitempty" json:"verifiedBy,omitempty"`
+	Method     string                    `bson:"method,omitempty" json:"method,omitempty"`
+	Notes      string                    `bson:"notes,omitempty" json:"notes,omitempty"`
 }
 
 // FindingVerificationAPI represents verification for API responses.
 type FindingVerificationAPI struct {
-	Status    string `json:"status"`
+	Status     string `json:"status"`
 	VerifiedAt string `json:"verifiedAt,omitempty"`
 	VerifiedBy string `json:"verifiedBy,omitempty"`
-	Method    string `json:"method,omitempty"`
-	Notes     string `json:"notes,omitempty"`
+	Method     string `json:"method,omitempty"`
+	Notes      string `json:"notes,omitempty"`
 }
 
 // FindingVerificationStatus represents the verification status of a finding.
@@ -200,15 +200,15 @@ const (
 
 // FindingFreshness represents freshness information for a finding.
 type FindingFreshness struct {
-	Status    FindingFreshnessStatus `bson:"status" json:"status"`
-	StaleAfter *time.Time             `bson:"staleAfter,omitempty" json:"staleAfter,omitempty"`
-	LastChecked *time.Time            `bson:"lastChecked,omitempty" json:"lastChecked,omitempty"`
+	Status      FindingFreshnessStatus `bson:"status" json:"status"`
+	StaleAfter  *time.Time             `bson:"staleAfter,omitempty" json:"staleAfter,omitempty"`
+	LastChecked *time.Time             `bson:"lastChecked,omitempty" json:"lastChecked,omitempty"`
 }
 
 // FindingFreshnessAPI represents freshness for API responses.
 type FindingFreshnessAPI struct {
-	Status    string `json:"status"`
-	StaleAfter string `json:"staleAfter,omitempty"`
+	Status      string `json:"status"`
+	StaleAfter  string `json:"staleAfter,omitempty"`
 	LastChecked string `json:"lastChecked,omitempty"`
 }
 
@@ -247,17 +247,17 @@ type ListFindingsOptions struct {
 
 // UpdateFindingLifecycleRequest represents a request to update finding lifecycle.
 type UpdateFindingLifecycleRequest struct {
-	Status        FindingLifecycleStatus `json:"status"`
+	Status         FindingLifecycleStatus `json:"status"`
 	Reason         string                 `json:"reason,omitempty"`
 	TransitionedBy string                 `json:"transitionedBy,omitempty"`
 }
 
 // UpdateFindingVerificationRequest represents a request to update finding verification.
 type UpdateFindingVerificationRequest struct {
-	Status    FindingVerificationStatus `json:"status"`
-	Method    string                     `json:"method,omitempty"`
-	Notes     string                     `json:"notes,omitempty"`
-	VerifiedBy string                     `json:"verifiedBy,omitempty"`
+	Status     FindingVerificationStatus `json:"status"`
+	Method     string                    `json:"method,omitempty"`
+	Notes      string                    `json:"notes,omitempty"`
+	VerifiedBy string                    `json:"verifiedBy,omitempty"`
 }
 
 // ToAPI converts a Finding to a FindingAPI.
@@ -314,7 +314,7 @@ func (f *Finding) ToAPI() *FindingAPI {
 		AssetID:       f.AssetID,
 		DefconID:      f.DefconID,
 		OccurredAt:    f.OccurredAt.Format(time.RFC3339),
-		Window:       window,
+		Window:        window,
 		Severity:      string(f.Severity),
 		Confidence:    f.Confidence,
 		Title:         f.Title,
@@ -326,17 +326,17 @@ func (f *Finding) ToAPI() *FindingAPI {
 			Status:         string(f.Lifecycle.Status),
 			TransitionedAt: transitionedAt,
 			TransitionedBy: f.Lifecycle.TransitionedBy,
-			Reason:          f.Lifecycle.Reason,
+			Reason:         f.Lifecycle.Reason,
 		},
 		Verification: FindingVerificationAPI{
-			Status:    string(f.Verification.Status),
+			Status:     string(f.Verification.Status),
 			VerifiedAt: verifiedAt,
 			VerifiedBy: f.Verification.VerifiedBy,
-			Method:    f.Verification.Method,
-			Notes:     f.Verification.Notes,
+			Method:     f.Verification.Method,
+			Notes:      f.Verification.Notes,
 		},
 		Freshness: FindingFreshnessAPI{
-			Status:     string(f.Freshness.Status),
+			Status:      string(f.Freshness.Status),
 			StaleAfter:  staleAfter,
 			LastChecked: lastChecked,
 		},
@@ -436,7 +436,7 @@ func (f *FindingAPI) FromAPI() (*Finding, error) {
 		AssetID:       f.AssetID,
 		DefconID:      f.DefconID,
 		OccurredAt:    occurredAt,
-		Window:       window,
+		Window:        window,
 		Severity:      FindingSeverity(f.Severity),
 		Confidence:    f.Confidence,
 		Title:         f.Title,
@@ -448,17 +448,17 @@ func (f *FindingAPI) FromAPI() (*Finding, error) {
 			Status:         FindingLifecycleStatus(f.Lifecycle.Status),
 			TransitionedAt: transitionedAt,
 			TransitionedBy: f.Lifecycle.TransitionedBy,
-			Reason:          f.Lifecycle.Reason,
+			Reason:         f.Lifecycle.Reason,
 		},
 		Verification: FindingVerification{
-			Status:    FindingVerificationStatus(f.Verification.Status),
+			Status:     FindingVerificationStatus(f.Verification.Status),
 			VerifiedAt: verifiedAt,
 			VerifiedBy: f.Verification.VerifiedBy,
-			Method:    f.Verification.Method,
-			Notes:     f.Verification.Notes,
+			Method:     f.Verification.Method,
+			Notes:      f.Verification.Notes,
 		},
 		Freshness: FindingFreshness{
-			Status:     FindingFreshnessStatus(f.Freshness.Status),
+			Status:      FindingFreshnessStatus(f.Freshness.Status),
 			StaleAfter:  staleAfter,
 			LastChecked: lastChecked,
 		},

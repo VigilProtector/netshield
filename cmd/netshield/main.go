@@ -1,36 +1,36 @@
 // Package main provides the NetShield API server.
 //
-//  @title                      NetShield API
-//  @version                    1.0
-//  @description                NetShield is a network threat and configuration assurance capability within the StratoWard family.
+//	@title                      NetShield API
+//	@version                    1.0
+//	@description                NetShield is a network threat and configuration assurance capability within the StratoWard family.
 //
-//  @contact.name               VigilProtector Platform Team
-//  @contact.url                https://docs.vigilprotector.io
-//  @contact.email              platform@vigilprotector.io
+//	@contact.name               VigilProtector Platform Team
+//	@contact.url                https://docs.vigilprotector.io
+//	@contact.email              platform@vigilprotector.io
 //
-//  @license.name               Proprietary
-//  @license.url                https://vigilprotector.io/license
+//	@license.name               Proprietary
+//	@license.url                https://vigilprotector.io/license
 //
-//  @host                       localhost:8900
-//  @BasePath                   /
-//  @schemes                    http https
+//	@host                       localhost:8900
+//	@BasePath                   /
+//	@schemes                    http https
 //
-//  @securityDefinitions.apikey BearerAuth
-//  @in                         header
-//  @name                       Authorization
-//  @description                Enter your Bearer token in the format: Bearer {token}
+//	@securityDefinitions.apikey BearerAuth
+//	@in                         header
+//	@name                       Authorization
+//	@description                Enter your Bearer token in the format: Bearer {token}
 //
-//  @tag.name                   sensors
-//  @tag.description            Operations on NetShield Sensors (Pickets)
+//	@tag.name                   sensors
+//	@tag.description            Operations on NetShield Sensors (Pickets)
 //
-//  @tag.name                   rulesets
-//  @tag.description            Operations on RuleSets
+//	@tag.name                   rulesets
+//	@tag.description            Operations on RuleSets
 //
-//  @tag.name                   findings
-//  @tag.description            Operations on Security Findings
+//	@tag.name                   findings
+//	@tag.description            Operations on Security Findings
 //
-//  @tag.name                   detections
-//  @tag.description            Operations on Detections
+//	@tag.name                   detections
+//	@tag.description            Operations on Detections
 package main
 
 import (
@@ -43,12 +43,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/go-logr/logr"
 
 	"vigilprotector.io/netshield/internal/config"
 	"vigilprotector.io/netshield/internal/http/router"
-	"vigilprotector.io/vp-lib/logging"
+	vplogging "vigilprotector.io/vp-lib/logging"
 )
 
 var version = "development" // Set at build time
@@ -70,7 +69,7 @@ func runServer() error {
 	}
 
 	logger := initializeLogger(cfg)
-	logger.V(logging.LogLevelInfo).Info("Starting NetShield API server", "version", version)
+	logger.V(vplogging.LogLevelInfo).Info("Starting NetShield API server", "version", version)
 
 	// Initialize router
 	r := router.SetupRouter(logger)
@@ -85,7 +84,7 @@ func runServer() error {
 	}
 
 	go func() {
-		logger.V(logging.LogLevelInfo).Info("starting http server", "port", cfg.Server.Port)
+		logger.V(vplogging.LogLevelInfo).Info("starting http server", "port", cfg.Server.Port)
 		errOnServe := srv.ListenAndServe()
 		if errOnServe != nil && !errors.Is(errOnServe, http.ErrServerClosed) {
 			logger.Error(errOnServe, "failed to start http server")
@@ -97,7 +96,7 @@ func runServer() error {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
-	logger.V(logging.LogLevelInfo).Info("shutting down server")
+	logger.V(vplogging.LogLevelInfo).Info("shutting down server")
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), cfg.Server.ShutdownTimeout)
 	defer cancel()
@@ -107,10 +106,10 @@ func runServer() error {
 		logger.Error(err, "server forced to shutdown")
 	}
 
-	logger.V(logging.LogLevelInfo).Info("Server exited gracefully")
+	logger.V(vplogging.LogLevelInfo).Info("Server exited gracefully")
 	return nil
 }
 
 func initializeLogger(cfg *config.Config) logr.Logger {
-	return logging.NewLogger(cfg.Environment, cfg.LogEncoding, serviceName, cfg.LogLevel)
+	return vplogging.NewLogger(cfg.Environment, cfg.LogEncoding, serviceName, cfg.LogLevel)
 }

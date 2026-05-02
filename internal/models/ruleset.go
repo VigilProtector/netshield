@@ -20,28 +20,28 @@ type RuleSet struct {
 	Scope       RuleSetScope  `bson:"scope" json:"scope"`
 	// IsDefault indicates if this rule set is the default for new sensors.
 	// NH-RD-002: ET Open Baseline should be marked as default.
-	IsDefault   bool          `bson:"isDefault" json:"isDefault"`
-	CreatedAt   time.Time     `bson:"createdAt" json:"createdAt"`
-	UpdatedAt   time.Time     `bson:"updatedAt" json:"updatedAt"`
-	CreatedBy   string        `bson:"createdBy" json:"createdBy"`
-	UpdatedBy   string        `bson:"updatedBy" json:"updatedBy"`
+	IsDefault bool      `bson:"isDefault" json:"isDefault"`
+	CreatedAt time.Time `bson:"createdAt" json:"createdAt"`
+	UpdatedAt time.Time `bson:"updatedAt" json:"updatedAt"`
+	CreatedBy string    `bson:"createdBy" json:"createdBy"`
+	UpdatedBy string    `bson:"updatedBy" json:"updatedBy"`
 }
 
 // RuleSetAPI represents a rule set for API responses.
 type RuleSetAPI struct {
-	ID          string    `json:"id"`
-	Name        string    `json:"name"`
-	Version     string    `json:"version"`
-	Description string    `json:"description,omitempty"`
-	Enabled     bool      `json:"enabled"`
-	Source      string    `json:"source"`
+	ID          string       `json:"id"`
+	Name        string       `json:"name"`
+	Version     string       `json:"version"`
+	Description string       `json:"description,omitempty"`
+	Enabled     bool         `json:"enabled"`
+	Source      string       `json:"source"`
 	Rules       []RuleRefAPI `json:"rules"`
-	Scope       ScopeAPI  `json:"scope"`
-	IsDefault   bool      `json:"isDefault"`
-	CreatedAt   string    `json:"createdAt"`
-	UpdatedAt   string    `json:"updatedAt"`
-	CreatedBy   string    `json:"createdBy"`
-	UpdatedBy   string    `json:"updatedBy"`
+	Scope       ScopeAPI     `json:"scope"`
+	IsDefault   bool         `json:"isDefault"`
+	CreatedAt   string       `json:"createdAt"`
+	UpdatedAt   string       `json:"updatedAt"`
+	CreatedBy   string       `json:"createdBy"`
+	UpdatedBy   string       `json:"updatedBy"`
 }
 
 // RuleSetListResponse wraps a list of rule sets for API responses.
@@ -66,9 +66,9 @@ const (
 
 // RuleSetScope represents the scope of a rule set.
 type RuleSetScope struct {
-	Type      ScopeType   `bson:"type" json:"type"`
-	DefconIDs []string   `bson:"defconIds,omitempty" json:"defconIds,omitempty"`
-	Namespace string     `bson:"namespace,omitempty" json:"namespace,omitempty"`
+	Type      ScopeType `bson:"type" json:"type"`
+	DefconIDs []string  `bson:"defconIds,omitempty" json:"defconIds,omitempty"`
+	Namespace string    `bson:"namespace,omitempty" json:"namespace,omitempty"`
 }
 
 // ScopeType represents the type of scope.
@@ -106,36 +106,36 @@ type RuleRefAPI struct {
 
 // Rule represents a single Suricata rule.
 type Rule struct {
-	ID          bson.ObjectID   `bson:"_id,omitempty" json:"-"`
-	RuleID      string          `bson:"ruleId" json:"ruleId"`
-	Content     string          `bson:"content" json:"content"`
-	Category    string          `bson:"category" json:"category"`
-	Severity    RuleSeverity    `bson:"severity" json:"severity"`
-	Message     string          `bson:"message" json:"message"`
-	Reference   string          `bson:"reference,omitempty" json:"reference,omitempty"`
-	Closing     bool            `bson:"closing,omitempty" json:"closing,omitempty"`
-	Default     bool            `bson:"default,omitempty" json:"default,omitempty"`
-	Source      RuleSetSource   `bson:"source" json:"source"`
-	CreatedAt   time.Time       `bson:"createdAt" json:"createdAt"`
-	UpdatedAt   time.Time       `bson:"updatedAt" json:"updatedAt"`
-	CreatedBy   string          `bson:"createdBy" json:"createdBy"`
-	UpdatedBy   string          `bson:"updatedBy" json:"updatedBy"`
+	ID        bson.ObjectID `bson:"_id,omitempty" json:"-"`
+	RuleID    string        `bson:"ruleId" json:"ruleId"`
+	Content   string        `bson:"content" json:"content"`
+	Category  string        `bson:"category" json:"category"`
+	Severity  RuleSeverity  `bson:"severity" json:"severity"`
+	Message   string        `bson:"message" json:"message"`
+	Reference string        `bson:"reference,omitempty" json:"reference,omitempty"`
+	Closing   bool          `bson:"closing,omitempty" json:"closing,omitempty"`
+	Default   bool          `bson:"default,omitempty" json:"default,omitempty"`
+	Source    RuleSetSource `bson:"source" json:"source"`
+	CreatedAt time.Time     `bson:"createdAt" json:"createdAt"`
+	UpdatedAt time.Time     `bson:"updatedAt" json:"updatedAt"`
+	CreatedBy string        `bson:"createdBy" json:"createdBy"`
+	UpdatedBy string        `bson:"updatedBy" json:"updatedBy"`
 }
 
 // RuleAPI represents a rule for API responses.
 type RuleAPI struct {
-	ID          string `json:"id"`
-	RuleID      string `json:"ruleId"`
-	Content     string `json:"content"`
-	Category    string `json:"category"`
-	Severity    string `json:"severity"`
-	Message     string `json:"message"`
-	Reference   string `json:"reference,omitempty"`
-	Closing     bool   `json:"closing,omitempty"`
-	Default     bool   `json:"default,omitempty"`
-	Source      string `json:"source"`
-	CreatedAt   string `json:"createdAt"`
-	UpdatedAt   string `json:"updatedAt"`
+	ID        string `json:"id"`
+	RuleID    string `json:"ruleId"`
+	Content   string `json:"content"`
+	Category  string `json:"category"`
+	Severity  string `json:"severity"`
+	Message   string `json:"message"`
+	Reference string `json:"reference,omitempty"`
+	Closing   bool   `json:"closing,omitempty"`
+	Default   bool   `json:"default,omitempty"`
+	Source    string `json:"source"`
+	CreatedAt string `json:"createdAt"`
+	UpdatedAt string `json:"updatedAt"`
 }
 
 // RuleSeverity represents the severity of a rule.
@@ -157,18 +157,18 @@ const (
 // RuleListResponse wraps a list of rules for API responses.
 type RuleListResponse struct {
 	Items      []*Rule `json:"items"`
-	TotalCount int    `json:"totalCount"`
-	Limit      int    `json:"limit"`
-	Offset     int    `json:"offset"`
+	TotalCount int     `json:"totalCount"`
+	Limit      int     `json:"limit"`
+	Offset     int     `json:"offset"`
 }
 
 // RuleFilter defines filter options for listing rules.
 type RuleFilter struct {
-	RuleID    string `json:"ruleId,omitempty"`
+	RuleID   string `json:"ruleId,omitempty"`
 	Category string `json:"category,omitempty"`
 	Severity string `json:"severity,omitempty"`
 	Source   string `json:"source,omitempty"`
-	Enabled  *bool   `json:"enabled,omitempty"`
+	Enabled  *bool  `json:"enabled,omitempty"`
 }
 
 // ListRulesOptions defines options for listing rules.
@@ -182,24 +182,24 @@ type ListRulesOptions struct {
 
 // CreateRuleSetRequest represents a request to create a rule set.
 type CreateRuleSetRequest struct {
-	Name        string      `json:"name"`
-	Version     string      `json:"version"`
-	Description string      `json:"description,omitempty"`
-	Enabled     bool        `json:"enabled"`
-	Source      string      `json:"source"`
+	Name        string       `json:"name"`
+	Version     string       `json:"version"`
+	Description string       `json:"description,omitempty"`
+	Enabled     bool         `json:"enabled"`
+	Source      string       `json:"source"`
 	Rules       []RuleRefAPI `json:"rules"`
-	Scope       ScopeAPI    `json:"scope"`
+	Scope       ScopeAPI     `json:"scope"`
 }
 
 // UpdateRuleSetRequest represents a request to update a rule set.
 type UpdateRuleSetRequest struct {
-	Name        string      `json:"name,omitempty"`
-	Version     string      `json:"version,omitempty"`
-	Description string      `json:"description,omitempty"`
-	Enabled     *bool       `json:"enabled,omitempty"`
-	Source      string      `json:"source,omitempty"`
+	Name        string       `json:"name,omitempty"`
+	Version     string       `json:"version,omitempty"`
+	Description string       `json:"description,omitempty"`
+	Enabled     *bool        `json:"enabled,omitempty"`
+	Source      string       `json:"source,omitempty"`
 	Rules       []RuleRefAPI `json:"rules,omitempty"`
-	Scope       ScopeAPI    `json:"scope,omitempty"`
+	Scope       ScopeAPI     `json:"scope,omitempty"`
 }
 
 // RuleSetFilter defines filter options for listing rule sets.
@@ -207,7 +207,7 @@ type RuleSetFilter struct {
 	Name    string `json:"name,omitempty"`
 	Version string `json:"version,omitempty"`
 	Source  string `json:"source,omitempty"`
-	Enabled *bool   `json:"enabled,omitempty"`
+	Enabled *bool  `json:"enabled,omitempty"`
 }
 
 // ToAPI converts a RuleSet to a RuleSetAPI.
@@ -277,7 +277,7 @@ func (r *RuleSetAPI) FromAPI() (*RuleSet, error) {
 			DefconIDs: r.Scope.DefconIDs,
 			Namespace: r.Scope.Namespace,
 		},
-		IsDefault:   r.IsDefault,
+		IsDefault: r.IsDefault,
 		CreatedAt: createdAt,
 		UpdatedAt: updatedAt,
 		CreatedBy: r.CreatedBy,
@@ -288,17 +288,17 @@ func (r *RuleSetAPI) FromAPI() (*RuleSet, error) {
 // ToAPI converts a Rule to a RuleAPI.
 func (r *Rule) ToAPI() *RuleAPI {
 	return &RuleAPI{
-		ID:          r.ID.Hex(),
-		RuleID:      r.RuleID,
-		Content:     r.Content,
-		Category:    r.Category,
-		Severity:    string(r.Severity),
-		Message:     r.Message,
-		Reference:   r.Reference,
-		Closing:     r.Closing,
-		Default:     r.Default,
-		Source:      string(r.Source),
-		CreatedAt:   r.CreatedAt.Format(time.RFC3339),
-		UpdatedAt:   r.UpdatedAt.Format(time.RFC3339),
+		ID:        r.ID.Hex(),
+		RuleID:    r.RuleID,
+		Content:   r.Content,
+		Category:  r.Category,
+		Severity:  string(r.Severity),
+		Message:   r.Message,
+		Reference: r.Reference,
+		Closing:   r.Closing,
+		Default:   r.Default,
+		Source:    string(r.Source),
+		CreatedAt: r.CreatedAt.Format(time.RFC3339),
+		UpdatedAt: r.UpdatedAt.Format(time.RFC3339),
 	}
 }

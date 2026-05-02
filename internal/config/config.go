@@ -53,11 +53,11 @@ type MetricsConfig struct {
 
 // DatabaseConfig holds MongoDB configuration.
 type DatabaseConfig struct {
-	URI        string
-	Name       string
-	Timeout    time.Duration
-	MaxPool    int
-	MinPool    int
+	URI         string
+	Name        string
+	Timeout     time.Duration
+	MaxPool     int
+	MinPool     int
 	IdleTimeout time.Duration
 }
 
@@ -66,18 +66,18 @@ func LoadConfig() (*Config, error) {
 	cfg := &Config{
 		Server: ServerConfig{
 			Port:            config.GetEnvOrDefault("SERVER_PORT", DefaultServerPort),
-			ShutdownTimeout: config.ParseDurationOrDefault("SERVER_SHUTDOWN_TIMEOUT", DefaultShutdownTimeout),
+			ShutdownTimeout: DefaultShutdownTimeout,
 		},
 		Metrics: MetricsConfig{
 			Port: config.GetEnvOrDefault("METRICS_PORT", DefaultMetricsPort),
 		},
 		Database: DatabaseConfig{
-			URI:        config.GetEnvOrDefault("MONGODB_URI", "mongodb://localhost:27017"),
-			Name:       config.GetEnvOrDefault("MONGODB_DATABASE", "netshield"),
-			Timeout:    config.ParseDurationOrDefault("MONGODB_TIMEOUT", 5*time.Second),
-			MaxPool:    config.ParseIntOrDefault("MONGODB_MAX_POOL", 100),
-			MinPool:    config.ParseIntOrDefault("MONGODB_MIN_POOL", 5),
-			IdleTimeout: config.ParseDurationOrDefault("MONGODB_IDLE_TIMEOUT", 30*time.Second),
+			URI:         config.GetEnvOrDefault("MONGODB_URI", "mongodb://localhost:27017"),
+			Name:        config.GetEnvOrDefault("MONGODB_DATABASE", "netshield"),
+			Timeout:     config.ParseDurationOrDefault("MONGODB_TIMEOUT", "5s"),
+			MaxPool:     config.ParseIntOrDefault("MONGODB_MAX_POOL", 100),
+			MinPool:     config.ParseIntOrDefault("MONGODB_MIN_POOL", 5),
+			IdleTimeout: config.ParseDurationOrDefault("MONGODB_IDLE_TIMEOUT", "30s"),
 		},
 		Environment: config.GetEnvOrDefault("ENVIRONMENT", "production"),
 		LogLevel:    config.ParseInt8OrDefault("LOG_LEVEL", DefaultLogLevel),

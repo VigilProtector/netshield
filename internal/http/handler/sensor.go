@@ -2,36 +2,27 @@
 package handler
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-logr/logr"
 
 	"vigilprotector.io/netshield/internal/models"
 	"vigilprotector.io/netshield/internal/service"
+	"vigilprotector.io/vp-lib/authn"
 	"vigilprotector.io/vp-lib/correlation"
-	vpauthn "vigilprotector.io/vp-lib/gin/middleware/authn"
-	"vigilprotector.io/vp-lib/http/response"
-	"vigilprotector.io/vp-lib/logging"
-	"vigilprotector.io/vp-lib/types"
+	ginlogging "vigilprotector.io/vp-lib/gin/logging"
+	"vigilprotector.io/vp-lib/gin/response"
+	vplogging "vigilprotector.io/vp-lib/logging"
 )
 
 // SensorHandler handles HTTP requests for sensor operations.
 type SensorHandler struct {
-	service service.SensorServicer
-}
-
-// SensorServicer defines the interface for sensor service operations.
-// ADR: Consumer-defined interfaces - defined where consumed, not where implemented.
-type SensorServicer interface {
-	List(ctx context.Context, logger logr.Logger, subject *types.Subject, opts service.ListSensorsOptions) (*service.ListSensorsResult, error)
-	Get(ctx context.Context, logger logr.Logger, subject *types.Subject, picketID string) (*models.Sensor, error)
+	service service.SensorServiceInterface
 }
 
 // NewSensorHandler creates a new SensorHandler.
-func NewSensorHandler(service SensorServicer) *SensorHandler {
+func NewSensorHandler(service service.SensorServiceInterface) *SensorHandler {
 	return &SensorHandler{
 		service: service,
 	}
@@ -55,18 +46,18 @@ func NewSensorHandler(service SensorServicer) *SensorHandler {
 // @Router       /netshield/v1/sensors [get]
 func (h *SensorHandler) ListSensors(c *gin.Context) {
 	// Get logger (ALWAYS first line)
-	logger := logging.GetLogger(c)
-	logger = correlation.GetLoggerWithCorrelationID(c, logger)
+	logger := ginlogging.GetLogger(c)
+	logger = ginlogging.GetLoggerWithCorrelationID(c, logger)
 
 	// Ensure correlation ID
 	ctx := correlation.Ensure(c.Request.Context())
 	c.Request = c.Request.WithContext(ctx)
 
 	// Extract subject
-	subject, err := vpauthn.ExtractSubject(ctx)
+	subject, err := authn.ExtractSubject(ctx)
 	if err != nil {
 		logger.Error(err, "failed to extract subject")
-		response.SendError(c, http.StatusUnauthorized, "Authentication required", err.Error())
+		response.SendError(c, http.StatusUnauthorized, "authentication_required", "Authentication required", err.Error())
 		return
 	}
 
@@ -107,15 +98,15 @@ func (h *SensorHandler) ListSensors(c *gin.Context) {
 	}
 
 	// Call service
-	result, err := h.service.List(ctx, logger, &subject, opts)
+	result, err := h.service.List(ctx, logger, subject, opts)
 	if err != nil {
 		logger.Error(err, "failed to list sensors")
-		response.SendError(c, http.StatusInternalServerError, "Failed to list sensors", err.Error())
+		response.SendError(c, http.StatusInternalServerError, "list_sensors_failed", "Failed to list sensors", err.Error())
 		return
 	}
 
 	// Success response
-	logger.V(logging.LogLevelVerbose).Info("sensors listed successfully", "count", len(result.Items))
+	logger.V(vplogging.LogLevelVerbose).Info("sensors listed successfully", "count", len(result.Items))
 	response.SendResponse(c, http.StatusOK, "Sensors listed successfully", result.Items)
 }
 
@@ -134,39 +125,39 @@ func (h *SensorHandler) ListSensors(c *gin.Context) {
 // @Router       /netshield/v1/sensors/{picketId} [get]
 func (h *SensorHandler) GetSensor(c *gin.Context) {
 	// Get logger (ALWAYS first line)
-	logger := logging.GetLogger(c)
-	logger = correlation.GetLoggerWithCorrelationID(c, logger)
+	logger := ginlogging.GetLogger(c)
+	logger = ginlogging.GetLoggerWithCorrelationID(c, logger)
 
 	// Ensure correlation ID
 	ctx := correlation.Ensure(c.Request.Context())
 	c.Request = c.Request.WithContext(ctx)
 
 	// Extract subject
-	subject, err := vpauthn.ExtractSubject(ctx)
+	subject, err := authn.ExtractSubject(ctx)
 	if err != nil {
 		logger.Error(err, "failed to extract subject")
-		response.SendError(c, http.StatusUnauthorized, "Authentication required", err.Error())
+		response.SendError(c, http.StatusUnauthorized, "authentication_required", "Authentication required", err.Error())
 		return
 	}
 
 	// Get Picket ID from path
 	picketID := c.Param("picketId")
 	if picketID == "" {
-		logger.V(logging.LogLevelInfo).Error(nil, "missing picketId parameter")
-		response.SendError(c, http.StatusBadRequest, "picketId is required", nil)
+		logger.V(vplogging.LogLevelInfo).Error(nil, "missing picketId parameter")
+		response.SendError(c, http.StatusBadRequest, "invalid_request", "picketId is required", nil)
 		return
 	}
 
 	// Call service
-	sensor, err := h.service.Get(ctx, logger, &subject, picketID)
+	sensor, err := h.service.Get(ctx, logger, subject, picketID)
 	if err != nil {
 		logger.Error(err, "failed to get sensor", "picketId", picketID)
-		response.SendError(c, http.StatusInternalServerError, "Failed to get sensor", err.Error())
+		response.SendError(c, http.StatusInternalServerError, "get_sensor_failed", "Failed to get sensor", err.Error())
 		return
 	}
 
 	// Success response
-	logger.V(logging.LogLevelVerbose).Info("sensor retrieved successfully", "picketId", picketID)
+	logger.V(vplogging.LogLevelVerbose).Info("sensor retrieved successfully", "picketId", picketID)
 	response.SendResponse(c, http.StatusOK, "Sensor retrieved successfully", sensor.ToAPI())
 }
 

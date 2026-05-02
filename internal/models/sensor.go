@@ -28,17 +28,17 @@ type Sensor struct {
 
 // SensorAPI represents a sensor for API responses (camelCase JSON).
 type SensorAPI struct {
-	PicketID    string    `json:"picketId"`
-	DefconID    string    `json:"defconId"`
-	DefconName  string    `json:"defconName"`
-	NodeName    string    `json:"nodeName"`
-	Namespace   string    `json:"namespace"`
-	Status      string    `json:"status"`
-	Health      string    `json:"health"`
-	RuleVersion string    `json:"ruleVersion"`
-	LastSeen    string    `json:"lastSeen"`
-	CreatedAt   string    `json:"createdAt"`
-	UpdatedAt   string    `json:"updatedAt"`
+	PicketID    string `json:"picketId"`
+	DefconID    string `json:"defconId"`
+	DefconName  string `json:"defconName"`
+	NodeName    string `json:"nodeName"`
+	Namespace   string `json:"namespace"`
+	Status      string `json:"status"`
+	Health      string `json:"health"`
+	RuleVersion string `json:"ruleVersion"`
+	LastSeen    string `json:"lastSeen"`
+	CreatedAt   string `json:"createdAt"`
+	UpdatedAt   string `json:"updatedAt"`
 }
 
 // SensorListResponse wraps a list of sensors for API responses.
