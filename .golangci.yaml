@@ -158,7 +158,7 @@ issues:
     - "zz_generated.*\.go$"
   # Exclude rules by regexps.
   exclude-rules:
-    - "funlen: line is too long"
+    - "funlen"
 
 severity:
   default-severity: error
