@@ -105,7 +105,7 @@ func (h *SensorHandler) ListSensors(c *gin.Context) {
 	limit := 50
 
 	if l := c.Query("limit"); l != "" {
-		if parsed, err := parseInt(l, 50); err == nil {
+		if parsed, err := parseAndValidateLimit(l, 50); err == nil {
 			limit = parsed
 		}
 	}
@@ -113,7 +113,7 @@ func (h *SensorHandler) ListSensors(c *gin.Context) {
 	offset := 0
 
 	if o := c.Query("offset"); o != "" {
-		if parsed, err := parseInt(o, 0); err == nil {
+		if parsed, err := parseAndValidateOffset(o, 0); err == nil {
 			offset = parsed
 		}
 	}

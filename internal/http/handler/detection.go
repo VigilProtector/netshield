@@ -131,7 +131,7 @@ func (h *DetectionHandler) ListDetections(c *gin.Context) {
 	limit := 50
 
 	if l := c.Query("limit"); l != "" {
-		if parsed, err := parseInt(l, 50); err == nil {
+		if parsed, err := parseAndValidateLimit(l, 50); err == nil {
 			limit = parsed
 		}
 	}
@@ -139,7 +139,7 @@ func (h *DetectionHandler) ListDetections(c *gin.Context) {
 	offset := 0
 
 	if o := c.Query("offset"); o != "" {
-		if parsed, err := parseInt(o, 0); err == nil {
+		if parsed, err := parseAndValidateOffset(o, 0); err == nil {
 			offset = parsed
 		}
 	}
@@ -640,7 +640,7 @@ func (h *DetectionHandler) GetDetectionsBySensor(c *gin.Context) {
 	limit := 50
 
 	if l := c.Query("limit"); l != "" {
-		if parsed, err := parseInt(l, 50); err == nil {
+		if parsed, err := parseAndValidateLimit(l, 50); err == nil {
 			limit = parsed
 		}
 	}
@@ -648,7 +648,7 @@ func (h *DetectionHandler) GetDetectionsBySensor(c *gin.Context) {
 	offset := 0
 
 	if o := c.Query("offset"); o != "" {
-		if parsed, err := parseInt(o, 0); err == nil {
+		if parsed, err := parseAndValidateOffset(o, 0); err == nil {
 			offset = parsed
 		}
 	}
@@ -787,7 +787,7 @@ func (h *DetectionHandler) GetDetectionsByPicket(c *gin.Context) {
 	limit := 50
 
 	if l := c.Query("limit"); l != "" {
-		if parsed, err := parseInt(l, 50); err == nil {
+		if parsed, err := parseAndValidateLimit(l, 50); err == nil {
 			limit = parsed
 		}
 	}
@@ -795,7 +795,7 @@ func (h *DetectionHandler) GetDetectionsByPicket(c *gin.Context) {
 	offset := 0
 
 	if o := c.Query("offset"); o != "" {
-		if parsed, err := parseInt(o, 0); err == nil {
+		if parsed, err := parseAndValidateOffset(o, 0); err == nil {
 			offset = parsed
 		}
 	}
@@ -934,7 +934,7 @@ func (h *DetectionHandler) GetDetectionsByRuleSet(c *gin.Context) {
 	limit := 50
 
 	if l := c.Query("limit"); l != "" {
-		if parsed, err := parseInt(l, 50); err == nil {
+		if parsed, err := parseAndValidateLimit(l, 50); err == nil {
 			limit = parsed
 		}
 	}
@@ -942,7 +942,7 @@ func (h *DetectionHandler) GetDetectionsByRuleSet(c *gin.Context) {
 	offset := 0
 
 	if o := c.Query("offset"); o != "" {
-		if parsed, err := parseInt(o, 0); err == nil {
+		if parsed, err := parseAndValidateOffset(o, 0); err == nil {
 			offset = parsed
 		}
 	}
@@ -1081,7 +1081,7 @@ func (h *DetectionHandler) GetDetectionsByRule(c *gin.Context) {
 	limit := 50
 
 	if l := c.Query("limit"); l != "" {
-		if parsed, err := parseInt(l, 50); err == nil {
+		if parsed, err := parseAndValidateLimit(l, 50); err == nil {
 			limit = parsed
 		}
 	}
@@ -1089,7 +1089,7 @@ func (h *DetectionHandler) GetDetectionsByRule(c *gin.Context) {
 	offset := 0
 
 	if o := c.Query("offset"); o != "" {
-		if parsed, err := parseInt(o, 0); err == nil {
+		if parsed, err := parseAndValidateOffset(o, 0); err == nil {
 			offset = parsed
 		}
 	}
@@ -1221,7 +1221,7 @@ func (h *DetectionHandler) GetUnprocessedDetections(c *gin.Context) {
 	limit := 50
 
 	if l := c.Query("limit"); l != "" {
-		if parsed, err := parseInt(l, 50); err == nil {
+		if parsed, err := parseAndValidateLimit(l, 50); err == nil {
 			limit = parsed
 		}
 	}
@@ -1229,7 +1229,7 @@ func (h *DetectionHandler) GetUnprocessedDetections(c *gin.Context) {
 	offset := 0
 
 	if o := c.Query("offset"); o != "" {
-		if parsed, err := parseInt(o, 0); err == nil {
+		if parsed, err := parseAndValidateOffset(o, 0); err == nil {
 			offset = parsed
 		}
 	}
