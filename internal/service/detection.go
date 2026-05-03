@@ -10,6 +10,8 @@ import (
 	"github.com/go-logr/logr"
 
 	"vigilprotector.io/netshield/internal/models"
+	"vigilprotector.io/vp-lib/authz"
+	"vigilprotector.io/vp-lib/correlation"
 	"vigilprotector.io/vp-lib/ironchronicle"
 	vplogging "vigilprotector.io/vp-lib/logging"
 	"vigilprotector.io/vp-lib/types"
@@ -160,6 +162,31 @@ func (s *DetectionService) List(
 		"limit", opts.Limit,
 		"offset", opts.Offset)
 
+	// AuthZ check before store access (ADR-0027/28, microservice-standard.md)
+	input := authz.NewInput(
+		subject,
+		"netshield.detection.list",
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "detection",
+			ResourceRef:  "*",
+		},
+	)
+
+	decision, err := authz.Authorize(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("authorization failed: %w", err)
+	}
+
+	if !decision.Allow {
+		return nil, authz.ErrAccessDenied
+	}
+
+	// Audit event for read operation (ADR-0041/0055)
+	if s.shouldEmitDomainAudit(ctx, "netshield.detection.list") {
+		s.emitDetectionAuditEvent(ctx, subject, "netshield.detection.list", models.Detection{})
+	}
+
 	response, err := s.store.List(ctx, opts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list detections from store: %w", err)
@@ -177,6 +204,26 @@ func (s *DetectionService) Get(
 ) (*models.Detection, error) {
 	logger.V(vplogging.LogLevelVerbose).Info("getting detection by id", "detectionId", detectionID)
 
+	// AuthZ check before store access (ADR-0027/28, microservice-standard.md)
+	input := authz.NewInput(
+		subject,
+		"netshield.detection.read",
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "detection",
+			ResourceRef:  detectionID,
+		},
+	)
+
+	decision, err := authz.Authorize(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("authorization failed: %w", err)
+	}
+
+	if !decision.Allow {
+		return nil, authz.ErrAccessDenied
+	}
+
 	detection, err := s.store.GetByDetectionID(ctx, detectionID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get detection from store: %w", err)
@@ -184,6 +231,11 @@ func (s *DetectionService) Get(
 
 	if detection == nil {
 		return nil, ErrDetectionNotFound
+	}
+
+	// Audit event for read operation (ADR-0041/0055)
+	if s.shouldEmitDomainAudit(ctx, "netshield.detection.read") {
+		s.emitDetectionAuditEvent(ctx, subject, "netshield.detection.read", *detection)
 	}
 
 	return detection, nil
@@ -202,6 +254,26 @@ func (s *DetectionService) Create(
 		"sensorId", detection.SensorID,
 		"picketId", detection.PicketID,
 		"eventType", detection.EventType)
+
+	// AuthZ check before store access (ADR-0027/28, microservice-standard.md)
+	input := authz.NewInput(
+		subject,
+		"netshield.detection.create",
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "detection",
+			ResourceRef:  detection.DetectionID,
+		},
+	)
+
+	decision, err := authz.Authorize(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("authorization failed: %w", err)
+	}
+
+	if !decision.Allow {
+		return nil, authz.ErrAccessDenied
+	}
 
 	// Validate required fields
 	if detection.DetectionID == "" {
@@ -260,6 +332,26 @@ func (s *DetectionService) ProcessDetection(
 	detectionID string,
 ) (*models.Finding, error) {
 	logger.V(vplogging.LogLevelVerbose).Info("processing detection", "detectionId", detectionID)
+
+	// AuthZ check before store access (ADR-0027/28, microservice-standard.md)
+	input := authz.NewInput(
+		subject,
+		"netshield.detection.process",
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "detection",
+			ResourceRef:  detectionID,
+		},
+	)
+
+	decision, err := authz.Authorize(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("authorization failed: %w", err)
+	}
+
+	if !decision.Allow {
+		return nil, authz.ErrAccessDenied
+	}
 
 	// Get detection
 	detection, err := s.store.GetByDetectionID(ctx, detectionID)
@@ -426,6 +518,26 @@ func (s *DetectionService) MarkAsProcessed(
 ) error {
 	logger.V(vplogging.LogLevelVerbose).Info("marking detection as processed", "detectionId", detectionID)
 
+	// AuthZ check before store access (ADR-0027/28, microservice-standard.md)
+	input := authz.NewInput(
+		subject,
+		"netshield.detection.update",
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "detection",
+			ResourceRef:  detectionID,
+		},
+	)
+
+	decision, err := authz.Authorize(ctx, input)
+	if err != nil {
+		return fmt.Errorf("authorization failed: %w", err)
+	}
+
+	if !decision.Allow {
+		return authz.ErrAccessDenied
+	}
+
 	// Get detection
 	detection, err := s.store.GetByDetectionID(ctx, detectionID)
 	if err != nil {
@@ -515,6 +627,26 @@ func (s *DetectionService) GetUnprocessed(
 ) (*models.DetectionListResponse, error) {
 	logger.V(vplogging.LogLevelVerbose).Info("getting unprocessed detections")
 
+	// AuthZ check before store access (ADR-0027/28, microservice-standard.md)
+	input := authz.NewInput(
+		subject,
+		"netshield.detection.list",
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "detection",
+			ResourceRef:  "*",
+		},
+	)
+
+	decision, err := authz.Authorize(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("authorization failed: %w", err)
+	}
+
+	if !decision.Allow {
+		return nil, authz.ErrAccessDenied
+	}
+
 	response, err := s.store.GetUnprocessed(ctx, opts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get unprocessed detections: %w", err)
@@ -567,15 +699,46 @@ func (s *DetectionService) ProcessUnprocessed(
 	return processedCount, nil
 }
 
+// shouldEmitDomainAudit determines if domain audit events should be emitted.
+// ADR-0041/0055: Services emit domain events; vp-lib handles AuthN/AuthZ auditing.
+// For state-changing operations (create, update, delete, process), always emit.
+// For read/list operations, emit when the active customer audit policy enables domain access auditing.
+func (s *DetectionService) shouldEmitDomainAudit(ctx context.Context, action string) bool {
+	// Extract correlation ID from context
+	_, ok := correlation.FromContext(ctx)
+	if !ok {
+		return false
+	}
+
+	// For state-changing operations, always emit
+	switch action {
+	case "netshield.detection.create",
+		"netshield.detection.update",
+		"netshield.detection.delete",
+		"netshield.detection.process",
+		"netshield.detection.processed",
+		"netshield.detection.mark-processed":
+		return true
+	}
+
+	// For read/list operations, check if domain access auditing is enabled
+	// This is a placeholder - in production, this would check the active customer audit policy.
+	// For now, we emit read audits for development/traceability.
+	return true
+}
+
 // emitDetectionAuditEvent emits an audit event for detection operations.
-// Helper for audit event emission.
+// ADR-0041/0055: Services emit domain events; vp-lib handles AuthN/AuthZ auditing.
 func (s *DetectionService) emitDetectionAuditEvent(
 	ctx context.Context,
 	subject *types.Subject,
 	action string,
 	detection models.Detection,
 ) {
+	correlationID, _ := correlation.FromContext(ctx)
+
 	event := ironchronicle.Event{
+		CorrelationID: correlationID,
 		Actor: ironchronicle.Actor{
 			Type: string(subject.Type),
 			ID:   subject.ID,
@@ -618,6 +781,8 @@ func (s *DetectionService) emitDetectionAuditEventWithMeta(
 	detection models.Detection,
 	meta map[string]string,
 ) {
+	correlationID, _ := correlation.FromContext(ctx)
+
 	// Merge base meta with additional meta
 	mergedMeta := map[string]string{
 		"sensorId":   detection.SensorID,
@@ -641,6 +806,7 @@ func (s *DetectionService) emitDetectionAuditEventWithMeta(
 	}
 
 	event := ironchronicle.Event{
+		CorrelationID: correlationID,
 		Actor: ironchronicle.Actor{
 			Type: string(subject.Type),
 			ID:   subject.ID,
@@ -671,6 +837,26 @@ func (s *DetectionService) GetBySensorID(
 ) (*models.DetectionListResponse, error) {
 	logger.V(vplogging.LogLevelVerbose).Info("getting detections by sensorId", "sensorId", sensorID)
 
+	// AuthZ check before store access (ADR-0027/28, microservice-standard.md)
+	input := authz.NewInput(
+		subject,
+		"netshield.detection.list",
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "detection",
+			ResourceRef:  sensorID,
+		},
+	)
+
+	decision, err := authz.Authorize(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("authorization failed: %w", err)
+	}
+
+	if !decision.Allow {
+		return nil, authz.ErrAccessDenied
+	}
+
 	response, err := s.store.GetBySensorID(ctx, sensorID, opts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get detections by sensor: %w", err)
@@ -689,6 +875,26 @@ func (s *DetectionService) GetByPicketID(
 	opts models.ListDetectionsOptions,
 ) (*models.DetectionListResponse, error) {
 	logger.V(vplogging.LogLevelVerbose).Info("getting detections by picketId", "picketId", picketID)
+
+	// AuthZ check before store access (ADR-0027/28, microservice-standard.md)
+	input := authz.NewInput(
+		subject,
+		"netshield.detection.list",
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "detection",
+			ResourceRef:  picketID,
+		},
+	)
+
+	decision, err := authz.Authorize(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("authorization failed: %w", err)
+	}
+
+	if !decision.Allow {
+		return nil, authz.ErrAccessDenied
+	}
 
 	response, err := s.store.GetByPicketID(ctx, picketID, opts)
 	if err != nil {
@@ -709,6 +915,26 @@ func (s *DetectionService) GetByRuleSetID(
 ) (*models.DetectionListResponse, error) {
 	logger.V(vplogging.LogLevelVerbose).Info("getting detections by ruleSetId", "ruleSetId", ruleSetID)
 
+	// AuthZ check before store access (ADR-0027/28, microservice-standard.md)
+	input := authz.NewInput(
+		subject,
+		"netshield.detection.list",
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "detection",
+			ResourceRef:  ruleSetID,
+		},
+	)
+
+	decision, err := authz.Authorize(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("authorization failed: %w", err)
+	}
+
+	if !decision.Allow {
+		return nil, authz.ErrAccessDenied
+	}
+
 	response, err := s.store.GetByRuleSetID(ctx, ruleSetID, opts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get detections by ruleSet: %w", err)
@@ -727,6 +953,26 @@ func (s *DetectionService) GetByRuleID(
 	opts models.ListDetectionsOptions,
 ) (*models.DetectionListResponse, error) {
 	logger.V(vplogging.LogLevelVerbose).Info("getting detections by ruleId", "ruleId", ruleID)
+
+	// AuthZ check before store access (ADR-0027/28, microservice-standard.md)
+	input := authz.NewInput(
+		subject,
+		"netshield.detection.list",
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "detection",
+			ResourceRef:  ruleID,
+		},
+	)
+
+	decision, err := authz.Authorize(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("authorization failed: %w", err)
+	}
+
+	if !decision.Allow {
+		return nil, authz.ErrAccessDenied
+	}
 
 	response, err := s.store.GetByRuleID(ctx, ruleID, opts)
 	if err != nil {
