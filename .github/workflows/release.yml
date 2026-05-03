@@ -42,9 +42,17 @@ jobs:
           # Output version for next steps
           echo "new_release_version=$VERSION" >> "$GITHUB_OUTPUT"
 
+      - name: Log in to GHCR
+        if: steps.semantic-release.outputs.new_release_version != ''
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Build Docker image with version tag
         if: steps.semantic-release.outputs.new_release_version != ''
         run: |
           VERSION=${{ steps.semantic-release.outputs.new_release_version }}
-          docker build -t ghcr.io/${{ github.repository }}:$VERSION .
+          docker build -t ghcr.io/${{ github.repository }}:$VERSION -f build/Dockerfile .
           docker push ghcr.io/${{ github.repository }}:$VERSION

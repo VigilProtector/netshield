@@ -38,17 +38,13 @@ FROM gcr.io/distroless/static:nonroot
 
 WORKDIR /
 
-# Copy binary from builder
-COPY --from=builder /workspace/netshield .
+# Copy binary from builder with correct permissions
+# distroless image has no shell, so we cannot use RUN commands
+# Instead, we copy the binary with the correct user/permissions from builder
+COPY --from=builder --chown=65532:65532 /workspace/netshield .
 
-# Create non-root user
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-
-# Change ownership
-RUN chown appuser:appgroup /netshield
-
-# Switch to non-root user
-USER appuser:appgroup
+# Switch to non-root user (UID 65532 is the default nonroot user in distroless)
+USER 65532:65532
 
 # Expose ports
 EXPOSE 8900  # API HTTP port
