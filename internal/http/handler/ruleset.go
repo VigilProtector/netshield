@@ -59,6 +59,7 @@ func (h *RuleSetHandler) ListRuleSets(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to extract subject")
 		response.SendError(c, http.StatusUnauthorized, "authentication_required", "Authentication required", err.Error())
+
 		return
 	}
 
@@ -67,12 +68,15 @@ func (h *RuleSetHandler) ListRuleSets(c *gin.Context) {
 	if name := c.Query("name"); name != "" {
 		filter.Name = name
 	}
+
 	if version := c.Query("version"); version != "" {
 		filter.Version = version
 	}
+
 	if source := c.Query("source"); source != "" {
 		filter.Source = source
 	}
+
 	if enabled := c.Query("enabled"); enabled != "" {
 		if enabled == "true" {
 			filter.Enabled = boolPtr(true)
@@ -86,6 +90,7 @@ func (h *RuleSetHandler) ListRuleSets(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to list rule sets")
 		response.SendError(c, http.StatusInternalServerError, "list_rulesets_failed", "Failed to list rule sets", err.Error())
+
 		return
 	}
 
@@ -127,6 +132,7 @@ func (h *RuleSetHandler) GetRuleSet(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to extract subject")
 		response.SendError(c, http.StatusUnauthorized, "authentication_required", "Authentication required", err.Error())
+
 		return
 	}
 
@@ -135,6 +141,7 @@ func (h *RuleSetHandler) GetRuleSet(c *gin.Context) {
 	if id == "" {
 		logger.V(vplogging.LogLevelInfo).Error(nil, "missing id parameter")
 		response.SendError(c, http.StatusBadRequest, "invalid_request", "id is required", nil)
+
 		return
 	}
 
@@ -143,6 +150,7 @@ func (h *RuleSetHandler) GetRuleSet(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to get rule set", "id", id)
 		response.SendError(c, http.StatusInternalServerError, "get_ruleset_failed", "Failed to get rule set", err.Error())
+
 		return
 	}
 
@@ -184,6 +192,7 @@ func (h *RuleSetHandler) CreateRuleSet(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to extract subject")
 		response.SendError(c, http.StatusUnauthorized, "authentication_required", "Authentication required", err.Error())
+
 		return
 	}
 
@@ -192,6 +201,7 @@ func (h *RuleSetHandler) CreateRuleSet(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Error(err, "failed to parse request body")
 		response.SendError(c, http.StatusBadRequest, "invalid_request", "Invalid request body", err.Error())
+
 		return
 	}
 
@@ -207,6 +217,7 @@ func (h *RuleSetHandler) CreateRuleSet(c *gin.Context) {
 		}
 
 		response.SendError(c, http.StatusInternalServerError, "create_ruleset_failed", "Failed to create rule set", err.Error())
+
 		return
 	}
 
@@ -244,6 +255,7 @@ func (h *RuleSetHandler) UpdateRuleSet(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to extract subject")
 		response.SendError(c, http.StatusUnauthorized, "authentication_required", "Authentication required", err.Error())
+
 		return
 	}
 
@@ -252,6 +264,7 @@ func (h *RuleSetHandler) UpdateRuleSet(c *gin.Context) {
 	if id == "" {
 		logger.V(vplogging.LogLevelInfo).Error(nil, "missing id parameter")
 		response.SendError(c, http.StatusBadRequest, "invalid_request", "id is required", nil)
+
 		return
 	}
 
@@ -260,6 +273,7 @@ func (h *RuleSetHandler) UpdateRuleSet(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Error(err, "failed to parse request body")
 		response.SendError(c, http.StatusBadRequest, "invalid_request", "Invalid request body", err.Error())
+
 		return
 	}
 
@@ -275,6 +289,7 @@ func (h *RuleSetHandler) UpdateRuleSet(c *gin.Context) {
 		}
 
 		response.SendError(c, http.StatusInternalServerError, "update_ruleset_failed", "Failed to update rule set", err.Error())
+
 		return
 	}
 
@@ -310,6 +325,7 @@ func (h *RuleSetHandler) DeleteRuleSet(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to extract subject")
 		response.SendError(c, http.StatusUnauthorized, "authentication_required", "Authentication required", err.Error())
+
 		return
 	}
 
@@ -318,6 +334,7 @@ func (h *RuleSetHandler) DeleteRuleSet(c *gin.Context) {
 	if id == "" {
 		logger.V(vplogging.LogLevelInfo).Error(nil, "missing id parameter")
 		response.SendError(c, http.StatusBadRequest, "invalid_request", "id is required", nil)
+
 		return
 	}
 
@@ -331,12 +348,14 @@ func (h *RuleSetHandler) DeleteRuleSet(c *gin.Context) {
 			response.SendError(c, http.StatusNotFound, "ruleset_not_found", "Rule set not found", err.Error())
 			return
 		}
+
 		if errors.Is(err, service.ErrDefaultRuleSetCannotDelete) {
 			response.SendError(c, http.StatusBadRequest, "cannot_delete_default", "Cannot delete default rule set", err.Error())
 			return
 		}
 
 		response.SendError(c, http.StatusInternalServerError, "delete_ruleset_failed", "Failed to delete rule set", err.Error())
+
 		return
 	}
 
@@ -372,6 +391,7 @@ func (h *RuleSetHandler) EnableRuleSet(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to extract subject")
 		response.SendError(c, http.StatusUnauthorized, "authentication_required", "Authentication required", err.Error())
+
 		return
 	}
 
@@ -380,6 +400,7 @@ func (h *RuleSetHandler) EnableRuleSet(c *gin.Context) {
 	if id == "" {
 		logger.V(vplogging.LogLevelInfo).Error(nil, "missing id parameter")
 		response.SendError(c, http.StatusBadRequest, "invalid_request", "id is required", nil)
+
 		return
 	}
 
@@ -395,6 +416,7 @@ func (h *RuleSetHandler) EnableRuleSet(c *gin.Context) {
 		}
 
 		response.SendError(c, http.StatusInternalServerError, "enable_ruleset_failed", "Failed to enable rule set", err.Error())
+
 		return
 	}
 
@@ -430,6 +452,7 @@ func (h *RuleSetHandler) DisableRuleSet(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to extract subject")
 		response.SendError(c, http.StatusUnauthorized, "authentication_required", "Authentication required", err.Error())
+
 		return
 	}
 
@@ -438,6 +461,7 @@ func (h *RuleSetHandler) DisableRuleSet(c *gin.Context) {
 	if id == "" {
 		logger.V(vplogging.LogLevelInfo).Error(nil, "missing id parameter")
 		response.SendError(c, http.StatusBadRequest, "invalid_request", "id is required", nil)
+
 		return
 	}
 
@@ -451,12 +475,14 @@ func (h *RuleSetHandler) DisableRuleSet(c *gin.Context) {
 			response.SendError(c, http.StatusNotFound, "ruleset_not_found", "Rule set not found", err.Error())
 			return
 		}
+
 		if errors.Is(err, service.ErrDefaultRuleSetCannotDisable) {
 			response.SendError(c, http.StatusBadRequest, "cannot_disable_default", "Cannot disable default rule set", err.Error())
 			return
 		}
 
 		response.SendError(c, http.StatusInternalServerError, "disable_ruleset_failed", "Failed to disable rule set", err.Error())
+
 		return
 	}
 
@@ -491,6 +517,7 @@ func (h *RuleSetHandler) GetDefaultRuleSet(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to extract subject")
 		response.SendError(c, http.StatusUnauthorized, "authentication_required", "Authentication required", err.Error())
+
 		return
 	}
 
@@ -499,6 +526,7 @@ func (h *RuleSetHandler) GetDefaultRuleSet(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to get default rule set")
 		response.SendError(c, http.StatusInternalServerError, "get_default_ruleset_failed", "Failed to get default rule set", err.Error())
+
 		return
 	}
 
@@ -539,6 +567,7 @@ func (h *RuleSetHandler) RenderRuleSet(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to extract subject")
 		response.SendError(c, http.StatusUnauthorized, "authentication_required", "Authentication required", err.Error())
+
 		return
 	}
 
@@ -547,6 +576,7 @@ func (h *RuleSetHandler) RenderRuleSet(c *gin.Context) {
 	if id == "" {
 		logger.V(vplogging.LogLevelInfo).Error(nil, "missing id parameter")
 		response.SendError(c, http.StatusBadRequest, "invalid_request", "id is required", nil)
+
 		return
 	}
 
@@ -562,6 +592,7 @@ func (h *RuleSetHandler) RenderRuleSet(c *gin.Context) {
 		}
 
 		response.SendError(c, http.StatusInternalServerError, "render_ruleset_failed", "Failed to render rule set", err.Error())
+
 		return
 	}
 

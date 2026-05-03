@@ -61,18 +61,23 @@ func (s *DetectionStore) List(
 	if opts.Filter.SensorID != "" {
 		filter["sensorId"] = opts.Filter.SensorID
 	}
+
 	if opts.Filter.PicketID != "" {
 		filter["picketId"] = opts.Filter.PicketID
 	}
+
 	if opts.Filter.RuleSetID != "" {
 		filter["ruleSetId"] = opts.Filter.RuleSetID
 	}
+
 	if opts.Filter.RuleID != "" {
 		filter["ruleId"] = opts.Filter.RuleID
 	}
+
 	if opts.Filter.EventType != "" {
 		filter["eventType"] = opts.Filter.EventType
 	}
+
 	if opts.Filter.Severity != "" {
 		filter["severity"] = opts.Filter.Severity
 	}
@@ -84,6 +89,7 @@ func (s *DetectionStore) List(
 			filter["timestamp"] = bson.M{"$gte": startTime}
 		}
 	}
+
 	if opts.Filter.EndTime != "" {
 		endTime, err := time.Parse(time.RFC3339, opts.Filter.EndTime)
 		if err == nil {
@@ -110,6 +116,7 @@ func (s *DetectionStore) List(
 	if opts.Limit > 0 {
 		findOpts.SetLimit(int64(opts.Limit))
 	}
+
 	if opts.Offset > 0 {
 		findOpts.SetSkip(int64(opts.Offset))
 	}
@@ -119,10 +126,12 @@ func (s *DetectionStore) List(
 	if sortBy == "" {
 		sortBy = "timestamp"
 	}
+
 	sortOrder := -1 // Default descending for detections
 	if opts.SortAsc {
 		sortOrder = 1
 	}
+
 	findOpts.SetSort(bson.D{{Key: sortBy, Value: sortOrder}})
 
 	// Execute query
@@ -134,11 +143,13 @@ func (s *DetectionStore) List(
 
 	// Decode results
 	detections := make([]*models.Detection, 0)
+
 	for cursor.Next(ctx) {
 		var detection models.Detection
 		if err := cursor.Decode(&detection); err != nil {
 			return nil, fmt.Errorf("failed to decode detection: %w", err)
 		}
+
 		detections = append(detections, &detection)
 	}
 
@@ -170,11 +181,13 @@ func (s *DetectionStore) GetByID(
 	filter := bson.M{"_id": objID}
 
 	var detection models.Detection
+
 	err = s.collection.FindOne(ctx, filter).Decode(&detection)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, nil
 		}
+
 		return nil, fmt.Errorf("failed to get detection by id: %w", err)
 	}
 
@@ -192,11 +205,13 @@ func (s *DetectionStore) GetByDetectionID(
 	filter := bson.M{"detectionId": detectionID}
 
 	var detection models.Detection
+
 	err := s.collection.FindOne(ctx, filter).Decode(&detection)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, nil
 		}
+
 		return nil, fmt.Errorf("failed to get detection by detectionId: %w", err)
 	}
 
@@ -227,6 +242,7 @@ func (s *DetectionStore) Create(
 				}
 			}
 		}
+
 		return fmt.Errorf("failed to create detection: %w", err)
 	}
 
@@ -331,15 +347,19 @@ func (s *DetectionStore) GetBySensorID(
 	if opts.Filter.PicketID != "" {
 		filter["picketId"] = opts.Filter.PicketID
 	}
+
 	if opts.Filter.RuleSetID != "" {
 		filter["ruleSetId"] = opts.Filter.RuleSetID
 	}
+
 	if opts.Filter.RuleID != "" {
 		filter["ruleId"] = opts.Filter.RuleID
 	}
+
 	if opts.Filter.EventType != "" {
 		filter["eventType"] = opts.Filter.EventType
 	}
+
 	if opts.Filter.Severity != "" {
 		filter["severity"] = opts.Filter.Severity
 	}
@@ -351,6 +371,7 @@ func (s *DetectionStore) GetBySensorID(
 			filter["timestamp"] = bson.M{"$gte": startTime}
 		}
 	}
+
 	if opts.Filter.EndTime != "" {
 		endTime, err := time.Parse(time.RFC3339, opts.Filter.EndTime)
 		if err == nil {
@@ -376,6 +397,7 @@ func (s *DetectionStore) GetBySensorID(
 	if opts.Limit > 0 {
 		findOpts.SetLimit(int64(opts.Limit))
 	}
+
 	if opts.Offset > 0 {
 		findOpts.SetSkip(int64(opts.Offset))
 	}
@@ -385,10 +407,12 @@ func (s *DetectionStore) GetBySensorID(
 	if sortBy == "" {
 		sortBy = "timestamp"
 	}
+
 	sortOrder := -1
 	if opts.SortAsc {
 		sortOrder = 1
 	}
+
 	findOpts.SetSort(bson.D{{Key: sortBy, Value: sortOrder}})
 
 	// Execute query
@@ -400,11 +424,13 @@ func (s *DetectionStore) GetBySensorID(
 
 	// Decode results
 	detections := make([]*models.Detection, 0)
+
 	for cursor.Next(ctx) {
 		var detection models.Detection
 		if err := cursor.Decode(&detection); err != nil {
 			return nil, fmt.Errorf("failed to decode detection: %w", err)
 		}
+
 		detections = append(detections, &detection)
 	}
 
@@ -436,15 +462,19 @@ func (s *DetectionStore) GetByPicketID(
 	if opts.Filter.SensorID != "" {
 		filter["sensorId"] = opts.Filter.SensorID
 	}
+
 	if opts.Filter.RuleSetID != "" {
 		filter["ruleSetId"] = opts.Filter.RuleSetID
 	}
+
 	if opts.Filter.RuleID != "" {
 		filter["ruleId"] = opts.Filter.RuleID
 	}
+
 	if opts.Filter.EventType != "" {
 		filter["eventType"] = opts.Filter.EventType
 	}
+
 	if opts.Filter.Severity != "" {
 		filter["severity"] = opts.Filter.Severity
 	}
@@ -456,6 +486,7 @@ func (s *DetectionStore) GetByPicketID(
 			filter["timestamp"] = bson.M{"$gte": startTime}
 		}
 	}
+
 	if opts.Filter.EndTime != "" {
 		endTime, err := time.Parse(time.RFC3339, opts.Filter.EndTime)
 		if err == nil {
@@ -481,6 +512,7 @@ func (s *DetectionStore) GetByPicketID(
 	if opts.Limit > 0 {
 		findOpts.SetLimit(int64(opts.Limit))
 	}
+
 	if opts.Offset > 0 {
 		findOpts.SetSkip(int64(opts.Offset))
 	}
@@ -490,10 +522,12 @@ func (s *DetectionStore) GetByPicketID(
 	if sortBy == "" {
 		sortBy = "timestamp"
 	}
+
 	sortOrder := -1
 	if opts.SortAsc {
 		sortOrder = 1
 	}
+
 	findOpts.SetSort(bson.D{{Key: sortBy, Value: sortOrder}})
 
 	// Execute query
@@ -505,11 +539,13 @@ func (s *DetectionStore) GetByPicketID(
 
 	// Decode results
 	detections := make([]*models.Detection, 0)
+
 	for cursor.Next(ctx) {
 		var detection models.Detection
 		if err := cursor.Decode(&detection); err != nil {
 			return nil, fmt.Errorf("failed to decode detection: %w", err)
 		}
+
 		detections = append(detections, &detection)
 	}
 
@@ -541,15 +577,19 @@ func (s *DetectionStore) GetByRuleSetID(
 	if opts.Filter.SensorID != "" {
 		filter["sensorId"] = opts.Filter.SensorID
 	}
+
 	if opts.Filter.PicketID != "" {
 		filter["picketId"] = opts.Filter.PicketID
 	}
+
 	if opts.Filter.RuleID != "" {
 		filter["ruleId"] = opts.Filter.RuleID
 	}
+
 	if opts.Filter.EventType != "" {
 		filter["eventType"] = opts.Filter.EventType
 	}
+
 	if opts.Filter.Severity != "" {
 		filter["severity"] = opts.Filter.Severity
 	}
@@ -561,6 +601,7 @@ func (s *DetectionStore) GetByRuleSetID(
 			filter["timestamp"] = bson.M{"$gte": startTime}
 		}
 	}
+
 	if opts.Filter.EndTime != "" {
 		endTime, err := time.Parse(time.RFC3339, opts.Filter.EndTime)
 		if err == nil {
@@ -586,6 +627,7 @@ func (s *DetectionStore) GetByRuleSetID(
 	if opts.Limit > 0 {
 		findOpts.SetLimit(int64(opts.Limit))
 	}
+
 	if opts.Offset > 0 {
 		findOpts.SetSkip(int64(opts.Offset))
 	}
@@ -595,10 +637,12 @@ func (s *DetectionStore) GetByRuleSetID(
 	if sortBy == "" {
 		sortBy = "timestamp"
 	}
+
 	sortOrder := -1
 	if opts.SortAsc {
 		sortOrder = 1
 	}
+
 	findOpts.SetSort(bson.D{{Key: sortBy, Value: sortOrder}})
 
 	// Execute query
@@ -610,11 +654,13 @@ func (s *DetectionStore) GetByRuleSetID(
 
 	// Decode results
 	detections := make([]*models.Detection, 0)
+
 	for cursor.Next(ctx) {
 		var detection models.Detection
 		if err := cursor.Decode(&detection); err != nil {
 			return nil, fmt.Errorf("failed to decode detection: %w", err)
 		}
+
 		detections = append(detections, &detection)
 	}
 
@@ -646,15 +692,19 @@ func (s *DetectionStore) GetByRuleID(
 	if opts.Filter.SensorID != "" {
 		filter["sensorId"] = opts.Filter.SensorID
 	}
+
 	if opts.Filter.PicketID != "" {
 		filter["picketId"] = opts.Filter.PicketID
 	}
+
 	if opts.Filter.RuleSetID != "" {
 		filter["ruleSetId"] = opts.Filter.RuleSetID
 	}
+
 	if opts.Filter.EventType != "" {
 		filter["eventType"] = opts.Filter.EventType
 	}
+
 	if opts.Filter.Severity != "" {
 		filter["severity"] = opts.Filter.Severity
 	}
@@ -666,6 +716,7 @@ func (s *DetectionStore) GetByRuleID(
 			filter["timestamp"] = bson.M{"$gte": startTime}
 		}
 	}
+
 	if opts.Filter.EndTime != "" {
 		endTime, err := time.Parse(time.RFC3339, opts.Filter.EndTime)
 		if err == nil {
@@ -691,6 +742,7 @@ func (s *DetectionStore) GetByRuleID(
 	if opts.Limit > 0 {
 		findOpts.SetLimit(int64(opts.Limit))
 	}
+
 	if opts.Offset > 0 {
 		findOpts.SetSkip(int64(opts.Offset))
 	}
@@ -700,10 +752,12 @@ func (s *DetectionStore) GetByRuleID(
 	if sortBy == "" {
 		sortBy = "timestamp"
 	}
+
 	sortOrder := -1
 	if opts.SortAsc {
 		sortOrder = 1
 	}
+
 	findOpts.SetSort(bson.D{{Key: sortBy, Value: sortOrder}})
 
 	// Execute query
@@ -715,11 +769,13 @@ func (s *DetectionStore) GetByRuleID(
 
 	// Decode results
 	detections := make([]*models.Detection, 0)
+
 	for cursor.Next(ctx) {
 		var detection models.Detection
 		if err := cursor.Decode(&detection); err != nil {
 			return nil, fmt.Errorf("failed to decode detection: %w", err)
 		}
+
 		detections = append(detections, &detection)
 	}
 
@@ -753,18 +809,23 @@ func (s *DetectionStore) GetUnprocessed(
 	if opts.Filter.SensorID != "" {
 		filter["sensorId"] = opts.Filter.SensorID
 	}
+
 	if opts.Filter.PicketID != "" {
 		filter["picketId"] = opts.Filter.PicketID
 	}
+
 	if opts.Filter.RuleSetID != "" {
 		filter["ruleSetId"] = opts.Filter.RuleSetID
 	}
+
 	if opts.Filter.RuleID != "" {
 		filter["ruleId"] = opts.Filter.RuleID
 	}
+
 	if opts.Filter.EventType != "" {
 		filter["eventType"] = opts.Filter.EventType
 	}
+
 	if opts.Filter.Severity != "" {
 		filter["severity"] = opts.Filter.Severity
 	}
@@ -776,6 +837,7 @@ func (s *DetectionStore) GetUnprocessed(
 			filter["timestamp"] = bson.M{"$gte": startTime}
 		}
 	}
+
 	if opts.Filter.EndTime != "" {
 		endTime, err := time.Parse(time.RFC3339, opts.Filter.EndTime)
 		if err == nil {
@@ -801,6 +863,7 @@ func (s *DetectionStore) GetUnprocessed(
 	if opts.Limit > 0 {
 		findOpts.SetLimit(int64(opts.Limit))
 	}
+
 	if opts.Offset > 0 {
 		findOpts.SetSkip(int64(opts.Offset))
 	}
@@ -810,10 +873,12 @@ func (s *DetectionStore) GetUnprocessed(
 	if sortBy == "" {
 		sortBy = "timestamp"
 	}
+
 	sortOrder := -1
 	if opts.SortAsc {
 		sortOrder = 1
 	}
+
 	findOpts.SetSort(bson.D{{Key: sortBy, Value: sortOrder}})
 
 	// Execute query
@@ -825,11 +890,13 @@ func (s *DetectionStore) GetUnprocessed(
 
 	// Decode results
 	detections := make([]*models.Detection, 0)
+
 	for cursor.Next(ctx) {
 		var detection models.Detection
 		if err := cursor.Decode(&detection); err != nil {
 			return nil, fmt.Errorf("failed to decode detection: %w", err)
 		}
+
 		detections = append(detections, &detection)
 	}
 

@@ -67,6 +67,7 @@ func (h *FindingHandler) ListFindings(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to extract subject")
 		response.SendError(c, http.StatusUnauthorized, "authentication_required", "Authentication required", err.Error())
+
 		return
 	}
 
@@ -75,35 +76,45 @@ func (h *FindingHandler) ListFindings(c *gin.Context) {
 	if findingType := c.Query("findingType"); findingType != "" {
 		filter.FindingType = findingType
 	}
+
 	if sourceContext := c.Query("sourceContext"); sourceContext != "" {
 		filter.SourceContext = sourceContext
 	}
+
 	if assetID := c.Query("assetId"); assetID != "" {
 		filter.AssetID = assetID
 	}
+
 	if defconID := c.Query("defconId"); defconID != "" {
 		filter.DefconID = defconID
 	}
+
 	if severity := c.Query("severity"); severity != "" {
 		filter.Severity = severity
 	}
+
 	if lifecycle := c.Query("lifecycle"); lifecycle != "" {
 		filter.Lifecycle = lifecycle
 	}
+
 	if verification := c.Query("verification"); verification != "" {
 		filter.Verification = verification
 	}
+
 	if freshness := c.Query("freshness"); freshness != "" {
 		filter.Freshness = freshness
 	}
+
 	if startTime := c.Query("startTime"); startTime != "" {
 		filter.StartTime = startTime
 	}
+
 	if endTime := c.Query("endTime"); endTime != "" {
 		filter.EndTime = endTime
 	}
 
 	limit := 50
+
 	if l := c.Query("limit"); l != "" {
 		if parsed, err := parseInt(l, 50); err == nil {
 			limit = parsed
@@ -111,6 +122,7 @@ func (h *FindingHandler) ListFindings(c *gin.Context) {
 	}
 
 	offset := 0
+
 	if o := c.Query("offset"); o != "" {
 		if parsed, err := parseInt(o, 0); err == nil {
 			offset = parsed
@@ -128,6 +140,7 @@ func (h *FindingHandler) ListFindings(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to list findings")
 		response.SendError(c, http.StatusInternalServerError, "list_findings_failed", "Failed to list findings", err.Error())
+
 		return
 	}
 
@@ -169,6 +182,7 @@ func (h *FindingHandler) GetFinding(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to extract subject")
 		response.SendError(c, http.StatusUnauthorized, "authentication_required", "Authentication required", err.Error())
+
 		return
 	}
 
@@ -177,6 +191,7 @@ func (h *FindingHandler) GetFinding(c *gin.Context) {
 	if findingID == "" {
 		logger.V(vplogging.LogLevelInfo).Error(nil, "missing findingId parameter")
 		response.SendError(c, http.StatusBadRequest, "invalid_request", "findingId is required", nil)
+
 		return
 	}
 
@@ -185,6 +200,7 @@ func (h *FindingHandler) GetFinding(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to get finding", "findingId", findingID)
 		response.SendError(c, http.StatusInternalServerError, "get_finding_failed", "Failed to get finding", err.Error())
+
 		return
 	}
 
@@ -226,6 +242,7 @@ func (h *FindingHandler) CreateFinding(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to extract subject")
 		response.SendError(c, http.StatusUnauthorized, "authentication_required", "Authentication required", err.Error())
+
 		return
 	}
 
@@ -234,6 +251,7 @@ func (h *FindingHandler) CreateFinding(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Error(err, "failed to parse request body")
 		response.SendError(c, http.StatusBadRequest, "invalid_request", "Invalid request body", err.Error())
+
 		return
 	}
 
@@ -242,6 +260,7 @@ func (h *FindingHandler) CreateFinding(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to convert from API model")
 		response.SendError(c, http.StatusBadRequest, "invalid_request", "Invalid finding data", err.Error())
+
 		return
 	}
 
@@ -255,16 +274,19 @@ func (h *FindingHandler) CreateFinding(c *gin.Context) {
 			response.SendError(c, http.StatusConflict, "finding_already_exists", "Finding already exists", err.Error())
 			return
 		}
+
 		if errors.Is(err, service.ErrInvalidFindingType) {
 			response.SendError(c, http.StatusBadRequest, "invalid_finding_type", "Invalid finding type", err.Error())
 			return
 		}
+
 		if errors.Is(err, service.ErrInvalidSeverity) {
 			response.SendError(c, http.StatusBadRequest, "invalid_severity", "Invalid severity", err.Error())
 			return
 		}
 
 		response.SendError(c, http.StatusInternalServerError, "create_finding_failed", "Failed to create finding", err.Error())
+
 		return
 	}
 
@@ -302,6 +324,7 @@ func (h *FindingHandler) UpdateFindingLifecycle(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to extract subject")
 		response.SendError(c, http.StatusUnauthorized, "authentication_required", "Authentication required", err.Error())
+
 		return
 	}
 
@@ -310,6 +333,7 @@ func (h *FindingHandler) UpdateFindingLifecycle(c *gin.Context) {
 	if findingID == "" {
 		logger.V(vplogging.LogLevelInfo).Error(nil, "missing findingId parameter")
 		response.SendError(c, http.StatusBadRequest, "invalid_request", "findingId is required", nil)
+
 		return
 	}
 
@@ -318,6 +342,7 @@ func (h *FindingHandler) UpdateFindingLifecycle(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Error(err, "failed to parse request body")
 		response.SendError(c, http.StatusBadRequest, "invalid_request", "Invalid request body", err.Error())
+
 		return
 	}
 
@@ -331,12 +356,14 @@ func (h *FindingHandler) UpdateFindingLifecycle(c *gin.Context) {
 			response.SendError(c, http.StatusNotFound, "finding_not_found", "Finding not found", err.Error())
 			return
 		}
+
 		if errors.Is(err, service.ErrInvalidLifecycleTransition) {
 			response.SendError(c, http.StatusBadRequest, "invalid_lifecycle_transition", "Invalid lifecycle transition", err.Error())
 			return
 		}
 
 		response.SendError(c, http.StatusInternalServerError, "update_lifecycle_failed", "Failed to update lifecycle", err.Error())
+
 		return
 	}
 
@@ -374,6 +401,7 @@ func (h *FindingHandler) UpdateFindingVerification(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to extract subject")
 		response.SendError(c, http.StatusUnauthorized, "authentication_required", "Authentication required", err.Error())
+
 		return
 	}
 
@@ -382,6 +410,7 @@ func (h *FindingHandler) UpdateFindingVerification(c *gin.Context) {
 	if findingID == "" {
 		logger.V(vplogging.LogLevelInfo).Error(nil, "missing findingId parameter")
 		response.SendError(c, http.StatusBadRequest, "invalid_request", "findingId is required", nil)
+
 		return
 	}
 
@@ -390,6 +419,7 @@ func (h *FindingHandler) UpdateFindingVerification(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Error(err, "failed to parse request body")
 		response.SendError(c, http.StatusBadRequest, "invalid_request", "Invalid request body", err.Error())
+
 		return
 	}
 
@@ -403,12 +433,14 @@ func (h *FindingHandler) UpdateFindingVerification(c *gin.Context) {
 			response.SendError(c, http.StatusNotFound, "finding_not_found", "Finding not found", err.Error())
 			return
 		}
+
 		if errors.Is(err, service.ErrInvalidVerificationStatus) {
 			response.SendError(c, http.StatusBadRequest, "invalid_verification_status", "Invalid verification status", err.Error())
 			return
 		}
 
 		response.SendError(c, http.StatusInternalServerError, "update_verification_failed", "Failed to update verification", err.Error())
+
 		return
 	}
 
@@ -444,6 +476,7 @@ func (h *FindingHandler) MarkFindingsStale(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to extract subject")
 		response.SendError(c, http.StatusUnauthorized, "authentication_required", "Authentication required", err.Error())
+
 		return
 	}
 
@@ -457,6 +490,7 @@ func (h *FindingHandler) MarkFindingsStale(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to parse staleAfter duration")
 		response.SendError(c, http.StatusBadRequest, "invalid_duration", "Invalid duration format. Use format like '24h', '7d', '168h'", err.Error())
+
 		return
 	}
 
@@ -465,6 +499,7 @@ func (h *FindingHandler) MarkFindingsStale(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to mark findings as stale")
 		response.SendError(c, http.StatusInternalServerError, "mark_stale_failed", "Failed to mark findings as stale", err.Error())
+
 		return
 	}
 
@@ -507,6 +542,7 @@ func (h *FindingHandler) GetFindingsByAsset(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to extract subject")
 		response.SendError(c, http.StatusUnauthorized, "authentication_required", "Authentication required", err.Error())
+
 		return
 	}
 
@@ -515,6 +551,7 @@ func (h *FindingHandler) GetFindingsByAsset(c *gin.Context) {
 	if assetID == "" {
 		logger.V(vplogging.LogLevelInfo).Error(nil, "missing assetId parameter")
 		response.SendError(c, http.StatusBadRequest, "invalid_request", "assetId is required", nil)
+
 		return
 	}
 
@@ -523,20 +560,25 @@ func (h *FindingHandler) GetFindingsByAsset(c *gin.Context) {
 	if findingType := c.Query("findingType"); findingType != "" {
 		filter.FindingType = findingType
 	}
+
 	if severity := c.Query("severity"); severity != "" {
 		filter.Severity = severity
 	}
+
 	if lifecycle := c.Query("lifecycle"); lifecycle != "" {
 		filter.Lifecycle = lifecycle
 	}
+
 	if verification := c.Query("verification"); verification != "" {
 		filter.Verification = verification
 	}
+
 	if freshness := c.Query("freshness"); freshness != "" {
 		filter.Freshness = freshness
 	}
 
 	limit := 50
+
 	if l := c.Query("limit"); l != "" {
 		if parsed, err := parseInt(l, 50); err == nil {
 			limit = parsed
@@ -544,6 +586,7 @@ func (h *FindingHandler) GetFindingsByAsset(c *gin.Context) {
 	}
 
 	offset := 0
+
 	if o := c.Query("offset"); o != "" {
 		if parsed, err := parseInt(o, 0); err == nil {
 			offset = parsed
@@ -561,6 +604,7 @@ func (h *FindingHandler) GetFindingsByAsset(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to get findings by asset", "assetId", assetID)
 		response.SendError(c, http.StatusInternalServerError, "get_findings_by_asset_failed", "Failed to get findings by asset", err.Error())
+
 		return
 	}
 
@@ -609,6 +653,7 @@ func (h *FindingHandler) GetFindingsByDefcon(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to extract subject")
 		response.SendError(c, http.StatusUnauthorized, "authentication_required", "Authentication required", err.Error())
+
 		return
 	}
 
@@ -617,6 +662,7 @@ func (h *FindingHandler) GetFindingsByDefcon(c *gin.Context) {
 	if defconID == "" {
 		logger.V(vplogging.LogLevelInfo).Error(nil, "missing defconId parameter")
 		response.SendError(c, http.StatusBadRequest, "invalid_request", "defconId is required", nil)
+
 		return
 	}
 
@@ -625,20 +671,25 @@ func (h *FindingHandler) GetFindingsByDefcon(c *gin.Context) {
 	if findingType := c.Query("findingType"); findingType != "" {
 		filter.FindingType = findingType
 	}
+
 	if severity := c.Query("severity"); severity != "" {
 		filter.Severity = severity
 	}
+
 	if lifecycle := c.Query("lifecycle"); lifecycle != "" {
 		filter.Lifecycle = lifecycle
 	}
+
 	if verification := c.Query("verification"); verification != "" {
 		filter.Verification = verification
 	}
+
 	if freshness := c.Query("freshness"); freshness != "" {
 		filter.Freshness = freshness
 	}
 
 	limit := 50
+
 	if l := c.Query("limit"); l != "" {
 		if parsed, err := parseInt(l, 50); err == nil {
 			limit = parsed
@@ -646,6 +697,7 @@ func (h *FindingHandler) GetFindingsByDefcon(c *gin.Context) {
 	}
 
 	offset := 0
+
 	if o := c.Query("offset"); o != "" {
 		if parsed, err := parseInt(o, 0); err == nil {
 			offset = parsed
@@ -663,6 +715,7 @@ func (h *FindingHandler) GetFindingsByDefcon(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to get findings by defcon", "defconId", defconID)
 		response.SendError(c, http.StatusInternalServerError, "get_findings_by_defcon_failed", "Failed to get findings by defcon", err.Error())
+
 		return
 	}
 
@@ -712,6 +765,7 @@ func (h *FindingHandler) GetFindingsByType(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to extract subject")
 		response.SendError(c, http.StatusUnauthorized, "authentication_required", "Authentication required", err.Error())
+
 		return
 	}
 
@@ -720,6 +774,7 @@ func (h *FindingHandler) GetFindingsByType(c *gin.Context) {
 	if findingType == "" {
 		logger.V(vplogging.LogLevelInfo).Error(nil, "missing findingType parameter")
 		response.SendError(c, http.StatusBadRequest, "invalid_request", "findingType is required", nil)
+
 		return
 	}
 
@@ -728,23 +783,29 @@ func (h *FindingHandler) GetFindingsByType(c *gin.Context) {
 	if assetID := c.Query("assetId"); assetID != "" {
 		filter.AssetID = assetID
 	}
+
 	if defconID := c.Query("defconId"); defconID != "" {
 		filter.DefconID = defconID
 	}
+
 	if severity := c.Query("severity"); severity != "" {
 		filter.Severity = severity
 	}
+
 	if lifecycle := c.Query("lifecycle"); lifecycle != "" {
 		filter.Lifecycle = lifecycle
 	}
+
 	if verification := c.Query("verification"); verification != "" {
 		filter.Verification = verification
 	}
+
 	if freshness := c.Query("freshness"); freshness != "" {
 		filter.Freshness = freshness
 	}
 
 	limit := 50
+
 	if l := c.Query("limit"); l != "" {
 		if parsed, err := parseInt(l, 50); err == nil {
 			limit = parsed
@@ -752,6 +813,7 @@ func (h *FindingHandler) GetFindingsByType(c *gin.Context) {
 	}
 
 	offset := 0
+
 	if o := c.Query("offset"); o != "" {
 		if parsed, err := parseInt(o, 0); err == nil {
 			offset = parsed
@@ -766,6 +828,7 @@ func (h *FindingHandler) GetFindingsByType(c *gin.Context) {
 
 	// Call service - convert string to FindingType
 	findingTypeEnum := models.FindingType(findingType)
+
 	result, err := h.service.GetByType(ctx, logger, subject, findingTypeEnum, opts)
 	if err != nil {
 		logger.Error(err, "failed to get findings by type", "findingType", findingType)
@@ -777,6 +840,7 @@ func (h *FindingHandler) GetFindingsByType(c *gin.Context) {
 		}
 
 		response.SendError(c, http.StatusInternalServerError, "get_findings_by_type_failed", "Failed to get findings by type", err.Error())
+
 		return
 	}
 
@@ -824,6 +888,7 @@ func (h *FindingHandler) GetStaleFindings(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to extract subject")
 		response.SendError(c, http.StatusUnauthorized, "authentication_required", "Authentication required", err.Error())
+
 		return
 	}
 
@@ -832,23 +897,29 @@ func (h *FindingHandler) GetStaleFindings(c *gin.Context) {
 	if findingType := c.Query("findingType"); findingType != "" {
 		filter.FindingType = findingType
 	}
+
 	if assetID := c.Query("assetId"); assetID != "" {
 		filter.AssetID = assetID
 	}
+
 	if defconID := c.Query("defconId"); defconID != "" {
 		filter.DefconID = defconID
 	}
+
 	if severity := c.Query("severity"); severity != "" {
 		filter.Severity = severity
 	}
+
 	if lifecycle := c.Query("lifecycle"); lifecycle != "" {
 		filter.Lifecycle = lifecycle
 	}
+
 	if verification := c.Query("verification"); verification != "" {
 		filter.Verification = verification
 	}
 
 	limit := 50
+
 	if l := c.Query("limit"); l != "" {
 		if parsed, err := parseInt(l, 50); err == nil {
 			limit = parsed
@@ -856,6 +927,7 @@ func (h *FindingHandler) GetStaleFindings(c *gin.Context) {
 	}
 
 	offset := 0
+
 	if o := c.Query("offset"); o != "" {
 		if parsed, err := parseInt(o, 0); err == nil {
 			offset = parsed
@@ -873,6 +945,7 @@ func (h *FindingHandler) GetStaleFindings(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to get stale findings")
 		response.SendError(c, http.StatusInternalServerError, "get_stale_findings_failed", "Failed to get stale findings", err.Error())
+
 		return
 	}
 

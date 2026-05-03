@@ -2,7 +2,6 @@
 package handler
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -58,6 +57,7 @@ func (h *SensorHandler) ListSensors(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to extract subject")
 		response.SendError(c, http.StatusUnauthorized, "authentication_required", "Authentication required", err.Error())
+
 		return
 	}
 
@@ -66,14 +66,17 @@ func (h *SensorHandler) ListSensors(c *gin.Context) {
 	if defconID := c.Query("defconId"); defconID != "" {
 		filter.DefconID = defconID
 	}
+
 	if status := c.Query("status"); status != "" {
 		filter.Status = status
 	}
+
 	if health := c.Query("health"); health != "" {
 		filter.Health = health
 	}
 
 	limit := 50
+
 	if l := c.Query("limit"); l != "" {
 		if parsed, err := parseInt(l, 50); err == nil {
 			limit = parsed
@@ -81,6 +84,7 @@ func (h *SensorHandler) ListSensors(c *gin.Context) {
 	}
 
 	offset := 0
+
 	if o := c.Query("offset"); o != "" {
 		if parsed, err := parseInt(o, 0); err == nil {
 			offset = parsed
@@ -102,6 +106,7 @@ func (h *SensorHandler) ListSensors(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to list sensors")
 		response.SendError(c, http.StatusInternalServerError, "list_sensors_failed", "Failed to list sensors", err.Error())
+
 		return
 	}
 
@@ -137,6 +142,7 @@ func (h *SensorHandler) GetSensor(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to extract subject")
 		response.SendError(c, http.StatusUnauthorized, "authentication_required", "Authentication required", err.Error())
+
 		return
 	}
 
@@ -145,6 +151,7 @@ func (h *SensorHandler) GetSensor(c *gin.Context) {
 	if picketID == "" {
 		logger.V(vplogging.LogLevelInfo).Error(nil, "missing picketId parameter")
 		response.SendError(c, http.StatusBadRequest, "invalid_request", "picketId is required", nil)
+
 		return
 	}
 
@@ -153,20 +160,11 @@ func (h *SensorHandler) GetSensor(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to get sensor", "picketId", picketID)
 		response.SendError(c, http.StatusInternalServerError, "get_sensor_failed", "Failed to get sensor", err.Error())
+
 		return
 	}
 
 	// Success response
 	logger.V(vplogging.LogLevelVerbose).Info("sensor retrieved successfully", "picketId", picketID)
 	response.SendResponse(c, http.StatusOK, "Sensor retrieved successfully", sensor.ToAPI())
-}
-
-// parseInt is a helper function to parse integer query parameters.
-func parseInt(s string, defaultValue int) (int, error) {
-	var val int
-	_, err := fmt.Sscanf(s, "%d", &val)
-	if err != nil {
-		return defaultValue, err
-	}
-	return val, nil
 }

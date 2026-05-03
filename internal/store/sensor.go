@@ -59,9 +59,11 @@ func (s *SensorStore) List(
 	if opts.Filter.DefconID != "" {
 		filter["defconId"] = opts.Filter.DefconID
 	}
+
 	if opts.Filter.Status != "" {
 		filter["status"] = opts.Filter.Status
 	}
+
 	if opts.Filter.Health != "" {
 		filter["health"] = opts.Filter.Health
 	}
@@ -77,6 +79,7 @@ func (s *SensorStore) List(
 	if opts.Limit > 0 {
 		findOpts.SetLimit(int64(opts.Limit))
 	}
+
 	if opts.Offset > 0 {
 		findOpts.SetSkip(int64(opts.Offset))
 	}
@@ -90,11 +93,13 @@ func (s *SensorStore) List(
 
 	// Decode results
 	sensors := make([]*models.Sensor, 0)
+
 	for cursor.Next(ctx) {
 		var sensor models.Sensor
 		if err := cursor.Decode(&sensor); err != nil {
 			return nil, fmt.Errorf("failed to decode sensor: %w", err)
 		}
+
 		sensors = append(sensors, &sensor)
 	}
 
@@ -121,11 +126,13 @@ func (s *SensorStore) GetByPicketID(
 	filter := bson.M{"picketId": picketID}
 
 	var sensor models.Sensor
+
 	err := s.collection.FindOne(ctx, filter).Decode(&sensor)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, nil
 		}
+
 		return nil, fmt.Errorf("failed to get sensor by picketId: %w", err)
 	}
 
@@ -154,6 +161,7 @@ func (s *SensorStore) Create(
 				}
 			}
 		}
+
 		return fmt.Errorf("failed to create sensor: %w", err)
 	}
 
@@ -217,11 +225,13 @@ func (s *SensorStore) GetByDefconID(
 	defer cursor.Close(ctx)
 
 	sensors := make([]*models.Sensor, 0)
+
 	for cursor.Next(ctx) {
 		var sensor models.Sensor
 		if err := cursor.Decode(&sensor); err != nil {
 			return nil, fmt.Errorf("failed to decode sensor: %w", err)
 		}
+
 		sensors = append(sensors, &sensor)
 	}
 

@@ -63,24 +63,31 @@ func (s *FindingStore) List(
 	if opts.Filter.FindingType != "" {
 		filter["findingType"] = opts.Filter.FindingType
 	}
+
 	if opts.Filter.SourceContext != "" {
 		filter["sourceContext"] = opts.Filter.SourceContext
 	}
+
 	if opts.Filter.AssetID != "" {
 		filter["assetId"] = opts.Filter.AssetID
 	}
+
 	if opts.Filter.DefconID != "" {
 		filter["defconId"] = opts.Filter.DefconID
 	}
+
 	if opts.Filter.Severity != "" {
 		filter["severity"] = opts.Filter.Severity
 	}
+
 	if opts.Filter.Lifecycle != "" {
 		filter["lifecycle.status"] = opts.Filter.Lifecycle
 	}
+
 	if opts.Filter.Verification != "" {
 		filter["verification.status"] = opts.Filter.Verification
 	}
+
 	if opts.Filter.Freshness != "" {
 		filter["freshness.status"] = opts.Filter.Freshness
 	}
@@ -92,6 +99,7 @@ func (s *FindingStore) List(
 			filter["occurredAt"] = bson.M{"$gte": startTime}
 		}
 	}
+
 	if opts.Filter.EndTime != "" {
 		endTime, err := time.Parse(time.RFC3339, opts.Filter.EndTime)
 		if err == nil {
@@ -118,6 +126,7 @@ func (s *FindingStore) List(
 	if opts.Limit > 0 {
 		findOpts.SetLimit(int64(opts.Limit))
 	}
+
 	if opts.Offset > 0 {
 		findOpts.SetSkip(int64(opts.Offset))
 	}
@@ -127,10 +136,12 @@ func (s *FindingStore) List(
 	if sortBy == "" {
 		sortBy = "occurredAt"
 	}
+
 	sortOrder := 1
 	if !opts.SortAsc {
 		sortOrder = -1
 	}
+
 	findOpts.SetSort(bson.D{{Key: sortBy, Value: sortOrder}})
 
 	// Execute query
@@ -142,11 +153,13 @@ func (s *FindingStore) List(
 
 	// Decode results
 	findings := make([]*models.Finding, 0)
+
 	for cursor.Next(ctx) {
 		var finding models.Finding
 		if err := cursor.Decode(&finding); err != nil {
 			return nil, fmt.Errorf("failed to decode finding: %w", err)
 		}
+
 		findings = append(findings, &finding)
 	}
 
@@ -178,11 +191,13 @@ func (s *FindingStore) GetByID(
 	filter := bson.M{"_id": objID}
 
 	var finding models.Finding
+
 	err = s.collection.FindOne(ctx, filter).Decode(&finding)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, nil
 		}
+
 		return nil, fmt.Errorf("failed to get finding by id: %w", err)
 	}
 
@@ -200,11 +215,13 @@ func (s *FindingStore) GetByFindingID(
 	filter := bson.M{"findingId": findingID}
 
 	var finding models.Finding
+
 	err := s.collection.FindOne(ctx, filter).Decode(&finding)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, nil
 		}
+
 		return nil, fmt.Errorf("failed to get finding by findingId: %w", err)
 	}
 
@@ -234,6 +251,7 @@ func (s *FindingStore) Create(
 				}
 			}
 		}
+
 		return fmt.Errorf("failed to create finding: %w", err)
 	}
 
@@ -333,15 +351,19 @@ func (s *FindingStore) GetByAssetID(
 	if opts.Filter.FindingType != "" {
 		filter["findingType"] = opts.Filter.FindingType
 	}
+
 	if opts.Filter.Severity != "" {
 		filter["severity"] = opts.Filter.Severity
 	}
+
 	if opts.Filter.Lifecycle != "" {
 		filter["lifecycle.status"] = opts.Filter.Lifecycle
 	}
+
 	if opts.Filter.Verification != "" {
 		filter["verification.status"] = opts.Filter.Verification
 	}
+
 	if opts.Filter.Freshness != "" {
 		filter["freshness.status"] = opts.Filter.Freshness
 	}
@@ -357,6 +379,7 @@ func (s *FindingStore) GetByAssetID(
 	if opts.Limit > 0 {
 		findOpts.SetLimit(int64(opts.Limit))
 	}
+
 	if opts.Offset > 0 {
 		findOpts.SetSkip(int64(opts.Offset))
 	}
@@ -366,10 +389,12 @@ func (s *FindingStore) GetByAssetID(
 	if sortBy == "" {
 		sortBy = "occurredAt"
 	}
+
 	sortOrder := 1
 	if !opts.SortAsc {
 		sortOrder = -1
 	}
+
 	findOpts.SetSort(bson.D{{Key: sortBy, Value: sortOrder}})
 
 	// Execute query
@@ -381,11 +406,13 @@ func (s *FindingStore) GetByAssetID(
 
 	// Decode results
 	findings := make([]*models.Finding, 0)
+
 	for cursor.Next(ctx) {
 		var finding models.Finding
 		if err := cursor.Decode(&finding); err != nil {
 			return nil, fmt.Errorf("failed to decode finding: %w", err)
 		}
+
 		findings = append(findings, &finding)
 	}
 
@@ -417,15 +444,19 @@ func (s *FindingStore) GetByDefconID(
 	if opts.Filter.FindingType != "" {
 		filter["findingType"] = opts.Filter.FindingType
 	}
+
 	if opts.Filter.Severity != "" {
 		filter["severity"] = opts.Filter.Severity
 	}
+
 	if opts.Filter.Lifecycle != "" {
 		filter["lifecycle.status"] = opts.Filter.Lifecycle
 	}
+
 	if opts.Filter.Verification != "" {
 		filter["verification.status"] = opts.Filter.Verification
 	}
+
 	if opts.Filter.Freshness != "" {
 		filter["freshness.status"] = opts.Filter.Freshness
 	}
@@ -441,6 +472,7 @@ func (s *FindingStore) GetByDefconID(
 	if opts.Limit > 0 {
 		findOpts.SetLimit(int64(opts.Limit))
 	}
+
 	if opts.Offset > 0 {
 		findOpts.SetSkip(int64(opts.Offset))
 	}
@@ -450,10 +482,12 @@ func (s *FindingStore) GetByDefconID(
 	if sortBy == "" {
 		sortBy = "occurredAt"
 	}
+
 	sortOrder := 1
 	if !opts.SortAsc {
 		sortOrder = -1
 	}
+
 	findOpts.SetSort(bson.D{{Key: sortBy, Value: sortOrder}})
 
 	// Execute query
@@ -465,11 +499,13 @@ func (s *FindingStore) GetByDefconID(
 
 	// Decode results
 	findings := make([]*models.Finding, 0)
+
 	for cursor.Next(ctx) {
 		var finding models.Finding
 		if err := cursor.Decode(&finding); err != nil {
 			return nil, fmt.Errorf("failed to decode finding: %w", err)
 		}
+
 		findings = append(findings, &finding)
 	}
 
@@ -501,18 +537,23 @@ func (s *FindingStore) GetByFindingType(
 	if opts.Filter.AssetID != "" {
 		filter["assetId"] = opts.Filter.AssetID
 	}
+
 	if opts.Filter.DefconID != "" {
 		filter["defconId"] = opts.Filter.DefconID
 	}
+
 	if opts.Filter.Severity != "" {
 		filter["severity"] = opts.Filter.Severity
 	}
+
 	if opts.Filter.Lifecycle != "" {
 		filter["lifecycle.status"] = opts.Filter.Lifecycle
 	}
+
 	if opts.Filter.Verification != "" {
 		filter["verification.status"] = opts.Filter.Verification
 	}
+
 	if opts.Filter.Freshness != "" {
 		filter["freshness.status"] = opts.Filter.Freshness
 	}
@@ -528,6 +569,7 @@ func (s *FindingStore) GetByFindingType(
 	if opts.Limit > 0 {
 		findOpts.SetLimit(int64(opts.Limit))
 	}
+
 	if opts.Offset > 0 {
 		findOpts.SetSkip(int64(opts.Offset))
 	}
@@ -537,10 +579,12 @@ func (s *FindingStore) GetByFindingType(
 	if sortBy == "" {
 		sortBy = "occurredAt"
 	}
+
 	sortOrder := 1
 	if !opts.SortAsc {
 		sortOrder = -1
 	}
+
 	findOpts.SetSort(bson.D{{Key: sortBy, Value: sortOrder}})
 
 	// Execute query
@@ -552,11 +596,13 @@ func (s *FindingStore) GetByFindingType(
 
 	// Decode results
 	findings := make([]*models.Finding, 0)
+
 	for cursor.Next(ctx) {
 		var finding models.Finding
 		if err := cursor.Decode(&finding); err != nil {
 			return nil, fmt.Errorf("failed to decode finding: %w", err)
 		}
+
 		findings = append(findings, &finding)
 	}
 
@@ -587,18 +633,23 @@ func (s *FindingStore) GetStale(
 	if opts.Filter.FindingType != "" {
 		filter["findingType"] = opts.Filter.FindingType
 	}
+
 	if opts.Filter.AssetID != "" {
 		filter["assetId"] = opts.Filter.AssetID
 	}
+
 	if opts.Filter.DefconID != "" {
 		filter["defconId"] = opts.Filter.DefconID
 	}
+
 	if opts.Filter.Severity != "" {
 		filter["severity"] = opts.Filter.Severity
 	}
+
 	if opts.Filter.Lifecycle != "" {
 		filter["lifecycle.status"] = opts.Filter.Lifecycle
 	}
+
 	if opts.Filter.Verification != "" {
 		filter["verification.status"] = opts.Filter.Verification
 	}
@@ -614,6 +665,7 @@ func (s *FindingStore) GetStale(
 	if opts.Limit > 0 {
 		findOpts.SetLimit(int64(opts.Limit))
 	}
+
 	if opts.Offset > 0 {
 		findOpts.SetSkip(int64(opts.Offset))
 	}
@@ -623,10 +675,12 @@ func (s *FindingStore) GetStale(
 	if sortBy == "" {
 		sortBy = "occurredAt"
 	}
+
 	sortOrder := 1
 	if !opts.SortAsc {
 		sortOrder = -1
 	}
+
 	findOpts.SetSort(bson.D{{Key: sortBy, Value: sortOrder}})
 
 	// Execute query
@@ -638,11 +692,13 @@ func (s *FindingStore) GetStale(
 
 	// Decode results
 	findings := make([]*models.Finding, 0)
+
 	for cursor.Next(ctx) {
 		var finding models.Finding
 		if err := cursor.Decode(&finding); err != nil {
 			return nil, fmt.Errorf("failed to decode finding: %w", err)
 		}
+
 		findings = append(findings, &finding)
 	}
 

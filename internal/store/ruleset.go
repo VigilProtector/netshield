@@ -60,12 +60,15 @@ func (s *RuleSetStore) List(
 	if opts.Name != "" {
 		filter["name"] = opts.Name
 	}
+
 	if opts.Version != "" {
 		filter["version"] = opts.Version
 	}
+
 	if opts.Source != "" {
 		filter["source"] = opts.Source
 	}
+
 	if opts.Enabled != nil {
 		filter["enabled"] = *opts.Enabled
 	}
@@ -88,11 +91,13 @@ func (s *RuleSetStore) List(
 
 	// Decode results
 	ruleSets := make([]*models.RuleSet, 0)
+
 	for cursor.Next(ctx) {
 		var ruleSet models.RuleSet
 		if err := cursor.Decode(&ruleSet); err != nil {
 			return nil, fmt.Errorf("failed to decode rule set: %w", err)
 		}
+
 		ruleSets = append(ruleSets, &ruleSet)
 	}
 
@@ -124,11 +129,13 @@ func (s *RuleSetStore) GetByID(
 	filter := bson.M{"_id": objID}
 
 	var ruleSet models.RuleSet
+
 	err = s.collection.FindOne(ctx, filter).Decode(&ruleSet)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, nil
 		}
+
 		return nil, fmt.Errorf("failed to get rule set by id: %w", err)
 	}
 
@@ -146,11 +153,13 @@ func (s *RuleSetStore) GetByName(
 	filter := bson.M{"name": name}
 
 	var ruleSet models.RuleSet
+
 	err := s.collection.FindOne(ctx, filter).Decode(&ruleSet)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, nil
 		}
+
 		return nil, fmt.Errorf("failed to get rule set by name: %w", err)
 	}
 
@@ -170,11 +179,13 @@ func (s *RuleSetStore) GetDefault(
 	}
 
 	var ruleSet models.RuleSet
+
 	err := s.collection.FindOne(ctx, filter).Decode(&ruleSet)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, nil
 		}
+
 		return nil, fmt.Errorf("failed to get default rule set: %w", err)
 	}
 
@@ -204,6 +215,7 @@ func (s *RuleSetStore) Create(
 				}
 			}
 		}
+
 		return fmt.Errorf("failed to create rule set: %w", err)
 	}
 
@@ -330,11 +342,13 @@ func (s *RuleSetStore) GetByScope(
 	defer cursor.Close(ctx)
 
 	ruleSets := make([]*models.RuleSet, 0)
+
 	for cursor.Next(ctx) {
 		var ruleSet models.RuleSet
 		if err := cursor.Decode(&ruleSet); err != nil {
 			return nil, fmt.Errorf("failed to decode rule set: %w", err)
 		}
+
 		ruleSets = append(ruleSets, &ruleSet)
 	}
 

@@ -63,6 +63,7 @@ func (h *DetectionHandler) ListDetections(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to extract subject")
 		response.SendError(c, http.StatusUnauthorized, "authentication_required", "Authentication required", err.Error())
+
 		return
 	}
 
@@ -71,29 +72,37 @@ func (h *DetectionHandler) ListDetections(c *gin.Context) {
 	if sensorID := c.Query("sensorId"); sensorID != "" {
 		filter.SensorID = sensorID
 	}
+
 	if picketID := c.Query("picketId"); picketID != "" {
 		filter.PicketID = picketID
 	}
+
 	if ruleSetID := c.Query("ruleSetId"); ruleSetID != "" {
 		filter.RuleSetID = ruleSetID
 	}
+
 	if ruleID := c.Query("ruleId"); ruleID != "" {
 		filter.RuleID = ruleID
 	}
+
 	if eventType := c.Query("eventType"); eventType != "" {
 		filter.EventType = eventType
 	}
+
 	if severity := c.Query("severity"); severity != "" {
 		filter.Severity = severity
 	}
+
 	if startTime := c.Query("startTime"); startTime != "" {
 		filter.StartTime = startTime
 	}
+
 	if endTime := c.Query("endTime"); endTime != "" {
 		filter.EndTime = endTime
 	}
 
 	limit := 50
+
 	if l := c.Query("limit"); l != "" {
 		if parsed, err := parseInt(l, 50); err == nil {
 			limit = parsed
@@ -101,6 +110,7 @@ func (h *DetectionHandler) ListDetections(c *gin.Context) {
 	}
 
 	offset := 0
+
 	if o := c.Query("offset"); o != "" {
 		if parsed, err := parseInt(o, 0); err == nil {
 			offset = parsed
@@ -118,6 +128,7 @@ func (h *DetectionHandler) ListDetections(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to list detections")
 		response.SendError(c, http.StatusInternalServerError, "list_detections_failed", "Failed to list detections", err.Error())
+
 		return
 	}
 
@@ -159,6 +170,7 @@ func (h *DetectionHandler) GetDetection(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to extract subject")
 		response.SendError(c, http.StatusUnauthorized, "authentication_required", "Authentication required", err.Error())
+
 		return
 	}
 
@@ -167,6 +179,7 @@ func (h *DetectionHandler) GetDetection(c *gin.Context) {
 	if detectionID == "" {
 		logger.V(vplogging.LogLevelInfo).Error(nil, "missing detectionId parameter")
 		response.SendError(c, http.StatusBadRequest, "invalid_request", "detectionId is required", nil)
+
 		return
 	}
 
@@ -175,6 +188,7 @@ func (h *DetectionHandler) GetDetection(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to get detection", "detectionId", detectionID)
 		response.SendError(c, http.StatusInternalServerError, "get_detection_failed", "Failed to get detection", err.Error())
+
 		return
 	}
 
@@ -216,6 +230,7 @@ func (h *DetectionHandler) CreateDetection(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to extract subject")
 		response.SendError(c, http.StatusUnauthorized, "authentication_required", "Authentication required", err.Error())
+
 		return
 	}
 
@@ -224,6 +239,7 @@ func (h *DetectionHandler) CreateDetection(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Error(err, "failed to parse request body")
 		response.SendError(c, http.StatusBadRequest, "invalid_request", "Invalid request body", err.Error())
+
 		return
 	}
 
@@ -232,6 +248,7 @@ func (h *DetectionHandler) CreateDetection(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to convert from API model")
 		response.SendError(c, http.StatusBadRequest, "invalid_request", "Invalid detection data", err.Error())
+
 		return
 	}
 
@@ -247,6 +264,7 @@ func (h *DetectionHandler) CreateDetection(c *gin.Context) {
 		}
 
 		response.SendError(c, http.StatusInternalServerError, "create_detection_failed", "Failed to create detection", err.Error())
+
 		return
 	}
 
@@ -283,6 +301,7 @@ func (h *DetectionHandler) ProcessDetection(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to extract subject")
 		response.SendError(c, http.StatusUnauthorized, "authentication_required", "Authentication required", err.Error())
+
 		return
 	}
 
@@ -291,6 +310,7 @@ func (h *DetectionHandler) ProcessDetection(c *gin.Context) {
 	if detectionID == "" {
 		logger.V(vplogging.LogLevelInfo).Error(nil, "missing detectionId parameter")
 		response.SendError(c, http.StatusBadRequest, "invalid_request", "detectionId is required", nil)
+
 		return
 	}
 
@@ -304,12 +324,14 @@ func (h *DetectionHandler) ProcessDetection(c *gin.Context) {
 			response.SendError(c, http.StatusNotFound, "detection_not_found", "Detection not found", err.Error())
 			return
 		}
+
 		if errors.Is(err, service.ErrDetectionAlreadyProcessed) {
 			response.SendError(c, http.StatusBadRequest, "already_processed", "Detection already processed", err.Error())
 			return
 		}
 
 		response.SendError(c, http.StatusInternalServerError, "process_detection_failed", "Failed to process detection", err.Error())
+
 		return
 	}
 
@@ -346,6 +368,7 @@ func (h *DetectionHandler) MarkAsProcessed(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to extract subject")
 		response.SendError(c, http.StatusUnauthorized, "authentication_required", "Authentication required", err.Error())
+
 		return
 	}
 
@@ -354,6 +377,7 @@ func (h *DetectionHandler) MarkAsProcessed(c *gin.Context) {
 	if detectionID == "" {
 		logger.V(vplogging.LogLevelInfo).Error(nil, "missing detectionId parameter")
 		response.SendError(c, http.StatusBadRequest, "invalid_request", "detectionId is required", nil)
+
 		return
 	}
 
@@ -369,6 +393,7 @@ func (h *DetectionHandler) MarkAsProcessed(c *gin.Context) {
 		}
 
 		response.SendError(c, http.StatusInternalServerError, "mark_processed_failed", "Failed to mark detection as processed", err.Error())
+
 		return
 	}
 
@@ -413,6 +438,7 @@ func (h *DetectionHandler) GetDetectionsBySensor(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to extract subject")
 		response.SendError(c, http.StatusUnauthorized, "authentication_required", "Authentication required", err.Error())
+
 		return
 	}
 
@@ -421,6 +447,7 @@ func (h *DetectionHandler) GetDetectionsBySensor(c *gin.Context) {
 	if sensorID == "" {
 		logger.V(vplogging.LogLevelInfo).Error(nil, "missing sensorId parameter")
 		response.SendError(c, http.StatusBadRequest, "invalid_request", "sensorId is required", nil)
+
 		return
 	}
 
@@ -429,26 +456,33 @@ func (h *DetectionHandler) GetDetectionsBySensor(c *gin.Context) {
 	if picketID := c.Query("picketId"); picketID != "" {
 		filter.PicketID = picketID
 	}
+
 	if ruleSetID := c.Query("ruleSetId"); ruleSetID != "" {
 		filter.RuleSetID = ruleSetID
 	}
+
 	if ruleID := c.Query("ruleId"); ruleID != "" {
 		filter.RuleID = ruleID
 	}
+
 	if eventType := c.Query("eventType"); eventType != "" {
 		filter.EventType = eventType
 	}
+
 	if severity := c.Query("severity"); severity != "" {
 		filter.Severity = severity
 	}
+
 	if startTime := c.Query("startTime"); startTime != "" {
 		filter.StartTime = startTime
 	}
+
 	if endTime := c.Query("endTime"); endTime != "" {
 		filter.EndTime = endTime
 	}
 
 	limit := 50
+
 	if l := c.Query("limit"); l != "" {
 		if parsed, err := parseInt(l, 50); err == nil {
 			limit = parsed
@@ -456,6 +490,7 @@ func (h *DetectionHandler) GetDetectionsBySensor(c *gin.Context) {
 	}
 
 	offset := 0
+
 	if o := c.Query("offset"); o != "" {
 		if parsed, err := parseInt(o, 0); err == nil {
 			offset = parsed
@@ -473,6 +508,7 @@ func (h *DetectionHandler) GetDetectionsBySensor(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to get detections by sensor", "sensorId", sensorID)
 		response.SendError(c, http.StatusInternalServerError, "get_detections_by_sensor_failed", "Failed to get detections by sensor", err.Error())
+
 		return
 	}
 
@@ -523,6 +559,7 @@ func (h *DetectionHandler) GetDetectionsByPicket(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to extract subject")
 		response.SendError(c, http.StatusUnauthorized, "authentication_required", "Authentication required", err.Error())
+
 		return
 	}
 
@@ -531,6 +568,7 @@ func (h *DetectionHandler) GetDetectionsByPicket(c *gin.Context) {
 	if picketID == "" {
 		logger.V(vplogging.LogLevelInfo).Error(nil, "missing picketId parameter")
 		response.SendError(c, http.StatusBadRequest, "invalid_request", "picketId is required", nil)
+
 		return
 	}
 
@@ -539,26 +577,33 @@ func (h *DetectionHandler) GetDetectionsByPicket(c *gin.Context) {
 	if sensorID := c.Query("sensorId"); sensorID != "" {
 		filter.SensorID = sensorID
 	}
+
 	if ruleSetID := c.Query("ruleSetId"); ruleSetID != "" {
 		filter.RuleSetID = ruleSetID
 	}
+
 	if ruleID := c.Query("ruleId"); ruleID != "" {
 		filter.RuleID = ruleID
 	}
+
 	if eventType := c.Query("eventType"); eventType != "" {
 		filter.EventType = eventType
 	}
+
 	if severity := c.Query("severity"); severity != "" {
 		filter.Severity = severity
 	}
+
 	if startTime := c.Query("startTime"); startTime != "" {
 		filter.StartTime = startTime
 	}
+
 	if endTime := c.Query("endTime"); endTime != "" {
 		filter.EndTime = endTime
 	}
 
 	limit := 50
+
 	if l := c.Query("limit"); l != "" {
 		if parsed, err := parseInt(l, 50); err == nil {
 			limit = parsed
@@ -566,6 +611,7 @@ func (h *DetectionHandler) GetDetectionsByPicket(c *gin.Context) {
 	}
 
 	offset := 0
+
 	if o := c.Query("offset"); o != "" {
 		if parsed, err := parseInt(o, 0); err == nil {
 			offset = parsed
@@ -583,6 +629,7 @@ func (h *DetectionHandler) GetDetectionsByPicket(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to get detections by picket", "picketId", picketID)
 		response.SendError(c, http.StatusInternalServerError, "get_detections_by_picket_failed", "Failed to get detections by picket", err.Error())
+
 		return
 	}
 
@@ -633,6 +680,7 @@ func (h *DetectionHandler) GetDetectionsByRuleSet(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to extract subject")
 		response.SendError(c, http.StatusUnauthorized, "authentication_required", "Authentication required", err.Error())
+
 		return
 	}
 
@@ -641,6 +689,7 @@ func (h *DetectionHandler) GetDetectionsByRuleSet(c *gin.Context) {
 	if ruleSetID == "" {
 		logger.V(vplogging.LogLevelInfo).Error(nil, "missing ruleSetId parameter")
 		response.SendError(c, http.StatusBadRequest, "invalid_request", "ruleSetId is required", nil)
+
 		return
 	}
 
@@ -649,26 +698,33 @@ func (h *DetectionHandler) GetDetectionsByRuleSet(c *gin.Context) {
 	if sensorID := c.Query("sensorId"); sensorID != "" {
 		filter.SensorID = sensorID
 	}
+
 	if picketID := c.Query("picketId"); picketID != "" {
 		filter.PicketID = picketID
 	}
+
 	if ruleID := c.Query("ruleId"); ruleID != "" {
 		filter.RuleID = ruleID
 	}
+
 	if eventType := c.Query("eventType"); eventType != "" {
 		filter.EventType = eventType
 	}
+
 	if severity := c.Query("severity"); severity != "" {
 		filter.Severity = severity
 	}
+
 	if startTime := c.Query("startTime"); startTime != "" {
 		filter.StartTime = startTime
 	}
+
 	if endTime := c.Query("endTime"); endTime != "" {
 		filter.EndTime = endTime
 	}
 
 	limit := 50
+
 	if l := c.Query("limit"); l != "" {
 		if parsed, err := parseInt(l, 50); err == nil {
 			limit = parsed
@@ -676,6 +732,7 @@ func (h *DetectionHandler) GetDetectionsByRuleSet(c *gin.Context) {
 	}
 
 	offset := 0
+
 	if o := c.Query("offset"); o != "" {
 		if parsed, err := parseInt(o, 0); err == nil {
 			offset = parsed
@@ -693,6 +750,7 @@ func (h *DetectionHandler) GetDetectionsByRuleSet(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to get detections by ruleSet", "ruleSetId", ruleSetID)
 		response.SendError(c, http.StatusInternalServerError, "get_detections_by_ruleset_failed", "Failed to get detections by rule set", err.Error())
+
 		return
 	}
 
@@ -743,6 +801,7 @@ func (h *DetectionHandler) GetDetectionsByRule(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to extract subject")
 		response.SendError(c, http.StatusUnauthorized, "authentication_required", "Authentication required", err.Error())
+
 		return
 	}
 
@@ -751,6 +810,7 @@ func (h *DetectionHandler) GetDetectionsByRule(c *gin.Context) {
 	if ruleID == "" {
 		logger.V(vplogging.LogLevelInfo).Error(nil, "missing ruleId parameter")
 		response.SendError(c, http.StatusBadRequest, "invalid_request", "ruleId is required", nil)
+
 		return
 	}
 
@@ -759,26 +819,33 @@ func (h *DetectionHandler) GetDetectionsByRule(c *gin.Context) {
 	if sensorID := c.Query("sensorId"); sensorID != "" {
 		filter.SensorID = sensorID
 	}
+
 	if picketID := c.Query("picketId"); picketID != "" {
 		filter.PicketID = picketID
 	}
+
 	if ruleSetID := c.Query("ruleSetId"); ruleSetID != "" {
 		filter.RuleSetID = ruleSetID
 	}
+
 	if eventType := c.Query("eventType"); eventType != "" {
 		filter.EventType = eventType
 	}
+
 	if severity := c.Query("severity"); severity != "" {
 		filter.Severity = severity
 	}
+
 	if startTime := c.Query("startTime"); startTime != "" {
 		filter.StartTime = startTime
 	}
+
 	if endTime := c.Query("endTime"); endTime != "" {
 		filter.EndTime = endTime
 	}
 
 	limit := 50
+
 	if l := c.Query("limit"); l != "" {
 		if parsed, err := parseInt(l, 50); err == nil {
 			limit = parsed
@@ -786,6 +853,7 @@ func (h *DetectionHandler) GetDetectionsByRule(c *gin.Context) {
 	}
 
 	offset := 0
+
 	if o := c.Query("offset"); o != "" {
 		if parsed, err := parseInt(o, 0); err == nil {
 			offset = parsed
@@ -803,6 +871,7 @@ func (h *DetectionHandler) GetDetectionsByRule(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to get detections by rule", "ruleId", ruleID)
 		response.SendError(c, http.StatusInternalServerError, "get_detections_by_rule_failed", "Failed to get detections by rule", err.Error())
+
 		return
 	}
 
@@ -852,6 +921,7 @@ func (h *DetectionHandler) GetUnprocessedDetections(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to extract subject")
 		response.SendError(c, http.StatusUnauthorized, "authentication_required", "Authentication required", err.Error())
+
 		return
 	}
 
@@ -860,29 +930,37 @@ func (h *DetectionHandler) GetUnprocessedDetections(c *gin.Context) {
 	if sensorID := c.Query("sensorId"); sensorID != "" {
 		filter.SensorID = sensorID
 	}
+
 	if picketID := c.Query("picketId"); picketID != "" {
 		filter.PicketID = picketID
 	}
+
 	if ruleSetID := c.Query("ruleSetId"); ruleSetID != "" {
 		filter.RuleSetID = ruleSetID
 	}
+
 	if ruleID := c.Query("ruleId"); ruleID != "" {
 		filter.RuleID = ruleID
 	}
+
 	if eventType := c.Query("eventType"); eventType != "" {
 		filter.EventType = eventType
 	}
+
 	if severity := c.Query("severity"); severity != "" {
 		filter.Severity = severity
 	}
+
 	if startTime := c.Query("startTime"); startTime != "" {
 		filter.StartTime = startTime
 	}
+
 	if endTime := c.Query("endTime"); endTime != "" {
 		filter.EndTime = endTime
 	}
 
 	limit := 50
+
 	if l := c.Query("limit"); l != "" {
 		if parsed, err := parseInt(l, 50); err == nil {
 			limit = parsed
@@ -890,6 +968,7 @@ func (h *DetectionHandler) GetUnprocessedDetections(c *gin.Context) {
 	}
 
 	offset := 0
+
 	if o := c.Query("offset"); o != "" {
 		if parsed, err := parseInt(o, 0); err == nil {
 			offset = parsed
@@ -907,6 +986,7 @@ func (h *DetectionHandler) GetUnprocessedDetections(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to get unprocessed detections")
 		response.SendError(c, http.StatusInternalServerError, "get_unprocessed_detections_failed", "Failed to get unprocessed detections", err.Error())
+
 		return
 	}
 

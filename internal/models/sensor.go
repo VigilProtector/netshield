@@ -118,10 +118,12 @@ func (s *SensorAPI) FromAPI() (*Sensor, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	createdAt, err := time.Parse(time.RFC3339, s.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
+
 	updatedAt, err := time.Parse(time.RFC3339, s.UpdatedAt)
 	if err != nil {
 		return nil, err
