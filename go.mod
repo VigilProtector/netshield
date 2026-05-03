@@ -105,8 +105,6 @@ require (
 	sigs.k8s.io/yaml v1.6.0 // indirect
 )
 
-
-
 // Replace directive to pin vp-lib to a specific released version
 // This ensures reproducible builds and works both locally and in CI
 replace vigilprotector.io/vp-lib => github.com/VigilProtector/vp-lib v0.29.0
