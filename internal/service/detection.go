@@ -207,9 +207,11 @@ func (s *DetectionService) Create(
 	if detection.DetectionID == "" {
 		return nil, fmt.Errorf("detectionId is required: %w", ErrDetectionAlreadyExists)
 	}
+
 	if detection.SensorID == "" && detection.PicketID == "" {
 		return nil, fmt.Errorf("sensorId or picketId is required: %w", ErrDetectionAlreadyExists)
 	}
+
 	if detection.EventType == "" {
 		return nil, fmt.Errorf("eventType is required: %w", ErrInvalidEventType)
 	}
@@ -229,6 +231,7 @@ func (s *DetectionService) Create(
 	if err != nil {
 		return nil, fmt.Errorf("failed to check for existing detection: %w", err)
 	}
+
 	if existing != nil {
 		return nil, ErrDetectionAlreadyExists
 	}
@@ -263,6 +266,7 @@ func (s *DetectionService) ProcessDetection(
 	if err != nil {
 		return nil, fmt.Errorf("failed to get detection: %w", err)
 	}
+
 	if detection == nil {
 		return nil, ErrDetectionNotFound
 	}
@@ -282,6 +286,7 @@ func (s *DetectionService) ProcessDetection(
 		logger.V(vplogging.LogLevelDebug).Info("failed to correlate detection with context",
 			"detectionId", detectionID, "error", ctxErr)
 		// Continue without context enrichment
+
 	}
 
 	// Step 2: Convert detection to finding (NH-LM-007, NH-FD-001..004)
@@ -301,6 +306,7 @@ func (s *DetectionService) ProcessDetection(
 		logger.V(vplogging.LogLevelDebug).Info("failed to mark detection as processed",
 			"detectionId", detectionID, "error", err)
 		// Continue, finding was created successfully
+
 	}
 
 	// Emit audit event for detection processing
@@ -329,6 +335,7 @@ func (s *DetectionService) createFindingFromDetection(
 		// Already enriched from context correlation
 		finding.AssetID = detection.AssetID
 	}
+
 	if detection.DefconID != "" {
 		finding.DefconID = detection.DefconID
 	}
@@ -386,6 +393,7 @@ func (s *DetectionService) correlateWithContext(
 	if flowCtx.AssetID != "" {
 		detection.AssetID = flowCtx.AssetID
 	}
+
 	if flowCtx.DefconID != "" {
 		detection.DefconID = flowCtx.DefconID
 	}
@@ -421,6 +429,7 @@ func (s *DetectionService) MarkAsProcessed(
 	if err != nil {
 		return fmt.Errorf("failed to get detection: %w", err)
 	}
+
 	if detection == nil {
 		return ErrDetectionNotFound
 	}
@@ -543,9 +552,11 @@ func (s *DetectionService) ProcessUnprocessed(
 		if err != nil {
 			logger.V(vplogging.LogLevelDebug).Info("failed to process detection",
 				"detectionId", detection.DetectionID, "error", err)
+
 			// Continue with next detection
 			continue
 		}
+
 		processedCount++
 	}
 

@@ -165,12 +165,15 @@ func (s *FindingService) Create(
 	if finding.FindingID == "" {
 		return nil, fmt.Errorf("findingId is required: %w", ErrFindingAlreadyExists)
 	}
+
 	if finding.FindingType == "" {
 		return nil, fmt.Errorf("findingType is required: %w", ErrInvalidFindingType)
 	}
+
 	if finding.Severity == "" {
 		return nil, fmt.Errorf("severity is required: %w", ErrInvalidSeverity)
 	}
+
 	if finding.Title == "" {
 		return nil, fmt.Errorf("title is required: %w", ErrInvalidFindingType)
 	}
@@ -189,6 +192,7 @@ func (s *FindingService) Create(
 	if finding.Lifecycle.Status == "" {
 		finding.Lifecycle.Status = models.FindingLifecycleStatusOpen
 	}
+
 	if !s.IsValidLifecycleStatus(finding.Lifecycle.Status) {
 		return nil, fmt.Errorf("invalid lifecycle status %q: %w", finding.Lifecycle.Status, ErrInvalidLifecycleTransition)
 	}
@@ -197,6 +201,7 @@ func (s *FindingService) Create(
 	if finding.Verification.Status == "" {
 		finding.Verification.Status = models.FindingVerificationStatusUnverified
 	}
+
 	if !s.IsValidVerificationStatus(finding.Verification.Status) {
 		return nil, fmt.Errorf("invalid verification status %q: %w", finding.Verification.Status, ErrInvalidVerificationStatus)
 	}
@@ -205,6 +210,7 @@ func (s *FindingService) Create(
 	if finding.Freshness.Status == "" {
 		finding.Freshness.Status = models.FindingFreshnessStatusFresh
 	}
+
 	if !s.IsValidFreshnessStatus(finding.Freshness.Status) {
 		return nil, fmt.Errorf("invalid freshness status %q: %w", finding.Freshness.Status, ErrInvalidFreshnessStatus)
 	}
@@ -225,6 +231,7 @@ func (s *FindingService) Create(
 	if err != nil {
 		return nil, fmt.Errorf("failed to check for existing finding: %w", err)
 	}
+
 	if existing != nil {
 		return nil, ErrFindingAlreadyExists
 	}
@@ -265,6 +272,7 @@ func (s *FindingService) UpdateLifecycle(
 	if err != nil {
 		return nil, fmt.Errorf("failed to get finding: %w", err)
 	}
+
 	if finding == nil {
 		return nil, ErrFindingNotFound
 	}
@@ -281,9 +289,11 @@ func (s *FindingService) UpdateLifecycle(
 	finding.Lifecycle.Status = req.Status
 	finding.Lifecycle.TransitionedAt = pointerToTime(time.Now().UTC())
 	finding.Lifecycle.TransitionedBy = req.TransitionedBy
+
 	if req.Reason != "" {
 		finding.Lifecycle.Reason = req.Reason
 	}
+
 	finding.UpdatedAt = time.Now().UTC()
 
 	// Persist update
@@ -328,6 +338,7 @@ func (s *FindingService) UpdateVerification(
 	if err != nil {
 		return nil, fmt.Errorf("failed to get finding: %w", err)
 	}
+
 	if finding == nil {
 		return nil, ErrFindingNotFound
 	}

@@ -59,7 +59,6 @@ linters:
     - rowserrcheck
     - sqlclosecheck
     - staticcheck
-    - structcheck
     - stylecheck
     - typecheck
     - unconvert
@@ -69,11 +68,52 @@ linters:
     - wsl
 
 linters-settings:
-  # Settings for depguard - temporarily disabled to unblock development
-  # TODO: Re-enable with proper whitelist configuration
+  # Settings for depguard - whitelist of allowed packages
+  # NO wildcards allowed!
   depguard:
-    list-type: blacklist
-    packages: []
+    list-type: whitelist
+    packages:
+      # Standard library - must be explicitly listed to override Main list
+      - "context"
+      - "errors"
+      - "fmt"
+      - "strings"
+      - "testing"
+      - "time"
+      # Third party
+      - "github.com/gin-gonic/gin"
+      - "github.com/go-logr/logr"
+      - "github.com/stretchr/testify/assert"
+      - "github.com/stretchr/testify/require"
+      # vp-lib additional packages
+      - "vigilprotector.io/vp-lib/authn"
+      - "vigilprotector.io/vp-lib/config"
+      - "vigilprotector.io/vp-lib/correlation"
+      - "vigilprotector.io/vp-lib/gin/logging"
+      - "vigilprotector.io/vp-lib/gin/response"
+      # MongoDB
+      - "go.mongodb.org/mongo-driver/v2/bson"
+      - "go.mongodb.org/mongo-driver/v2/mongo"
+      - "go.mongodb.org/mongo-driver/v2/mongo/options"
+      - "golang.org/x/net/context"
+      # Kubernetes
+      - "k8s.io/apimachinery/pkg/types"
+      - "k8s.io/apimachinery/pkg/runtime"
+      - "k8s.io/apimachinery/pkg/apis/meta/v1"
+      # Internal packages
+      - "vigilprotector.io/netshield/internal/config"
+      - "vigilprotector.io/netshield/internal/models"
+      - "vigilprotector.io/netshield/internal/service"
+      - "vigilprotector.io/netshield/internal/store"
+      - "vigilprotector.io/netshield/internal/http/handler"
+      - "vigilprotector.io/netshield/internal/http/router"
+      # vp-lib packages
+      - "vigilprotector.io/vp-lib/ironchronicle"
+      - "vigilprotector.io/vp-lib/logging"
+      - "vigilprotector.io/vp-lib/types"
+    # Disable the Main list
+    ignore-file-rules:
+      - "$all:Main"
 
   # Settings for dupl
   dupl:
@@ -133,7 +173,6 @@ issues:
   # Exclude issue by regexps.
   exclude:
     - "SA1019"
-    - "funlen"
   # Exclude files by regexps.
   exclude-files:
     - "zz_generated.*\\.go$"

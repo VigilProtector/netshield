@@ -125,7 +125,8 @@ const (
 // Only alert, anomaly, lateral_movement, and policy_violation are considered detection events.
 // Other event types (flow, dns, http, tls, file) are not routed to NetShield.
 func (e DetectionEventType) IsDetectionEvent() bool {
-	switch e { //nolint:exhaustive
+	//nolint:exhaustive // DetectionEventType has additional values (flow, dns, http, tls, file) not routed to NetShield
+	switch e {
 	case DetectionEventTypeAlert,
 		DetectionEventTypeAnomaly,
 		DetectionEventTypeLateralMovement,
@@ -367,7 +368,8 @@ func mapConfidenceToFloat(confidence ConfidenceLevel) float64 {
 // in NetShield. Other types (flow, dns, http, tls, file) are not routed to NetShield
 // but we handle them gracefully if they appear.
 func mapDetectionTypeToFindingType(eventType DetectionEventType) FindingType {
-	switch eventType { //nolint:exhaustive
+	//nolint:exhaustive // Only alert, anomaly, lateral_movement, and policy_violation are expected as DetectionEventType values in NetShield
+	switch eventType {
 	case DetectionEventTypeAlert:
 		return FindingTypeKnownAttackPatternDetected
 	case DetectionEventTypeAnomaly:
