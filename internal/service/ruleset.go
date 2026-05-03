@@ -195,6 +195,7 @@ func (s *RuleSetService) Create(
 	if err != nil {
 		return nil, fmt.Errorf("failed to check for existing rule set: %w", err)
 	}
+
 	if existing != nil {
 		return nil, ErrRuleSetAlreadyExists
 	}
@@ -241,6 +242,7 @@ func (s *RuleSetService) Create(
 		if err != nil {
 			return nil, fmt.Errorf("failed to check for default rule set: %w", err)
 		}
+
 		if defaultRuleSet == nil {
 			// This is the first ET Open rule set, make it default
 			ruleSet.IsDefault = true
@@ -276,6 +278,7 @@ func (s *RuleSetService) Update(
 	if err != nil {
 		return nil, fmt.Errorf("failed to get rule set: %w", err)
 	}
+
 	if ruleSet == nil {
 		return nil, ErrRuleSetNotFound
 	}
@@ -292,16 +295,20 @@ func (s *RuleSetService) Update(
 	if req.Name != "" {
 		ruleSet.Name = req.Name
 	}
+
 	if req.Version != "" {
 		ruleSet.Version = req.Version
 	}
+
 	if req.Description != "" {
 		ruleSet.Description = req.Description
 	}
+
 	if req.Enabled != nil && *req.Enabled != ruleSet.Enabled {
 		// Only update if explicitly set in request
 		ruleSet.Enabled = *req.Enabled
 	}
+
 	if req.Source != "" {
 		source := models.RuleSetSource(req.Source)
 		if source != models.RuleSetSourceETOpen &&
@@ -309,6 +316,7 @@ func (s *RuleSetService) Update(
 			source != models.RuleSetSourceCustom {
 			return nil, fmt.Errorf("invalid source %q: %w", req.Source, ErrInvalidSource)
 		}
+
 		ruleSet.Source = source
 	}
 
@@ -330,6 +338,7 @@ func (s *RuleSetService) Update(
 				Threshold: rule.Threshold,
 			}
 		}
+
 		ruleSet.Rules = rules
 	}
 
@@ -347,12 +356,14 @@ func (s *RuleSetService) Update(
 	scopeChanged := oldScope.Type != ruleSet.Scope.Type ||
 		oldScope.Namespace != ruleSet.Scope.Namespace ||
 		len(oldScope.DefconIDs) != len(ruleSet.Scope.DefconIDs)
+
 	if !scopeChanged && len(oldScope.DefconIDs) > 0 {
 		// Check if DefconIDs are the same (order-independent)
 		defconMap := make(map[string]bool, len(oldScope.DefconIDs))
 		for _, id := range oldScope.DefconIDs {
 			defconMap[id] = true
 		}
+
 		for _, id := range ruleSet.Scope.DefconIDs {
 			if !defconMap[id] {
 				scopeChanged = true
@@ -362,6 +373,7 @@ func (s *RuleSetService) Update(
 	}
 
 	rulesChanged := len(oldRules) != len(ruleSet.Rules)
+
 	if !rulesChanged && len(oldRules) > 0 {
 		// Check if rules are the same
 		for i, oldRule := range oldRules {
@@ -369,6 +381,7 @@ func (s *RuleSetService) Update(
 				rulesChanged = true
 				break
 			}
+
 			if oldRule.RuleID != ruleSet.Rules[i].RuleID ||
 				oldRule.Enabled != ruleSet.Rules[i].Enabled ||
 				oldRule.Threshold != ruleSet.Rules[i].Threshold {
@@ -411,6 +424,7 @@ func (s *RuleSetService) Delete(
 	if err != nil {
 		return fmt.Errorf("failed to get rule set: %w", err)
 	}
+
 	if ruleSet == nil {
 		return ErrRuleSetNotFound
 	}
@@ -453,6 +467,7 @@ func (s *RuleSetService) Enable(
 	if err != nil {
 		return nil, fmt.Errorf("failed to get rule set: %w", err)
 	}
+
 	if ruleSet == nil {
 		return nil, ErrRuleSetNotFound
 	}
@@ -494,6 +509,7 @@ func (s *RuleSetService) Disable(
 	if err != nil {
 		return nil, fmt.Errorf("failed to get rule set: %w", err)
 	}
+
 	if ruleSet == nil {
 		return nil, ErrRuleSetNotFound
 	}
@@ -560,12 +576,14 @@ func (s *RuleSetService) Render(
 	if err != nil {
 		return "", fmt.Errorf("failed to get rule set: %w", err)
 	}
+
 	if ruleSet == nil {
 		return "", ErrRuleSetNotFound
 	}
 
 	// Get all rules referenced by the rule set
 	ruleIDs := make([]string, 0, len(ruleSet.Rules))
+
 	for _, ruleRef := range ruleSet.Rules {
 		if ruleRef.Enabled {
 			ruleIDs = append(ruleIDs, ruleRef.RuleID)

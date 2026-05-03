@@ -141,6 +141,7 @@ func (s *SensorService) List(
 
 	// Enrich with Defcon names
 	sensors := make([]*models.Sensor, 0, len(response.Items))
+
 	for _, sensor := range response.Items {
 		enriched := *sensor
 
@@ -223,6 +224,7 @@ func (s *SensorService) Register(
 	if sensor.PicketID == "" {
 		return nil, fmt.Errorf("picketId is required: %w", ErrInvalidStatus)
 	}
+
 	if sensor.DefconID == "" {
 		return nil, fmt.Errorf("defconId is required: %w", ErrInvalidStatus)
 	}
@@ -232,6 +234,7 @@ func (s *SensorService) Register(
 	if err != nil {
 		return nil, fmt.Errorf("failed to check for existing sensor: %w", err)
 	}
+
 	if existing != nil {
 		return nil, ErrSensorAlreadyExists
 	}
@@ -314,6 +317,7 @@ func (s *SensorService) UpdateStatus(
 	if err != nil {
 		return nil, fmt.Errorf("failed to get sensor: %w", err)
 	}
+
 	if sensor == nil {
 		return nil, ErrSensorNotFound
 	}
@@ -359,6 +363,7 @@ func (s *SensorService) UpdateLastSeen(
 	if err != nil {
 		return nil, fmt.Errorf("failed to get sensor: %w", err)
 	}
+
 	if sensor == nil {
 		return nil, ErrSensorNotFound
 	}
@@ -410,6 +415,7 @@ func (s *SensorService) UpdateRuleVersion(
 	if err != nil {
 		return nil, fmt.Errorf("failed to get sensor: %w", err)
 	}
+
 	if sensor == nil {
 		return nil, ErrSensorNotFound
 	}
@@ -457,6 +463,7 @@ func (s *SensorService) GetSensorsByDefcon(
 			if err != nil {
 				logger.V(vplogging.LogLevelDebug).Info("failed to get defcon name",
 					"defconId", sensor.DefconID, "error", err)
+
 				sensor.DefconName = sensor.DefconID
 			} else if defconName != "" {
 				sensor.DefconName = defconName
