@@ -10,6 +10,8 @@ import (
 	"github.com/go-logr/logr"
 
 	"vigilprotector.io/netshield/internal/models"
+	"vigilprotector.io/vp-lib/authz"
+	"vigilprotector.io/vp-lib/correlation"
 	"vigilprotector.io/vp-lib/ironchronicle"
 	vplogging "vigilprotector.io/vp-lib/logging"
 	"vigilprotector.io/vp-lib/types"
@@ -123,6 +125,26 @@ func (s *SensorService) List(
 		"limit", opts.Limit,
 		"offset", opts.Offset)
 
+	// AuthZ check before store access (ADR-0027/28, microservice-standard.md)
+	input := authz.NewInput(
+		subject,
+		"netshield.sensor.list",
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "sensor",
+			ResourceRef:  "*",
+		},
+	)
+
+	decision, err := authz.Authorize(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("authorization failed: %w", err)
+	}
+
+	if !decision.Allow {
+		return nil, authz.ErrAccessDenied
+	}
+
 	// Call store to get sensors
 	storeOpts := models.ListSensorsOptions{
 		Filter: models.SensorFilter{
@@ -181,6 +203,26 @@ func (s *SensorService) Get(
 ) (*models.Sensor, error) {
 	logger.V(vplogging.LogLevelVerbose).Info("getting sensor by picketId", "picketId", picketID)
 
+	// AuthZ check before store access (ADR-0027/28, microservice-standard.md)
+	input := authz.NewInput(
+		subject,
+		"netshield.sensor.read",
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "sensor",
+			ResourceRef:  picketID,
+		},
+	)
+
+	decision, err := authz.Authorize(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("authorization failed: %w", err)
+	}
+
+	if !decision.Allow {
+		return nil, authz.ErrAccessDenied
+	}
+
 	sensor, err := s.store.GetByPicketID(ctx, picketID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get sensor from store: %w", err)
@@ -219,6 +261,26 @@ func (s *SensorService) Register(
 		"picketId", sensor.PicketID,
 		"defconId", sensor.DefconID,
 		"nodeName", sensor.NodeName)
+
+	// AuthZ check before store access (ADR-0027/28, microservice-standard.md)
+	input := authz.NewInput(
+		subject,
+		"netshield.sensor.create",
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "sensor",
+			ResourceRef:  "*",
+		},
+	)
+
+	decision, err := authz.Authorize(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("authorization failed: %w", err)
+	}
+
+	if !decision.Allow {
+		return nil, authz.ErrAccessDenied
+	}
 
 	// Validate required fields
 	if sensor.PicketID == "" {
@@ -295,6 +357,26 @@ func (s *SensorService) UpdateStatus(
 		"status", status,
 		"health", health)
 
+	// AuthZ check before store access (ADR-0027/28, microservice-standard.md)
+	input := authz.NewInput(
+		subject,
+		"netshield.sensor.update",
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "sensor",
+			ResourceRef:  picketID,
+		},
+	)
+
+	decision, err := authz.Authorize(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("authorization failed: %w", err)
+	}
+
+	if !decision.Allow {
+		return nil, authz.ErrAccessDenied
+	}
+
 	// Validate status
 	if status != models.SensorStatusPending &&
 		status != models.SensorStatusActive &&
@@ -358,6 +440,26 @@ func (s *SensorService) UpdateLastSeen(
 ) (*models.Sensor, error) {
 	logger.V(vplogging.LogLevelVerbose).Info("updating sensor lastSeen", "picketId", picketID)
 
+	// AuthZ check before store access (ADR-0027/28, microservice-standard.md)
+	input := authz.NewInput(
+		subject,
+		"netshield.sensor.update",
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "sensor",
+			ResourceRef:  picketID,
+		},
+	)
+
+	decision, err := authz.Authorize(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("authorization failed: %w", err)
+	}
+
+	if !decision.Allow {
+		return nil, authz.ErrAccessDenied
+	}
+
 	// Get existing sensor
 	sensor, err := s.store.GetByPicketID(ctx, picketID)
 	if err != nil {
@@ -410,6 +512,26 @@ func (s *SensorService) UpdateRuleVersion(
 		"picketId", picketID,
 		"version", version)
 
+	// AuthZ check before store access (ADR-0027/28, microservice-standard.md)
+	input := authz.NewInput(
+		subject,
+		"netshield.sensor.update",
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "sensor",
+			ResourceRef:  picketID,
+		},
+	)
+
+	decision, err := authz.Authorize(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("authorization failed: %w", err)
+	}
+
+	if !decision.Allow {
+		return nil, authz.ErrAccessDenied
+	}
+
 	// Get existing sensor
 	sensor, err := s.store.GetByPicketID(ctx, picketID)
 	if err != nil {
@@ -451,6 +573,26 @@ func (s *SensorService) GetSensorsByDefcon(
 ) ([]*models.Sensor, error) {
 	logger.V(vplogging.LogLevelVerbose).Info("getting sensors by defconId", "defconId", defconID)
 
+	// AuthZ check before store access (ADR-0027/28, microservice-standard.md)
+	input := authz.NewInput(
+		subject,
+		"netshield.sensor.list",
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "sensor",
+			ResourceRef:  defconID,
+		},
+	)
+
+	decision, err := authz.Authorize(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("authorization failed: %w", err)
+	}
+
+	if !decision.Allow {
+		return nil, authz.ErrAccessDenied
+	}
+
 	sensors, err := s.store.GetByDefconID(ctx, defconID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get sensors by defcon: %w", err)
@@ -484,6 +626,26 @@ func (s *SensorService) MarkStale(
 	staleThreshold time.Duration,
 ) (int, error) {
 	logger.V(vplogging.LogLevelVerbose).Info("marking stale sensors", "threshold", staleThreshold)
+
+	// AuthZ check before store access (ADR-0027/28, microservice-standard.md)
+	input := authz.NewInput(
+		subject,
+		"netshield.sensor.update",
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "sensor",
+			ResourceRef:  "*",
+		},
+	)
+
+	decision, err := authz.Authorize(ctx, input)
+	if err != nil {
+		return 0, fmt.Errorf("authorization failed: %w", err)
+	}
+
+	if !decision.Allow {
+		return 0, authz.ErrAccessDenied
+	}
 
 	// Get all sensors
 	sensors, err := s.store.List(ctx, models.ListSensorsOptions{
@@ -540,14 +702,17 @@ func (s *SensorService) MarkStale(
 }
 
 // emitSensorAuditEvent emits an audit event for sensor operations.
-// Helper for NH-SM-008: Audit-Events fuer Picket-Register/Stale.
+// ADR-0041/0055: Services emit domain events; vp-lib handles AuthN/AuthZ auditing.
 func (s *SensorService) emitSensorAuditEvent(
 	ctx context.Context,
 	subject *types.Subject,
 	action string,
 	sensor models.Sensor,
 ) {
+	correlationID, _ := correlation.FromContext(ctx)
+
 	event := ironchronicle.Event{
+		CorrelationID: correlationID,
 		Actor: ironchronicle.Actor{
 			Type: string(subject.Type),
 			ID:   subject.ID,
@@ -562,6 +727,7 @@ func (s *SensorService) emitSensorAuditEvent(
 		},
 		Result: ironchronicle.ResultSuccess,
 		Meta: map[string]string{
+			"picketId":    sensor.PicketID,
 			"defconId":    sensor.DefconID,
 			"defconName":  sensor.DefconName,
 			"nodeName":    sensor.NodeName,
@@ -576,7 +742,6 @@ func (s *SensorService) emitSensorAuditEvent(
 }
 
 // emitSensorAuditEventWithMeta emits an audit event with additional metadata.
-// Helper for NH-SM-008: Audit-Events fuer Picket-Register/Stale.
 func (s *SensorService) emitSensorAuditEventWithMeta(
 	ctx context.Context,
 	subject *types.Subject,
@@ -584,8 +749,11 @@ func (s *SensorService) emitSensorAuditEventWithMeta(
 	sensor models.Sensor,
 	meta map[string]string,
 ) {
+	correlationID, _ := correlation.FromContext(ctx)
+
 	// Merge base meta with additional meta
 	mergedMeta := map[string]string{
+		"picketId":    sensor.PicketID,
 		"defconId":    sensor.DefconID,
 		"defconName":  sensor.DefconName,
 		"nodeName":    sensor.NodeName,
@@ -601,6 +769,7 @@ func (s *SensorService) emitSensorAuditEventWithMeta(
 	}
 
 	event := ironchronicle.Event{
+		CorrelationID: correlationID,
 		Actor: ironchronicle.Actor{
 			Type: string(subject.Type),
 			ID:   subject.ID,

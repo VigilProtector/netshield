@@ -10,6 +10,8 @@ import (
 	"github.com/go-logr/logr"
 
 	"vigilprotector.io/netshield/internal/models"
+	"vigilprotector.io/vp-lib/authz"
+	"vigilprotector.io/vp-lib/correlation"
 	"vigilprotector.io/vp-lib/ironchronicle"
 	vplogging "vigilprotector.io/vp-lib/logging"
 	"vigilprotector.io/vp-lib/types"
@@ -117,6 +119,26 @@ func (s *FindingService) List(
 		"limit", opts.Limit,
 		"offset", opts.Offset)
 
+	// AuthZ check before store access (ADR-0027/28, microservice-standard.md)
+	input := authz.NewInput(
+		subject,
+		"netshield.finding.list",
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "finding",
+			ResourceRef:  "*",
+		},
+	)
+
+	decision, err := authz.Authorize(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("authorization failed: %w", err)
+	}
+
+	if !decision.Allow {
+		return nil, authz.ErrAccessDenied
+	}
+
 	response, err := s.store.List(ctx, opts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list findings from store: %w", err)
@@ -134,6 +156,26 @@ func (s *FindingService) Get(
 	findingID string,
 ) (*models.Finding, error) {
 	logger.V(vplogging.LogLevelVerbose).Info("getting finding by id", "findingId", findingID)
+
+	// AuthZ check before store access (ADR-0027/28, microservice-standard.md)
+	input := authz.NewInput(
+		subject,
+		"netshield.finding.read",
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "finding",
+			ResourceRef:  findingID,
+		},
+	)
+
+	decision, err := authz.Authorize(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("authorization failed: %w", err)
+	}
+
+	if !decision.Allow {
+		return nil, authz.ErrAccessDenied
+	}
 
 	finding, err := s.store.GetByFindingID(ctx, findingID)
 	if err != nil {
@@ -160,6 +202,26 @@ func (s *FindingService) Create(
 		"findingId", finding.FindingID,
 		"findingType", finding.FindingType,
 		"severity", finding.Severity)
+
+	// AuthZ check before store access (ADR-0027/28, microservice-standard.md)
+	input := authz.NewInput(
+		subject,
+		"netshield.finding.create",
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "finding",
+			ResourceRef:  "*",
+		},
+	)
+
+	decision, err := authz.Authorize(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("authorization failed: %w", err)
+	}
+
+	if !decision.Allow {
+		return nil, authz.ErrAccessDenied
+	}
 
 	// Validate required fields
 	if finding.FindingID == "" {
@@ -262,6 +324,26 @@ func (s *FindingService) UpdateLifecycle(
 		"findingId", findingID,
 		"status", req.Status)
 
+	// AuthZ check before store access (ADR-0027/28, microservice-standard.md)
+	input := authz.NewInput(
+		subject,
+		"netshield.finding.update",
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "finding",
+			ResourceRef:  findingID,
+		},
+	)
+
+	decision, err := authz.Authorize(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("authorization failed: %w", err)
+	}
+
+	if !decision.Allow {
+		return nil, authz.ErrAccessDenied
+	}
+
 	// Validate new status
 	if !s.IsValidLifecycleStatus(req.Status) {
 		return nil, fmt.Errorf("invalid lifecycle status %q: %w", req.Status, ErrInvalidLifecycleTransition)
@@ -328,6 +410,26 @@ func (s *FindingService) UpdateVerification(
 		"findingId", findingID,
 		"status", req.Status)
 
+	// AuthZ check before store access (ADR-0027/28, microservice-standard.md)
+	input := authz.NewInput(
+		subject,
+		"netshield.finding.update",
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "finding",
+			ResourceRef:  findingID,
+		},
+	)
+
+	decision, err := authz.Authorize(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("authorization failed: %w", err)
+	}
+
+	if !decision.Allow {
+		return nil, authz.ErrAccessDenied
+	}
+
 	// Validate new status
 	if !s.IsValidVerificationStatus(req.Status) {
 		return nil, fmt.Errorf("invalid verification status %q: %w", req.Status, ErrInvalidVerificationStatus)
@@ -383,6 +485,26 @@ func (s *FindingService) MarkStale(
 	staleAfter time.Duration,
 ) (int, error) {
 	logger.V(vplogging.LogLevelVerbose).Info("marking stale findings", "staleAfter", staleAfter)
+
+	// AuthZ check before store access (ADR-0027/28, microservice-standard.md)
+	input := authz.NewInput(
+		subject,
+		"netshield.finding.update",
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "finding",
+			ResourceRef:  "*",
+		},
+	)
+
+	decision, err := authz.Authorize(ctx, input)
+	if err != nil {
+		return 0, fmt.Errorf("authorization failed: %w", err)
+	}
+
+	if !decision.Allow {
+		return 0, authz.ErrAccessDenied
+	}
 
 	// Get all open findings
 	opts := models.ListFindingsOptions{
@@ -448,6 +570,26 @@ func (s *FindingService) GetByAsset(
 ) (*models.FindingListResponse, error) {
 	logger.V(vplogging.LogLevelVerbose).Info("getting findings by assetId", "assetId", assetID)
 
+	// AuthZ check before store access (ADR-0027/28, microservice-standard.md)
+	input := authz.NewInput(
+		subject,
+		"netshield.finding.list",
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "finding",
+			ResourceRef:  assetID,
+		},
+	)
+
+	decision, err := authz.Authorize(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("authorization failed: %w", err)
+	}
+
+	if !decision.Allow {
+		return nil, authz.ErrAccessDenied
+	}
+
 	response, err := s.store.GetByAssetID(ctx, assetID, opts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get findings by asset: %w", err)
@@ -466,6 +608,26 @@ func (s *FindingService) GetByDefcon(
 ) (*models.FindingListResponse, error) {
 	logger.V(vplogging.LogLevelVerbose).Info("getting findings by defconId", "defconId", defconID)
 
+	// AuthZ check before store access (ADR-0027/28, microservice-standard.md)
+	input := authz.NewInput(
+		subject,
+		"netshield.finding.list",
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "finding",
+			ResourceRef:  defconID,
+		},
+	)
+
+	decision, err := authz.Authorize(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("authorization failed: %w", err)
+	}
+
+	if !decision.Allow {
+		return nil, authz.ErrAccessDenied
+	}
+
 	response, err := s.store.GetByDefconID(ctx, defconID, opts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get findings by defcon: %w", err)
@@ -483,6 +645,26 @@ func (s *FindingService) GetByType(
 	opts models.ListFindingsOptions,
 ) (*models.FindingListResponse, error) {
 	logger.V(vplogging.LogLevelVerbose).Info("getting findings by type", "findingType", findingType)
+
+	// AuthZ check before store access (ADR-0027/28, microservice-standard.md)
+	input := authz.NewInput(
+		subject,
+		"netshield.finding.list",
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "finding",
+			ResourceRef:  string(findingType),
+		},
+	)
+
+	decision, err := authz.Authorize(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("authorization failed: %w", err)
+	}
+
+	if !decision.Allow {
+		return nil, authz.ErrAccessDenied
+	}
 
 	// Validate finding type
 	if !s.IsValidFindingType(findingType) {
@@ -505,6 +687,26 @@ func (s *FindingService) GetStale(
 	opts models.ListFindingsOptions,
 ) (*models.FindingListResponse, error) {
 	logger.V(vplogging.LogLevelVerbose).Info("getting stale findings")
+
+	// AuthZ check before store access (ADR-0027/28, microservice-standard.md)
+	input := authz.NewInput(
+		subject,
+		"netshield.finding.list",
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "finding",
+			ResourceRef:  "stale",
+		},
+	)
+
+	decision, err := authz.Authorize(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("authorization failed: %w", err)
+	}
+
+	if !decision.Allow {
+		return nil, authz.ErrAccessDenied
+	}
 
 	response, err := s.store.GetStale(ctx, opts)
 	if err != nil {
@@ -613,7 +815,10 @@ func (s *FindingService) emitFindingAuditEvent(
 	action string,
 	finding models.Finding,
 ) {
+	correlationID, _ := correlation.FromContext(ctx)
+
 	event := ironchronicle.Event{
+		CorrelationID: correlationID,
 		Actor: ironchronicle.Actor{
 			Type: string(subject.Type),
 			ID:   subject.ID,
@@ -652,6 +857,8 @@ func (s *FindingService) emitFindingAuditEventWithMeta(
 	finding models.Finding,
 	meta map[string]string,
 ) {
+	correlationID, _ := correlation.FromContext(ctx)
+
 	// Merge base meta with additional meta
 	mergedMeta := map[string]string{
 		"findingType":   string(finding.FindingType),
@@ -671,6 +878,7 @@ func (s *FindingService) emitFindingAuditEventWithMeta(
 	}
 
 	event := ironchronicle.Event{
+		CorrelationID: correlationID,
 		Actor: ironchronicle.Actor{
 			Type: string(subject.Type),
 			ID:   subject.ID,
