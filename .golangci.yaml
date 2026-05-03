@@ -1,0 +1,181 @@
+# This file contains the configuration for golangci-lint.
+# The configuration is based on the VigilProtector platform standard.
+# See: https://github.com/golangci/golangci-lint
+
+run:
+  # Timeout for analysis, e.g. 30s, 5m.
+  timeout: 5m
+  # Exit code when at least one issue was found.
+  issues-exit-code: 1
+  # Include test files or not.
+  tests: true
+  # Default is true. Enables skipping of directories:
+  #   vendor$, third_party$, testdata$, examples$, Godeps$, builtin$
+  skip-dirs:
+    - vendor
+    - third_party
+    - testdata
+    - examples
+    - Godeps
+    - builtin
+  # Default is true. Enables skipping of files:
+  skip-files:
+    - ".*\\.pb\\.go"
+    - ".*_test\\.go"
+    - ".*_string\\.go"
+
+# output configuration options
+output:
+  # colored-line-number|line-number|json|tab|checkstyle|code-climate|junit-xml|html
+  format: colored-line-number
+  # Print lines of code with issue.
+  print-issued-lines: true
+  # Print linter name in the end of each output line.
+  print-linter-name: true
+
+# All available settings of specific linters.
+linters:
+  # Disable all linters.
+  disable-all: true
+  # Enable specific linters.
+  enable:
+    - bodyclose
+    - dogsled
+    - dupl
+    - errcheck
+    - exhaustive
+    - funlen
+    - gochecknoinits
+    - gocyclo
+    - gofmt
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - lll
+    - misspell
+    - nakedret
+    - nolintlint
+    - rowserrcheck
+    - sqlclosecheck
+    - staticcheck
+    - stylecheck
+    - typecheck
+    - unconvert
+    - unused
+    - whitespace
+    - wsl
+
+linters-settings:
+  # Settings for depguard - whitelist of allowed packages
+  # NO wildcards allowed!
+  depguard:
+    list-type: whitelist
+    packages:
+      # Standard library - must be explicitly listed to override Main list
+      - "context"
+      - "errors"
+      - "fmt"
+      - "strings"
+      - "testing"
+      - "time"
+      # Third party
+      - "github.com/gin-gonic/gin"
+      - "github.com/go-logr/logr"
+      - "github.com/stretchr/testify/assert"
+      - "github.com/stretchr/testify/require"
+      # vp-lib additional packages
+      - "vigilprotector.io/vp-lib/authn"
+      - "vigilprotector.io/vp-lib/config"
+      - "vigilprotector.io/vp-lib/correlation"
+      - "vigilprotector.io/vp-lib/gin/logging"
+      - "vigilprotector.io/vp-lib/gin/response"
+      # MongoDB
+      - "go.mongodb.org/mongo-driver/v2/bson"
+      - "go.mongodb.org/mongo-driver/v2/mongo"
+      - "go.mongodb.org/mongo-driver/v2/mongo/options"
+      - "golang.org/x/net/context"
+      # Kubernetes
+      - "k8s.io/apimachinery/pkg/types"
+      - "k8s.io/apimachinery/pkg/runtime"
+      - "k8s.io/apimachinery/pkg/apis/meta/v1"
+      # Internal packages
+      - "vigilprotector.io/netshield/internal/config"
+      - "vigilprotector.io/netshield/internal/models"
+      - "vigilprotector.io/netshield/internal/service"
+      - "vigilprotector.io/netshield/internal/store"
+      - "vigilprotector.io/netshield/internal/http/handler"
+      - "vigilprotector.io/netshield/internal/http/router"
+      # vp-lib packages
+      - "vigilprotector.io/vp-lib/ironchronicle"
+      - "vigilprotector.io/vp-lib/logging"
+      - "vigilprotector.io/vp-lib/types"
+    # Disable the Main list
+    ignore-file-rules:
+      - "$all:Main"
+
+  # Settings for dupl
+  dupl:
+    threshold: 1000
+
+  # Settings for funlen
+  funlen:
+    lines: 150
+    statements: 100
+
+  # Settings for gocyclo
+  gocyclo:
+    min-complexity: 30
+
+  # Settings for goconst
+  goconst:
+    min-len: 3
+    min-occurrences: 3
+
+  # Settings for gofmt
+  gofmt:
+    simplify: true
+
+  # Settings for goimports
+  goimports:
+    local-prefixes: vigilprotector.io/netshield
+
+  # Settings for lll
+  lll:
+    line-length: 180
+    tab-length: 4
+
+  # Settings for nolintlint
+  nolintlint:
+    allow-leading-space: false
+    allow-unused: false
+    require-explanation: true
+    require-specific: true
+
+issues:
+  # Maximum issues count per one linter.
+  max-per-linter: 0
+  # Maximum count of issues with the same text.
+  max-same-issues: 0
+  # Show only new issues: if there are unstaged changes or untracked files,
+  # only the issues appearing in those changes/files will be shown (filtering by git).
+  new: false
+  # Don't filter issues by git. Same as `new: false`.
+  new-from-rev: ""
+  # Don't filter issues by git. Same as `new: false`.
+  new-from-patch: ""
+  # Show only new issues created after git revision `NEWS_FROM_REV`
+  # Same as `new-from-rev`.
+  since: ""
+  # Fix found absolute path or absolute path with base.
+  fix: false
+  # Exclude issue by regexps.
+  exclude:
+    - "SA1019"
+  # Exclude files by regexps.
+  exclude-files:
+    - "zz_generated.*\\.go$"
+
+severity:
+  default-severity: error
+  case-severity: 0
