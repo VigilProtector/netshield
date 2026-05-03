@@ -58,10 +58,10 @@ func (m *mockVigilNetClient) GetDefconName(ctx context.Context, defconID string)
 func newTestSensor(picketID string) *models.Sensor {
 	now := time.Now().UTC()
 	return &models.Sensor{
-		PicketID:   picketID,
-		DefconID:   "defcon-1",
-		Status:     models.SensorStatusActive,
-		Health:     models.SensorHealthHealthy,
+		PicketID:    picketID,
+		DefconID:    "defcon-1",
+		Status:      models.SensorStatusActive,
+		Health:      models.SensorHealthHealthy,
 		RuleVersion: "v1.0.0",
 		CreatedAt:   now,
 		UpdatedAt:   now,
@@ -531,12 +531,12 @@ func TestSensorService_UpdateLastSeen(t *testing.T) {
 	testSensor.PicketID = "picket-1"
 
 	testCases := []struct {
-		name           string
-		picketID       string
-		storeSensor    *models.Sensor
-		storeErr       error
-		updateErr      error
-		expectedError  bool
+		name          string
+		picketID      string
+		storeSensor   *models.Sensor
+		storeErr      error
+		updateErr     error
+		expectedError bool
 	}{
 		{
 			name:          "successful update last seen",
@@ -613,13 +613,13 @@ func TestSensorService_UpdateRuleVersion(t *testing.T) {
 	testSensor.PicketID = "picket-1"
 
 	testCases := []struct {
-		name           string
-		picketID       string
-		version        string
-		storeSensor    *models.Sensor
-		storeErr       error
-		updateErr      error
-		expectedError  bool
+		name          string
+		picketID      string
+		version       string
+		storeSensor   *models.Sensor
+		storeErr      error
+		updateErr     error
+		expectedError bool
 	}{
 		{
 			name:          "successful update rule version",
@@ -707,10 +707,10 @@ func TestSensorService_GetSensorsByDefcon(t *testing.T) {
 		expectedError bool
 	}{
 		{
-			name:         "successful get sensors by defcon",
-			defconID:     "defcon-1",
-			storeSensors: testSensors,
-			storeErr:     nil,
+			name:          "successful get sensors by defcon",
+			defconID:      "defcon-1",
+			storeSensors:  testSensors,
+			storeErr:      nil,
 			expectedCount: 1,
 			expectedError: false,
 		},
@@ -723,10 +723,10 @@ func TestSensorService_GetSensorsByDefcon(t *testing.T) {
 			expectedError: true,
 		},
 		{
-			name:         "no sensors found",
-			defconID:     "defcon-not-found",
-			storeSensors: []*models.Sensor{},
-			storeErr:     nil,
+			name:          "no sensors found",
+			defconID:      "defcon-not-found",
+			storeSensors:  []*models.Sensor{},
+			storeErr:      nil,
 			expectedCount: 0,
 			expectedError: false,
 		},

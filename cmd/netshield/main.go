@@ -47,6 +47,7 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 
+	"vigilprotector.io/netshield/internal/client"
 	"vigilprotector.io/netshield/internal/config"
 	"vigilprotector.io/netshield/internal/http/handler"
 	"vigilprotector.io/netshield/internal/http/router"
@@ -165,11 +166,65 @@ func runServer() error {
 			"batchSize", cfg.FlowSeeker.BatchSize)
 	}
 
+	// Initialize FlowSeeker HTTP client for correlation (NH-CC-001..004)
+	var flowSeekerCorrelationClient service.FlowSeekerClient
+
+	if cfg.FlowSeeker.BaseURL != "" {
+		correlationHTTPClient := &http.Client{
+			Timeout: 30 * time.Second,
+		}
+		flowSeekerCorrelationClient = service.NewFlowSeekerHTTPClient(
+			cfg.FlowSeeker.BaseURL,
+			correlationHTTPClient,
+			logger,
+		)
+	}
+
+	// Initialize Cross-BC Query Clients for NH-CC-005
+	// Aegis Client for Asset-Identity and Criticality
+	var aegisClient *client.AegisClient
+	if cfg.Aegis.BaseURL != "" { //nolint:wsl // Client initialization requires multiple assignments for HTTP client and service client
+		aegisHTTPClient := client.NewHTTPClientWithTimeout(cfg.Aegis.Timeout, logger)
+		aegisClient = client.NewAegisClient(cfg.Aegis.BaseURL, aegisHTTPClient, logger)
+	}
+	if aegisClient != nil { //nolint:wsl // Configuration logging must follow client initialization immediately
+		logger.V(vplogging.LogLevelInfo).Info("Aegis client configured",
+			"baseURL", cfg.Aegis.BaseURL,
+			"timeout", cfg.Aegis.Timeout)
+	}
+
+	// NetSentinel Client for Device-Facts and Flow-Metrics
+	var netSentinelClient *client.NetSentinelClient
+	if cfg.NetSentinel.BaseURL != "" { //nolint:wsl // Client initialization requires multiple assignments for HTTP client and service client
+		netSentinelHTTPClient := client.NewHTTPClientWithTimeout(cfg.NetSentinel.Timeout, logger)
+		netSentinelClient = client.NewNetSentinelClient(
+			cfg.NetSentinel.BaseURL,
+			netSentinelHTTPClient,
+			logger,
+		)
+	}
+	if netSentinelClient != nil { //nolint:wsl // Configuration logging must follow client initialization immediately
+		logger.V(vplogging.LogLevelInfo).Info("NetSentinel client configured",
+			"baseURL", cfg.NetSentinel.BaseURL,
+			"timeout", cfg.NetSentinel.Timeout)
+	}
+
+	// NetAtlas Client for Zone and Topology
+	var netAtlasClient *client.NetAtlasClient
+	if cfg.NetAtlas.BaseURL != "" { //nolint:wsl // Client initialization requires multiple assignments for HTTP client and service client
+		netAtlasHTTPClient := client.NewHTTPClientWithTimeout(cfg.NetAtlas.Timeout, logger)
+		netAtlasClient = client.NewNetAtlasClient(cfg.NetAtlas.BaseURL, netAtlasHTTPClient, logger)
+	}
+	if netAtlasClient != nil { //nolint:wsl // Configuration logging must follow client initialization immediately
+		logger.V(vplogging.LogLevelInfo).Info("NetAtlas client configured",
+			"baseURL", cfg.NetAtlas.BaseURL,
+			"timeout", cfg.NetAtlas.Timeout)
+	}
+
 	// Initialize services
 	// Note: FlowSeekerClient for detectionService (correlation) is separate from
-	// FlowSeekerConsumer (subscription). For now, detectionService uses nil for
-	// correlation (NH-CC-005 not yet implemented), while FlowSeekerConsumer
-	// handles finding subscription (NH-LM-005/006).
+	// FlowSeekerConsumer (subscription). FlowSeekerConsumer handles finding subscription
+	// (NH-LM-005/006), while FlowSeekerClient handles correlation (NH-CC-001..004).
 	sensorService := service.NewSensorService(
 		sensorStore,
 		nil, // VigilNetClient - will be wired in future
@@ -187,16 +242,38 @@ func runServer() error {
 	detectionService := service.NewDetectionService(
 		detectionStore,
 		findingStore,
-		nil, // FlowSeekerClient for correlation (NH-CC-005) - not yet implemented
+		flowSeekerCorrelationClient, // FlowSeekerClient for correlation (NH-CC-005)
+		logger,
+	)
+
+	// Initialize Lateral Movement Detector (NH-LM-001..007)
+	lateralMovementConfig := service.DefaultLateralMovementConfig()
+	lateralMovementDetector := service.NewLateralMovementDetector(
+		lateralMovementConfig,
 		logger,
 	)
 
 	// Initialize and start FlowSeekerConsumer if subscription client is configured
 	// Implements NH-LM-005: FlowSeeker-Finding-Subscription via VL-FC-002
+	// Implements NH-LM-006: Event-driven Enrichment-Pipeline
+	// Implements NH-LM-007: Emission network.lateral_movement_suspected
+	// Implements NH-CC-005: Cross-BC Queries (Aegis, NetSentinel, NetAtlas)
 	if flowSeekerClient != nil {
+		// Create adapter wrappers for cross-BC clients
+		aegisAdapter := service.NewAegisClientAdapter(aegisClient)
+		netSentinelAdapter := service.NewNetSentinelClientAdapter(netSentinelClient)
+		netAtlasAdapter := service.NewNetAtlasClientAdapter(netAtlasClient)
+
 		flowSeekerConsumer = service.NewFlowSeekerConsumer(
 			flowSeekerClient,
 			detectionService,
+			findingService,
+			flowSeekerCorrelationClient, // FlowSeekerClient for flow context (NH-CC-005, NH-LM-006)
+			lateralMovementDetector,     // LateralMovementDetector for NH-LM-001..007
+			lateralMovementConfig,       // Configuration for lateral movement detection
+			aegisAdapter,                // AegisClientAdapter for Asset-Identity/Criticality (NH-CC-005)
+			netSentinelAdapter,          // NetSentinelClientAdapter for Flow-Metrics (NH-CC-005)
+			netAtlasAdapter,             // NetAtlasClientAdapter for Zone/Topology (NH-CC-005)
 			logger,
 			cfg.FlowSeeker.PollInterval,
 		)

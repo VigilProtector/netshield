@@ -809,115 +809,115 @@ func TestDetectionService_ProcessDetection(t *testing.T) {
 	testDetection.UpdatedAt = now
 
 	testCases := []struct {
-		name              string
-		detectionID       string
-		storeDetection    *models.Detection
-		storeErr          error
-		flowContext       *service.FlowContext
-		flowErr           error
-		createFindingErr   error
-		markProcessedErr  error
-		expectedFinding   bool
-		expectedError     bool
-		errorContains     string
+		name             string
+		detectionID      string
+		storeDetection   *models.Detection
+		storeErr         error
+		flowContext      *service.FlowContext
+		flowErr          error
+		createFindingErr error
+		markProcessedErr error
+		expectedFinding  bool
+		expectedError    bool
+		errorContains    string
 	}{
 		{
-			name:           "successful process detection",
-			detectionID:    "detection-1",
+			name:        "successful process detection",
+			detectionID: "detection-1",
 			storeDetection: func() *models.Detection {
 				d := newTestDetection("detection-1")
 				d.EventType = models.DetectionEventTypeLateralMovement
 				return d
 			}(),
-			storeErr:       nil,
+			storeErr: nil,
 			flowContext: &service.FlowContext{
-				FlowID:       "flow-1",
-				SourceIP:     "192.168.1.1",
-				DestIP:       "10.0.0.1",
-				Proto:        "TCP",
-				SourcePort:   12345,
-				DestPort:     80,
-				AssetID:      "asset-1",
-				DefconID:     "defcon-1",
-				StartTime:    now.Add(-5 * time.Minute),
-				EndTime:      now.Add(5 * time.Minute),
+				FlowID:     "flow-1",
+				SourceIP:   "192.168.1.1",
+				DestIP:     "10.0.0.1",
+				Proto:      "TCP",
+				SourcePort: 12345,
+				DestPort:   80,
+				AssetID:    "asset-1",
+				DefconID:   "defcon-1",
+				StartTime:  now.Add(-5 * time.Minute),
+				EndTime:    now.Add(5 * time.Minute),
 			},
 			flowErr:          nil,
-			createFindingErr:  nil,
+			createFindingErr: nil,
 			markProcessedErr: nil,
-			expectedFinding:   true,
+			expectedFinding:  true,
 			expectedError:    false,
 		},
 		{
-			name:           "detection not found",
-			detectionID:    "detection-not-found",
-			storeDetection: nil,
-			storeErr:       nil,
-			flowContext:    nil,
-			flowErr:        nil,
-			expectedFinding:   false,
-			expectedError:    true,
-			errorContains:    "detection not found",
+			name:            "detection not found",
+			detectionID:     "detection-not-found",
+			storeDetection:  nil,
+			storeErr:        nil,
+			flowContext:     nil,
+			flowErr:         nil,
+			expectedFinding: false,
+			expectedError:   true,
+			errorContains:   "detection not found",
 		},
 		{
-			name:           "store error on get",
-			detectionID:    "detection-1",
-			storeDetection: nil,
-			storeErr:       errors.New("store error"),
-			flowContext:    nil,
-			flowErr:        nil,
-			expectedFinding:   false,
-			expectedError:    true,
-			errorContains:    "failed to get detection",
+			name:            "store error on get",
+			detectionID:     "detection-1",
+			storeDetection:  nil,
+			storeErr:        errors.New("store error"),
+			flowContext:     nil,
+			flowErr:         nil,
+			expectedFinding: false,
+			expectedError:   true,
+			errorContains:   "failed to get detection",
 		},
 		{
-			name:           "detection already processed",
-			detectionID:    "detection-1",
+			name:        "detection already processed",
+			detectionID: "detection-1",
 			storeDetection: func() *models.Detection {
 				d := newTestDetection("detection-1")
 				// Simulate processed: UpdatedAt > CreatedAt
 				d.UpdatedAt = now.Add(time.Minute)
 				return d
 			}(),
-			storeErr:       nil,
-			flowContext:    nil,
-			flowErr:        nil,
-			expectedFinding:   false,
-			expectedError:    true,
-			errorContains:    "already processed",
+			storeErr:        nil,
+			flowContext:     nil,
+			flowErr:         nil,
+			expectedFinding: false,
+			expectedError:   true,
+			errorContains:   "already processed",
 		},
 		{
-			name:           "create finding error",
-			detectionID:    "detection-1",
-			storeDetection: testDetection,
-			storeErr:       nil,
-			flowContext:    nil,
-			flowErr:        nil,
+			name:             "create finding error",
+			detectionID:      "detection-1",
+			storeDetection:   testDetection,
+			storeErr:         nil,
+			flowContext:      nil,
+			flowErr:          nil,
 			createFindingErr: errors.New("create finding error"),
 			markProcessedErr: nil,
-			expectedFinding:   false,
+			expectedFinding:  false,
 			expectedError:    true,
 			errorContains:    "failed to create finding from detection",
 		},
 		{
-			name:           "flow context enriches detection",
-			detectionID:    "detection-1",
+			name:        "flow context enriches detection",
+			detectionID: "detection-1",
 			storeDetection: func() *models.Detection {
 				d := newTestDetection("detection-1")
 				d.EventType = models.DetectionEventTypeLateralMovement
-				d.AssetID = "" // No asset ID initially
+				d.AssetID = ""  // No asset ID initially
 				d.DefconID = "" // No defcon ID initially
 				return d
 			}(),
-			storeErr:       nil,
+			storeErr: nil,
 			flowContext: &service.FlowContext{
 				AssetID:  "enriched-asset-1",
 				DefconID: "enriched-defcon-1",
 			},
 			flowErr:          nil,
-			createFindingErr:  nil,
+			createFindingErr: nil,
 			markProcessedErr: nil,
-			expectedFinding:   true,
+			expectedFinding:  true,
 			expectedError:    false,
 		},
 	}
@@ -1188,18 +1188,18 @@ func TestDetectionService_ProcessUnprocessed(t *testing.T) {
 	testDetection.UpdatedAt = now
 
 	testCases := []struct {
-		name           string
-		batchSize      int
-		storeList      *models.DetectionListResponse
-		storeListErr   error
-		updateErr      error
-		createErr      error
-		expectedCount  int
-		expectedError  bool
+		name          string
+		batchSize     int
+		storeList     *models.DetectionListResponse
+		storeListErr  error
+		updateErr     error
+		createErr     error
+		expectedCount int
+		expectedError bool
 	}{
 		{
-			name:        "successful process unprocessed - no detections",
-			batchSize:   10,
+			name:      "successful process unprocessed - no detections",
+			batchSize: 10,
 			storeList: &models.DetectionListResponse{
 				Items:      []*models.Detection{},
 				TotalCount: 0,
@@ -1213,8 +1213,8 @@ func TestDetectionService_ProcessUnprocessed(t *testing.T) {
 			expectedError: false,
 		},
 		{
-			name:        "successful process unprocessed - with detections",
-			batchSize:   10,
+			name:      "successful process unprocessed - with detections",
+			batchSize: 10,
 			storeList: &models.DetectionListResponse{
 				Items:      []*models.Detection{testDetection},
 				TotalCount: 1,
@@ -1228,14 +1228,14 @@ func TestDetectionService_ProcessUnprocessed(t *testing.T) {
 			expectedError: false,
 		},
 		{
-			name:           "store error on get unprocessed",
-			batchSize:      10,
-			storeList:      nil,
-			storeListErr:   errors.New("store error"),
-			updateErr:      nil,
-			createErr:      nil,
-			expectedCount:  0,
-			expectedError:  true,
+			name:          "store error on get unprocessed",
+			batchSize:     10,
+			storeList:     nil,
+			storeListErr:  errors.New("store error"),
+			updateErr:     nil,
+			createErr:     nil,
+			expectedCount: 0,
+			expectedError: true,
 		},
 	}
 
