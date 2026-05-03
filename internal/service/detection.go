@@ -285,8 +285,6 @@ func (s *DetectionService) ProcessDetection(
 	if ctxErr != nil {
 		logger.V(vplogging.LogLevelDebug).Info("failed to correlate detection with context",
 			"detectionId", detectionID, "error", ctxErr)
-		// Continue without context enrichment
-
 	}
 
 	// Step 2: Convert detection to finding (NH-LM-007, NH-FD-001..004)
@@ -305,8 +303,6 @@ func (s *DetectionService) ProcessDetection(
 	if err != nil {
 		logger.V(vplogging.LogLevelDebug).Info("failed to mark detection as processed",
 			"detectionId", detectionID, "error", err)
-		// Continue, finding was created successfully
-
 	}
 
 	// Emit audit event for detection processing
