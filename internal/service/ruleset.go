@@ -11,6 +11,8 @@ import (
 	"github.com/go-logr/logr"
 
 	"vigilprotector.io/netshield/internal/models"
+	"vigilprotector.io/vp-lib/authz"
+	"vigilprotector.io/vp-lib/correlation"
 	"vigilprotector.io/vp-lib/ironchronicle"
 	vplogging "vigilprotector.io/vp-lib/logging"
 	"vigilprotector.io/vp-lib/types"
@@ -133,6 +135,26 @@ func (s *RuleSetService) List(
 		"filter.source", filter.Source,
 		"filter.enabled", filter.Enabled)
 
+	// AuthZ check before store access (ADR-0027/28, microservice-standard.md)
+	input := authz.NewInput(
+		subject,
+		"netshield.ruleset.list",
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "ruleset",
+			ResourceRef:  "*",
+		},
+	)
+
+	decision, err := authz.Authorize(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("authorization failed: %w", err)
+	}
+
+	if !decision.Allow {
+		return nil, authz.ErrAccessDenied
+	}
+
 	response, err := s.ruleSetStore.List(ctx, filter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list rule sets from store: %w", err)
@@ -150,6 +172,26 @@ func (s *RuleSetService) Get(
 	id string,
 ) (*models.RuleSet, error) {
 	logger.V(vplogging.LogLevelVerbose).Info("getting rule set by id", "id", id)
+
+	// AuthZ check before store access (ADR-0027/28, microservice-standard.md)
+	input := authz.NewInput(
+		subject,
+		"netshield.ruleset.read",
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "ruleset",
+			ResourceRef:  id,
+		},
+	)
+
+	decision, err := authz.Authorize(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("authorization failed: %w", err)
+	}
+
+	if !decision.Allow {
+		return nil, authz.ErrAccessDenied
+	}
 
 	ruleSet, err := s.ruleSetStore.GetByID(ctx, id)
 	if err != nil {
@@ -176,6 +218,26 @@ func (s *RuleSetService) Create(
 		"name", req.Name,
 		"version", req.Version,
 		"source", req.Source)
+
+	// AuthZ check before store access (ADR-0027/28, microservice-standard.md)
+	input := authz.NewInput(
+		subject,
+		"netshield.ruleset.create",
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "ruleset",
+			ResourceRef:  "*",
+		},
+	)
+
+	decision, err := authz.Authorize(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("authorization failed: %w", err)
+	}
+
+	if !decision.Allow {
+		return nil, authz.ErrAccessDenied
+	}
 
 	// Validate required fields
 	if req.Name == "" {
@@ -273,6 +335,26 @@ func (s *RuleSetService) Update(
 ) (*models.RuleSet, error) {
 	logger.V(vplogging.LogLevelVerbose).Info("updating rule set", "id", id)
 
+	// AuthZ check before store access (ADR-0027/28, microservice-standard.md)
+	input := authz.NewInput(
+		subject,
+		"netshield.ruleset.update",
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "ruleset",
+			ResourceRef:  id,
+		},
+	)
+
+	decision, err := authz.Authorize(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("authorization failed: %w", err)
+	}
+
+	if !decision.Allow {
+		return nil, authz.ErrAccessDenied
+	}
+
 	// Get existing rule set
 	ruleSet, err := s.ruleSetStore.GetByID(ctx, id)
 	if err != nil {
@@ -291,55 +373,9 @@ func (s *RuleSetService) Update(
 	oldScope := ruleSet.Scope
 	oldRules := ruleSet.Rules
 
-	// Update fields from request
-	if req.Name != "" {
-		ruleSet.Name = req.Name
-	}
-
-	if req.Version != "" {
-		ruleSet.Version = req.Version
-	}
-
-	if req.Description != "" {
-		ruleSet.Description = req.Description
-	}
-
-	if req.Enabled != nil && *req.Enabled != ruleSet.Enabled {
-		// Only update if explicitly set in request
-		ruleSet.Enabled = *req.Enabled
-	}
-
-	if req.Source != "" {
-		source := models.RuleSetSource(req.Source)
-		if source != models.RuleSetSourceETOpen &&
-			source != models.RuleSetSourceETPro &&
-			source != models.RuleSetSourceCustom {
-			return nil, fmt.Errorf("invalid source %q: %w", req.Source, ErrInvalidSource)
-		}
-
-		ruleSet.Source = source
-	}
-
-	// Update scope if provided
-	if req.Scope.Type != "" {
-		ruleSet.Scope.Type = models.ScopeType(req.Scope.Type)
-		ruleSet.Scope.DefconIDs = req.Scope.DefconIDs
-		ruleSet.Scope.Namespace = req.Scope.Namespace
-	}
-
-	// Update rules if provided
-	if len(req.Rules) > 0 {
-		rules := make([]models.RuleRef, len(req.Rules))
-		for i, rule := range req.Rules {
-			//nolint:gosimple // direct struct literal is clearer than conversion function
-			rules[i] = models.RuleRef{
-				RuleID:    rule.RuleID,
-				Enabled:   rule.Enabled,
-				Threshold: rule.Threshold,
-			}
-		}
-
-		ruleSet.Rules = rules
+	// Update fields from request using helper method to reduce complexity
+	if err := s.applyUpdateRequest(ruleSet, &req); err != nil {
+		return nil, err
 	}
 
 	ruleSet.UpdatedAt = time.Now().UTC()
@@ -419,6 +455,26 @@ func (s *RuleSetService) Delete(
 ) error {
 	logger.V(vplogging.LogLevelVerbose).Info("deleting rule set", "id", id)
 
+	// AuthZ check before store access (ADR-0027/28, microservice-standard.md)
+	input := authz.NewInput(
+		subject,
+		"netshield.ruleset.delete",
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "ruleset",
+			ResourceRef:  id,
+		},
+	)
+
+	decision, err := authz.Authorize(ctx, input)
+	if err != nil {
+		return fmt.Errorf("authorization failed: %w", err)
+	}
+
+	if !decision.Allow {
+		return authz.ErrAccessDenied
+	}
+
 	// Get existing rule set
 	ruleSet, err := s.ruleSetStore.GetByID(ctx, id)
 	if err != nil {
@@ -462,6 +518,26 @@ func (s *RuleSetService) Enable(
 ) (*models.RuleSet, error) {
 	logger.V(vplogging.LogLevelVerbose).Info("enabling rule set", "id", id)
 
+	// AuthZ check before store access (ADR-0027/28, microservice-standard.md)
+	input := authz.NewInput(
+		subject,
+		"netshield.ruleset.update",
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "ruleset",
+			ResourceRef:  id,
+		},
+	)
+
+	decision, err := authz.Authorize(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("authorization failed: %w", err)
+	}
+
+	if !decision.Allow {
+		return nil, authz.ErrAccessDenied
+	}
+
 	// Get existing rule set
 	ruleSet, err := s.ruleSetStore.GetByID(ctx, id)
 	if err != nil {
@@ -503,6 +579,26 @@ func (s *RuleSetService) Disable(
 	id string,
 ) (*models.RuleSet, error) {
 	logger.V(vplogging.LogLevelVerbose).Info("disabling rule set", "id", id)
+
+	// AuthZ check before store access (ADR-0027/28, microservice-standard.md)
+	input := authz.NewInput(
+		subject,
+		"netshield.ruleset.update",
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "ruleset",
+			ResourceRef:  id,
+		},
+	)
+
+	decision, err := authz.Authorize(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("authorization failed: %w", err)
+	}
+
+	if !decision.Allow {
+		return nil, authz.ErrAccessDenied
+	}
 
 	// Get existing rule set
 	ruleSet, err := s.ruleSetStore.GetByID(ctx, id)
@@ -549,6 +645,26 @@ func (s *RuleSetService) GetDefault(
 ) (*models.RuleSet, error) {
 	logger.V(vplogging.LogLevelVerbose).Info("getting default rule set")
 
+	// AuthZ check before store access (ADR-0027/28, microservice-standard.md)
+	input := authz.NewInput(
+		subject,
+		"netshield.ruleset.read",
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "ruleset",
+			ResourceRef:  "default",
+		},
+	)
+
+	decision, err := authz.Authorize(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("authorization failed: %w", err)
+	}
+
+	if !decision.Allow {
+		return nil, authz.ErrAccessDenied
+	}
+
 	defaultRuleSet, err := s.ruleSetStore.GetDefault(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get default rule set: %w", err)
@@ -570,6 +686,26 @@ func (s *RuleSetService) Render(
 	id string,
 ) (string, error) {
 	logger.V(vplogging.LogLevelVerbose).Info("rendering rule set", "id", id)
+
+	// AuthZ check before store access (ADR-0027/28, microservice-standard.md)
+	input := authz.NewInput(
+		subject,
+		"netshield.ruleset.read",
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "ruleset",
+			ResourceRef:  id,
+		},
+	)
+
+	decision, err := authz.Authorize(ctx, input)
+	if err != nil {
+		return "", fmt.Errorf("authorization failed: %w", err)
+	}
+
+	if !decision.Allow {
+		return "", authz.ErrAccessDenied
+	}
 
 	// Get rule set
 	ruleSet, err := s.ruleSetStore.GetByID(ctx, id)
@@ -629,12 +765,93 @@ func (s *RuleSetService) GetRuleSetsByScope(
 		"defconId", defconID,
 		"namespace", namespace)
 
+	// AuthZ check before store access (ADR-0027/28, microservice-standard.md)
+	input := authz.NewInput(
+		subject,
+		"netshield.ruleset.list",
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "ruleset",
+			ResourceRef:  string(scopeType) + ":" + defconID + ":" + namespace,
+		},
+	)
+
+	decision, err := authz.Authorize(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("authorization failed: %w", err)
+	}
+
+	if !decision.Allow {
+		return nil, authz.ErrAccessDenied
+	}
+
 	ruleSets, err := s.ruleSetStore.GetByScope(ctx, scopeType, defconID, namespace)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get rule sets by scope: %w", err)
 	}
 
 	return ruleSets, nil
+}
+
+// applyUpdateRequest applies the update request to a rule set.
+// This is a helper method to reduce cyclomatic complexity in Update().
+func (s *RuleSetService) applyUpdateRequest(
+	ruleSet *models.RuleSet,
+	req *models.UpdateRuleSetRequest,
+) error {
+	// Update basic fields
+	if req.Name != "" {
+		ruleSet.Name = req.Name
+	}
+
+	if req.Version != "" {
+		ruleSet.Version = req.Version
+	}
+
+	if req.Description != "" {
+		ruleSet.Description = req.Description
+	}
+
+	if req.Enabled != nil && *req.Enabled != ruleSet.Enabled {
+		// Only update if explicitly set in request
+		ruleSet.Enabled = *req.Enabled
+	}
+
+	// Update source with validation
+	if req.Source != "" {
+		source := models.RuleSetSource(req.Source)
+		if source != models.RuleSetSourceETOpen &&
+			source != models.RuleSetSourceETPro &&
+			source != models.RuleSetSourceCustom {
+			return fmt.Errorf("invalid source %q: %w", req.Source, ErrInvalidSource)
+		}
+
+		ruleSet.Source = source
+	}
+
+	// Update scope if provided
+	if req.Scope.Type != "" {
+		ruleSet.Scope.Type = models.ScopeType(req.Scope.Type)
+		ruleSet.Scope.DefconIDs = req.Scope.DefconIDs
+		ruleSet.Scope.Namespace = req.Scope.Namespace
+	}
+
+	// Update rules if provided
+	if len(req.Rules) > 0 {
+		rules := make([]models.RuleRef, len(req.Rules))
+		for i, rule := range req.Rules {
+			//nolint:gosimple // direct struct literal is clearer than conversion function
+			rules[i] = models.RuleRef{
+				RuleID:    rule.RuleID,
+				Enabled:   rule.Enabled,
+				Threshold: rule.Threshold,
+			}
+		}
+
+		ruleSet.Rules = rules
+	}
+
+	return nil
 }
 
 // emitRuleSetAuditEvent emits an audit event for ruleset operations.
@@ -645,7 +862,10 @@ func (s *RuleSetService) emitRuleSetAuditEvent(
 	action string,
 	ruleSet models.RuleSet,
 ) {
+	correlationID, _ := correlation.FromContext(ctx)
+
 	event := ironchronicle.Event{
+		CorrelationID: correlationID,
 		Actor: ironchronicle.Actor{
 			Type: string(subject.Type),
 			ID:   subject.ID,
@@ -682,6 +902,8 @@ func (s *RuleSetService) emitRuleSetAuditEventWithMeta(
 	ruleSet models.RuleSet,
 	meta map[string]string,
 ) {
+	correlationID, _ := correlation.FromContext(ctx)
+
 	// Merge base meta with additional meta
 	mergedMeta := map[string]string{
 		"name":      ruleSet.Name,
@@ -699,6 +921,7 @@ func (s *RuleSetService) emitRuleSetAuditEventWithMeta(
 	}
 
 	event := ironchronicle.Event{
+		CorrelationID: correlationID,
 		Actor: ironchronicle.Actor{
 			Type: string(subject.Type),
 			ID:   subject.ID,
