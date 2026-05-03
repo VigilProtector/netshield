@@ -164,18 +164,18 @@ func (h *RuleSetHandler) GetRuleSet(c *gin.Context) {
 	}
 
 	// Get rule set ID from path
-	id := c.Param("id")
-	if id == "" {
-		logger.V(vplogging.LogLevelInfo).Error(nil, "missing id parameter")
-		response.SendError(c, http.StatusBadRequest, "invalid_request", "id is required", nil)
+	ruleSetID := c.Param("ruleSetId")
+	if ruleSetID == "" {
+		logger.V(vplogging.LogLevelInfo).Error(nil, "missing ruleSetId parameter")
+		response.SendError(c, http.StatusBadRequest, "invalid_request", "ruleSetId is required", nil)
 
 		return
 	}
 
 	// Call service
-	ruleSet, err := h.service.Get(ctx, logger, subject, id)
+	ruleSet, err := h.service.Get(ctx, logger, subject, ruleSetID)
 	if err != nil {
-		logger.Error(err, "failed to get rule set", "id", id)
+		logger.Error(err, "failed to get rule set", "ruleSetId", ruleSetID)
 		response.SendError(c, http.StatusInternalServerError, "get_ruleset_failed", "Failed to get rule set", err.Error())
 
 		return
@@ -187,7 +187,7 @@ func (h *RuleSetHandler) GetRuleSet(c *gin.Context) {
 	}
 
 	// Success response
-	logger.V(vplogging.LogLevelVerbose).Info("rule set retrieved successfully", "id", id)
+	logger.V(vplogging.LogLevelVerbose).Info("rule set retrieved successfully", "ruleSetId", ruleSetID)
 	response.SendResponse(c, http.StatusOK, "Rule set retrieved successfully", ruleSet.ToAPI())
 }
 
@@ -287,10 +287,10 @@ func (h *RuleSetHandler) UpdateRuleSet(c *gin.Context) {
 	}
 
 	// Get rule set ID from path
-	id := c.Param("id")
-	if id == "" {
+	ruleSetID := c.Param("ruleSetId")
+	if ruleSetID == "" {
 		logger.V(vplogging.LogLevelInfo).Error(nil, "missing id parameter")
-		response.SendError(c, http.StatusBadRequest, "invalid_request", "id is required", nil)
+		response.SendError(c, http.StatusBadRequest, "invalid_request", "ruleSetId is required", nil)
 
 		return
 	}
@@ -305,9 +305,9 @@ func (h *RuleSetHandler) UpdateRuleSet(c *gin.Context) {
 	}
 
 	// Call service
-	ruleSet, err := h.service.Update(ctx, logger, subject, id, req)
+	ruleSet, err := h.service.Update(ctx, logger, subject, ruleSetID, req)
 	if err != nil {
-		logger.Error(err, "failed to update rule set", "id", id)
+		logger.Error(err, "failed to update rule set", "ruleSetId", ruleSetID)
 
 		// Handle specific errors
 		if errors.Is(err, service.ErrRuleSetNotFound) {
@@ -321,7 +321,7 @@ func (h *RuleSetHandler) UpdateRuleSet(c *gin.Context) {
 	}
 
 	// Success response
-	logger.V(vplogging.LogLevelVerbose).Info("rule set updated successfully", "id", id)
+	logger.V(vplogging.LogLevelVerbose).Info("rule set updated successfully", "ruleSetId", ruleSetID)
 	response.SendResponse(c, http.StatusOK, "Rule set updated successfully", ruleSet.ToAPI())
 }
 
@@ -357,18 +357,18 @@ func (h *RuleSetHandler) DeleteRuleSet(c *gin.Context) {
 	}
 
 	// Get rule set ID from path
-	id := c.Param("id")
-	if id == "" {
+	ruleSetID := c.Param("ruleSetId")
+	if ruleSetID == "" {
 		logger.V(vplogging.LogLevelInfo).Error(nil, "missing id parameter")
-		response.SendError(c, http.StatusBadRequest, "invalid_request", "id is required", nil)
+		response.SendError(c, http.StatusBadRequest, "invalid_request", "ruleSetId is required", nil)
 
 		return
 	}
 
 	// Call service
-	err = h.service.Delete(ctx, logger, subject, id)
+	err = h.service.Delete(ctx, logger, subject, ruleSetID)
 	if err != nil {
-		logger.Error(err, "failed to delete rule set", "id", id)
+		logger.Error(err, "failed to delete rule set", "ruleSetId", ruleSetID)
 
 		// Handle specific errors
 		if errors.Is(err, service.ErrRuleSetNotFound) {
@@ -387,7 +387,7 @@ func (h *RuleSetHandler) DeleteRuleSet(c *gin.Context) {
 	}
 
 	// Success response
-	logger.V(vplogging.LogLevelVerbose).Info("rule set deleted successfully", "id", id)
+	logger.V(vplogging.LogLevelVerbose).Info("rule set deleted successfully", "ruleSetId", ruleSetID)
 	response.SendResponse(c, http.StatusOK, "Rule set deleted successfully", nil)
 }
 
@@ -423,18 +423,18 @@ func (h *RuleSetHandler) EnableRuleSet(c *gin.Context) {
 	}
 
 	// Get rule set ID from path
-	id := c.Param("id")
-	if id == "" {
+	ruleSetID := c.Param("ruleSetId")
+	if ruleSetID == "" {
 		logger.V(vplogging.LogLevelInfo).Error(nil, "missing id parameter")
-		response.SendError(c, http.StatusBadRequest, "invalid_request", "id is required", nil)
+		response.SendError(c, http.StatusBadRequest, "invalid_request", "ruleSetId is required", nil)
 
 		return
 	}
 
 	// Call service
-	ruleSet, err := h.service.Enable(ctx, logger, subject, id)
+	ruleSet, err := h.service.Enable(ctx, logger, subject, ruleSetID)
 	if err != nil {
-		logger.Error(err, "failed to enable rule set", "id", id)
+		logger.Error(err, "failed to enable rule set", "ruleSetId", ruleSetID)
 
 		// Handle specific errors
 		if errors.Is(err, service.ErrRuleSetNotFound) {
@@ -448,7 +448,7 @@ func (h *RuleSetHandler) EnableRuleSet(c *gin.Context) {
 	}
 
 	// Success response
-	logger.V(vplogging.LogLevelVerbose).Info("rule set enabled successfully", "id", id)
+	logger.V(vplogging.LogLevelVerbose).Info("rule set enabled successfully", "ruleSetId", ruleSetID)
 	response.SendResponse(c, http.StatusOK, "Rule set enabled successfully", ruleSet.ToAPI())
 }
 
@@ -484,18 +484,18 @@ func (h *RuleSetHandler) DisableRuleSet(c *gin.Context) {
 	}
 
 	// Get rule set ID from path
-	id := c.Param("id")
-	if id == "" {
+	ruleSetID := c.Param("ruleSetId")
+	if ruleSetID == "" {
 		logger.V(vplogging.LogLevelInfo).Error(nil, "missing id parameter")
-		response.SendError(c, http.StatusBadRequest, "invalid_request", "id is required", nil)
+		response.SendError(c, http.StatusBadRequest, "invalid_request", "ruleSetId is required", nil)
 
 		return
 	}
 
 	// Call service
-	ruleSet, err := h.service.Disable(ctx, logger, subject, id)
+	ruleSet, err := h.service.Disable(ctx, logger, subject, ruleSetID)
 	if err != nil {
-		logger.Error(err, "failed to disable rule set", "id", id)
+		logger.Error(err, "failed to disable rule set", "ruleSetId", ruleSetID)
 
 		// Handle specific errors
 		if errors.Is(err, service.ErrRuleSetNotFound) {
@@ -514,7 +514,7 @@ func (h *RuleSetHandler) DisableRuleSet(c *gin.Context) {
 	}
 
 	// Success response
-	logger.V(vplogging.LogLevelVerbose).Info("rule set disabled successfully", "id", id)
+	logger.V(vplogging.LogLevelVerbose).Info("rule set disabled successfully", "ruleSetId", ruleSetID)
 	response.SendResponse(c, http.StatusOK, "Rule set disabled successfully", ruleSet.ToAPI())
 }
 
@@ -599,18 +599,18 @@ func (h *RuleSetHandler) RenderRuleSet(c *gin.Context) {
 	}
 
 	// Get rule set ID from path
-	id := c.Param("id")
-	if id == "" {
+	ruleSetID := c.Param("ruleSetId")
+	if ruleSetID == "" {
 		logger.V(vplogging.LogLevelInfo).Error(nil, "missing id parameter")
-		response.SendError(c, http.StatusBadRequest, "invalid_request", "id is required", nil)
+		response.SendError(c, http.StatusBadRequest, "invalid_request", "ruleSetId is required", nil)
 
 		return
 	}
 
 	// Call service
-	rules, err := h.service.Render(ctx, logger, subject, id)
+	rules, err := h.service.Render(ctx, logger, subject, ruleSetID)
 	if err != nil {
-		logger.Error(err, "failed to render rule set", "id", id)
+		logger.Error(err, "failed to render rule set", "ruleSetId", ruleSetID)
 
 		// Handle specific errors
 		if errors.Is(err, service.ErrRuleSetNotFound) {
@@ -624,7 +624,7 @@ func (h *RuleSetHandler) RenderRuleSet(c *gin.Context) {
 	}
 
 	// Success response - return as plain text
-	logger.V(vplogging.LogLevelVerbose).Info("rule set rendered successfully", "id", id)
+	logger.V(vplogging.LogLevelVerbose).Info("rule set rendered successfully", "ruleSetId", ruleSetID)
 	c.Header("Content-Type", "text/plain; charset=utf-8")
 	c.String(http.StatusOK, rules)
 }

@@ -29,6 +29,7 @@ func SetupRouter(
 	// Health endpoints (MANDATORY, no auth)
 	router.GET("/health", healthHandler)
 	router.GET("/ready", readyHandler)
+	router.GET("/metrics", metricsHandler)
 
 	// API routes
 	v1 := router.Group("/netshield/v1")
@@ -43,14 +44,15 @@ func SetupRouter(
 		// RuleSet endpoints
 		// NH-RD-001..007: Regelset-Management-APIs
 		v1.GET("/rulesets", ruleSetHandler.ListRuleSets)
-		v1.GET("/rulesets/:id", ruleSetHandler.GetRuleSet)
 		v1.POST("/rulesets", ruleSetHandler.CreateRuleSet)
-		v1.PATCH("/rulesets/:id", ruleSetHandler.UpdateRuleSet)
-		v1.DELETE("/rulesets/:id", ruleSetHandler.DeleteRuleSet)
-		v1.POST("/rulesets/:id/enable", ruleSetHandler.EnableRuleSet)
-		v1.POST("/rulesets/:id/disable", ruleSetHandler.DisableRuleSet)
 		v1.GET("/rulesets/default", ruleSetHandler.GetDefaultRuleSet)
-		v1.GET("/rulesets/:id/render", ruleSetHandler.RenderRuleSet)
+		v1.GET("/rulesets/:ruleSetId", ruleSetHandler.GetRuleSet)
+		v1.PATCH("/rulesets/:ruleSetId", ruleSetHandler.UpdateRuleSet)
+		v1.DELETE("/rulesets/:ruleSetId", ruleSetHandler.DeleteRuleSet)
+		v1.POST("/rulesets/:ruleSetId/enable", ruleSetHandler.EnableRuleSet)
+		v1.POST("/rulesets/:ruleSetId/disable", ruleSetHandler.DisableRuleSet)
+		v1.GET("/rulesets/:ruleSetId/render", ruleSetHandler.RenderRuleSet)
+		v1.GET("/rulesets/:ruleSetId/detections", detectionHandler.GetDetectionsByRuleSet)
 
 		// Finding endpoints
 		// VL-FC-001: Finding listing with filtering
@@ -76,9 +78,8 @@ func SetupRouter(
 		v1.POST("/detections/:detectionId/mark-processed", detectionHandler.MarkAsProcessed)
 
 		// Detection endpoints by sensor/picket/ruleSet/rule
-		v1.GET("/sensors/:sensorId/detections", detectionHandler.GetDetectionsBySensor)
+		v1.GET("/sensors/:picketId/detections", detectionHandler.GetDetectionsBySensor)
 		v1.GET("/pickets/:picketId/detections", detectionHandler.GetDetectionsByPicket)
-		v1.GET("/rulesets/:ruleSetId/detections", detectionHandler.GetDetectionsByRuleSet)
 		v1.GET("/rules/:ruleId/detections", detectionHandler.GetDetectionsByRule)
 		v1.GET("/detections/unprocessed", detectionHandler.GetUnprocessedDetections)
 	}
@@ -92,4 +93,8 @@ func healthHandler(c *gin.Context) {
 
 func readyHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "ready"})
+}
+
+func metricsHandler(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"status": "metrics not implemented"})
 }
