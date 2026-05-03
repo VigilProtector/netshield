@@ -8,6 +8,8 @@ import (
 
 	"github.com/go-logr/logr"
 
+	"vigilprotector.io/netshield/internal/client"
+	"vigilprotector.io/netshield/internal/crossbc"
 	"vigilprotector.io/netshield/internal/models"
 	"vigilprotector.io/vp-lib/findings"
 	"vigilprotector.io/vp-lib/findings/pullcursor"
@@ -15,14 +17,110 @@ import (
 	"vigilprotector.io/vp-lib/types"
 )
 
+// AegisClientAdapter wraps client.AegisClient to provide the AegisClientInterface.
+type AegisClientAdapter struct {
+	client *client.AegisClient
+}
+
+// GetAsset retrieves an asset by ID from Aegis.
+func (a *AegisClientAdapter) GetAsset(ctx context.Context, assetID string) (*crossbc.AegisAssetDetail, error) {
+	if a.client == nil {
+		return nil, nil
+	}
+
+	return a.client.GetAsset(ctx, assetID)
+}
+
+// NetSentinelClientAdapter wraps client.NetSentinelClient to provide the NetSentinelClientInterface.
+type NetSentinelClientAdapter struct {
+	client *client.NetSentinelClient
+}
+
+// GetDeviceFacts retrieves live sys* snapshot for a device.
+func (n *NetSentinelClientAdapter) GetDeviceFacts(ctx context.Context, deviceIP string) (*crossbc.DeviceFactsResponse, error) {
+	if n.client == nil {
+		return nil, nil
+	}
+
+	return n.client.GetDeviceFacts(ctx, deviceIP)
+}
+
+// GetInterfaceFacts retrieves live ifTable snapshot for a device.
+func (n *NetSentinelClientAdapter) GetInterfaceFacts(ctx context.Context, deviceIP string) (*crossbc.InterfaceFactsResponse, error) {
+	if n.client == nil {
+		return nil, nil
+	}
+
+	return n.client.GetInterfaceFacts(ctx, deviceIP)
+}
+
+// GetIPAddresses retrieves live ipAdEntTable snapshot for a device.
+func (n *NetSentinelClientAdapter) GetIPAddresses(ctx context.Context, deviceIP string) (*crossbc.IPAddressesResponse, error) {
+	if n.client == nil {
+		return nil, nil
+	}
+
+	return n.client.GetIPAddresses(ctx, deviceIP)
+}
+
+// NetAtlasClientAdapter wraps client.NetAtlasClient to provide the NetAtlasClientInterface.
+type NetAtlasClientAdapter struct {
+	client *client.NetAtlasClient
+}
+
+// GetTopologyPath retrieves the shortest path between two assets.
+func (n *NetAtlasClientAdapter) GetTopologyPath(ctx context.Context, fromAssetID string, toAssetID string) (*crossbc.TopologyPathAPI, error) {
+	if n.client == nil {
+		return nil, nil
+	}
+
+	return n.client.GetTopologyPath(ctx, fromAssetID, toAssetID)
+}
+
+// GetZoneForAsset retrieves the zone information for a given asset.
+func (n *NetAtlasClientAdapter) GetZoneForAsset(ctx context.Context, assetID string) (*crossbc.TopologyZoneAPI, error) {
+	if n.client == nil {
+		return nil, nil
+	}
+
+	return n.client.GetZoneForAsset(ctx, assetID)
+}
+
+// GetLatestSnapshot retrieves the latest topology snapshot.
+func (n *NetAtlasClientAdapter) GetLatestSnapshot(ctx context.Context) (*crossbc.TopologySnapshotAPI, error) {
+	if n.client == nil {
+		return nil, nil
+	}
+
+	return n.client.GetLatestSnapshot(ctx)
+}
+
 // FlowSeekerConsumer handles consumption and processing of findings from FlowSeeker.
 // Implements NH-LM-005: FlowSeeker-Finding-Subscription via VL-FC-002.
 // Implements NH-LM-006: Event-driven Enrichment-Pipeline.
+// Implements NH-LM-007: Emission network.lateral_movement_suspected.
+// Implements NH-CC-005: Cross-BC Queries for Aegis, NetSentinel, NetAtlas.
 type FlowSeekerConsumer struct {
 	// subscriptionClient is the pull-cursor client for FlowSeeker findings
 	subscriptionClient *pullcursor.SubscriptionClient
 	// detectionService is used to create detections from FlowSeeker findings
 	detectionService DetectionServiceInterface
+	// findingService is used to create findings from lateral movement detection
+	findingService FindingServiceInterface
+	// flowSeekerClient is used to fetch flow context for correlation (NH-CC-001..004, NH-LM-006)
+	flowSeekerClient FlowSeekerClient
+	// lateralMovementDetector is used for NH-LM-001..007 lateral movement detection
+	lateralMovementDetector *LateralMovementDetector
+	// lateralMovementConfig holds configuration for lateral movement detection
+	lateralMovementConfig LateralMovementConfig
+	// Cross-BC Query Clients for NH-CC-005
+	// Note: Using adapter types that wrap client implementations
+	// aegisClient provides Asset-Identity and Criticality information
+	aegisClient *AegisClientAdapter
+	// netSentinelClient provides Device-Facts and Flow-Metrics
+	netSentinelClient *NetSentinelClientAdapter
+	// netAtlasClient provides Zone and Topology information
+	netAtlasClient *NetAtlasClientAdapter
 	// logger for this consumer
 	logger logr.Logger
 	// pollInterval is how often to check for new findings
@@ -34,14 +132,28 @@ type FlowSeekerConsumer struct {
 func NewFlowSeekerConsumer(
 	subscriptionClient *pullcursor.SubscriptionClient,
 	detectionService DetectionServiceInterface,
+	findingService FindingServiceInterface,
+	flowSeekerClient FlowSeekerClient,
+	lateralMovementDetector *LateralMovementDetector,
+	lateralMovementConfig LateralMovementConfig,
+	aegisClient *AegisClientAdapter,
+	netSentinelClient *NetSentinelClientAdapter,
+	netAtlasClient *NetAtlasClientAdapter,
 	logger logr.Logger,
 	pollInterval time.Duration,
 ) *FlowSeekerConsumer {
 	return &FlowSeekerConsumer{
-		subscriptionClient: subscriptionClient,
-		detectionService:   detectionService,
-		logger:             logger.WithName("flowseeker-consumer"),
-		pollInterval:       pollInterval,
+		subscriptionClient:      subscriptionClient,
+		detectionService:        detectionService,
+		findingService:          findingService,
+		flowSeekerClient:        flowSeekerClient,
+		lateralMovementDetector: lateralMovementDetector,
+		lateralMovementConfig:   lateralMovementConfig,
+		aegisClient:             aegisClient,
+		netSentinelClient:       netSentinelClient,
+		netAtlasClient:          netAtlasClient,
+		logger:                  logger.WithName("flowseeker-consumer"),
+		pollInterval:            pollInterval,
 	}
 }
 
@@ -155,6 +267,70 @@ func (c *FlowSeekerConsumer) processNextFinding(ctx context.Context) (bool, erro
 		return true, nil
 	}
 
+	// NH-LM-006: Event-driven Enrichment-Pipeline
+	// NH-CC-005: Cross-BC Query - Get flow context and enrich with Aegis/NetSentinel/NetAtlas
+	// Use a reasonable time window around the finding timestamp
+	timeWindowStart := detection.Timestamp.Add(-1 * time.Minute)
+	timeWindowEnd := detection.Timestamp.Add(1 * time.Minute)
+
+	// Get flow context from FlowSeeker (NH-CC-001..004)
+	flowCtx, err := c.flowSeekerClient.GetFlowContext(
+		ctx,
+		detection.SourceIP,
+		detection.DestIP,
+		timeWindowStart,
+		timeWindowEnd,
+	)
+	if err != nil {
+		logger.Error(err, "failed to get flow context for lateral movement detection",
+			"findingId", envelope.FindingID,
+			"detectionId", detection.DetectionID,
+			"srcIP", detection.SourceIP,
+			"dstIP", detection.DestIP)
+	}
+
+	// NH-CC-005: Enrich with cross-BC context information
+	c.enrichWithCrossBCContext(ctx, logger, detection, flowCtx)
+
+	// Log flow context retrieval for lateral movement analysis
+	if flowCtx != nil {
+		logger.V(vplogging.LogLevelDebug).Info("retrieved flow context for lateral movement analysis",
+			"detectionId", detection.DetectionID,
+			"flowId", flowCtx.FlowID,
+			"assetId", flowCtx.AssetID,
+			"defconId", flowCtx.DefconID)
+	}
+
+	// NH-LM-005/006/007: Process detection for lateral movement
+	// Implements NH-LM-001..004 via LateralMovementDetector
+	finding, isLateralMovement := c.lateralMovementDetector.ProcessDetectionForLateralMovement(
+		ctx,
+		logger,
+		detection,
+		flowCtx,
+		c.lateralMovementConfig,
+	)
+
+	if isLateralMovement && finding != nil {
+		// NH-LM-007: Emit network.lateral_movement_suspected finding
+		logger.V(vplogging.LogLevelInfo).Info("lateral movement detected, creating finding",
+			"findingId", finding.FindingID,
+			"detectionId", detection.DetectionID)
+
+		// Create the lateral movement finding in NetShield
+		// Using the same system subject for audit consistency
+		_, err = c.findingService.Create(ctx, logger, systemSubject, finding)
+		if err != nil {
+			logger.Error(err, "failed to create lateral movement finding", // Continue - finding creation failure shouldn't block detection processing
+				"findingId", finding.FindingID,
+				"detectionId", detection.DetectionID)
+		} else {
+			logger.V(vplogging.LogLevelInfo).Info("created lateral movement finding",
+				"findingId", finding.FindingID,
+				"findingType", finding.FindingType)
+		}
+	}
+
 	// Acknowledge successful processing
 	if ackErr := ack(ctx); ackErr != nil {
 		logger.Error(ackErr, "failed to ack finding",
@@ -165,7 +341,8 @@ func (c *FlowSeekerConsumer) processNextFinding(ctx context.Context) (bool, erro
 
 	logger.V(vplogging.LogLevelInfo).Info("processed FlowSeeker finding",
 		"findingId", envelope.FindingID,
-		"detectionId", detection.DetectionID)
+		"detectionId", detection.DetectionID,
+		"lateralMovementDetected", isLateralMovement)
 
 	return true, nil
 }
@@ -229,14 +406,11 @@ func (c *FlowSeekerConsumer) convertFindingToDetection(envelope findings.Envelop
 		UpdatedAt: time.Now().UTC(),
 	}
 
-	// TODO: NH-LM-006: Add enrichment from FlowSeeker flow context
-	// This would require calling FlowSeekerClient.GetFlowContext with the
-	// source/dest IPs from the finding to get additional context like
-	// AssetID, DefconID, Zone, etc.
+	// NH-LM-006: Flow context enrichment is now handled in processNextFinding
+	// via FlowSeekerClient.GetFlowContext
 
-	// TODO: NH-CC-005: Add enrichment from Aegis for asset information
-	// This would require calling Aegis API to get detailed asset information
-	// for the source/destination IPs in the finding
+	// NH-CC-005: Cross-BC enrichment (Aegis, NetSentinel, NetAtlas) is handled
+	// in processNextFinding via the respective clients
 
 	return detection, nil
 }
@@ -262,6 +436,67 @@ func mapFlowSeekerFindingType(findingType string) models.DetectionEventType {
 		// NH-SG-009: Only alert and anomaly go to NetShield, but we also accept
 		// flow findings from FlowSeeker for correlation purposes
 		return models.DetectionEventTypeFlow
+	}
+}
+
+// enrichWithCrossBCContext enriches the detection with cross-BC context information.
+// Implements NH-CC-005: Synchrone Cross-BC-Query-Zugriffe.
+func (c *FlowSeekerConsumer) enrichWithCrossBCContext(
+	ctx context.Context,
+	logger logr.Logger,
+	detection *models.Detection,
+	flowCtx *FlowContext,
+) {
+	if flowCtx == nil {
+		return
+	}
+
+	// Enrich with Aegis asset information
+	if flowCtx.AssetID != "" && c.aegisClient != nil {
+		aegisAsset, aegisErr := c.aegisClient.GetAsset(ctx, flowCtx.AssetID)
+		if aegisErr == nil && aegisAsset != nil {
+			// Enrich detection with asset identity and criticality
+			if aegisAsset.Hostname != "" {
+				detection.AssetID = aegisAsset.ID
+			}
+
+			if aegisAsset.Criticality != "" {
+				// Map criticality to detection severity if needed
+				logger.V(vplogging.LogLevelDebug).Info("enriched with Aegis asset info",
+					"assetId", aegisAsset.ID,
+					"criticality", aegisAsset.Criticality)
+			} else {
+				logger.V(vplogging.LogLevelDebug).Info("Aegis asset not found for flow context",
+					"assetId", flowCtx.AssetID)
+			}
+		}
+	}
+
+	// Enrich with NetSentinel device metrics
+	if flowCtx.DestIP != "" && c.netSentinelClient != nil {
+		deviceFacts, nsErr := c.netSentinelClient.GetDeviceFacts(ctx, flowCtx.DestIP)
+		if nsErr == nil && deviceFacts != nil {
+			logger.V(vplogging.LogLevelDebug).Info("enriched with NetSentinel device facts",
+				"deviceIp", deviceFacts.DeviceIP,
+				"sysName", deviceFacts.SysName,
+				"freshness", deviceFacts.Freshness)
+		} else {
+			logger.V(vplogging.LogLevelDebug).Info("NetSentinel device facts not found",
+				"deviceIp", flowCtx.DestIP)
+		}
+	}
+
+	// Enrich with NetAtlas zone information
+	if flowCtx.AssetID != "" && c.netAtlasClient != nil {
+		zoneInfo, naErr := c.netAtlasClient.GetZoneForAsset(ctx, flowCtx.AssetID)
+		if naErr == nil && zoneInfo != nil {
+			logger.V(vplogging.LogLevelDebug).Info("enriched with NetAtlas zone info",
+				"assetId", flowCtx.AssetID,
+				"zoneAssetId", zoneInfo.AssetID)
+		} else {
+			logger.V(vplogging.LogLevelDebug).Info("NetAtlas zone not found for asset",
+				"assetId", flowCtx.AssetID)
+		}
 	}
 }
 

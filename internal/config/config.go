@@ -36,6 +36,9 @@ type Config struct {
 	Metrics     MetricsConfig
 	Database    DatabaseConfig
 	FlowSeeker  FlowSeekerConfig
+	Aegis       AegisConfig
+	NetSentinel NetSentinelConfig
+	NetAtlas    NetAtlasConfig
 	Environment string
 	LogLevel    int8
 	LogEncoding string
@@ -72,6 +75,30 @@ type FlowSeekerConfig struct {
 	BatchSize int
 }
 
+// AegisConfig holds Aegis service configuration for cross-BC queries.
+type AegisConfig struct {
+	// BaseURL is the Aegis API root URL.
+	BaseURL string
+	// Timeout is the HTTP client timeout.
+	Timeout time.Duration
+}
+
+// NetSentinelConfig holds NetSentinel service configuration for cross-BC queries.
+type NetSentinelConfig struct {
+	// BaseURL is the NetSentinel Query-Fassade API root URL.
+	BaseURL string
+	// Timeout is the HTTP client timeout.
+	Timeout time.Duration
+}
+
+// NetAtlasConfig holds NetAtlas service configuration for cross-BC queries.
+type NetAtlasConfig struct {
+	// BaseURL is the NetAtlas API root URL.
+	BaseURL string
+	// Timeout is the HTTP client timeout.
+	Timeout time.Duration
+}
+
 // LoadConfig loads configuration from environment variables.
 func LoadConfig() (*Config, error) {
 	cfg := &Config{
@@ -94,6 +121,18 @@ func LoadConfig() (*Config, error) {
 			BaseURL:      config.GetEnvOrDefault("FLOWSEEKER_BASE_URL", ""),
 			PollInterval: config.ParseDurationOrDefault("FLOWSEEKER_POLL_INTERVAL", "5s"),
 			BatchSize:    config.ParseIntOrDefault("FLOWSEEKER_BATCH_SIZE", 100),
+		},
+		Aegis: AegisConfig{
+			BaseURL: config.GetEnvOrDefault("AEGIS_BASE_URL", ""),
+			Timeout: config.ParseDurationOrDefault("AEGIS_TIMEOUT", "10s"),
+		},
+		NetSentinel: NetSentinelConfig{
+			BaseURL: config.GetEnvOrDefault("NETSENTINEL_BASE_URL", ""),
+			Timeout: config.ParseDurationOrDefault("NETSENTINEL_TIMEOUT", "10s"),
+		},
+		NetAtlas: NetAtlasConfig{
+			BaseURL: config.GetEnvOrDefault("NETATLAS_BASE_URL", ""),
+			Timeout: config.ParseDurationOrDefault("NETATLAS_TIMEOUT", "10s"),
 		},
 		Environment: config.GetEnvOrDefault("ENVIRONMENT", "production"),
 		LogLevel:    config.ParseInt8OrDefault("LOG_LEVEL", DefaultLogLevel),

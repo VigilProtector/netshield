@@ -177,9 +177,9 @@ func TestDetectionFromAPI(t *testing.T) {
 // TestIsDetectionEvent tests the IsDetectionEvent method.
 func TestIsDetectionEvent(t *testing.T) {
 	tests := []struct {
-		name     string
-		event    DetectionEventType
-		want     bool
+		name  string
+		event DetectionEventType
+		want  bool
 	}{
 		{"alert is detection", DetectionEventTypeAlert, true},
 		{"anomaly is detection", DetectionEventTypeAnomaly, true},
