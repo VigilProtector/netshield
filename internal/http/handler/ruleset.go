@@ -10,10 +10,12 @@ import (
 	"vigilprotector.io/netshield/internal/models"
 	"vigilprotector.io/netshield/internal/service"
 	"vigilprotector.io/vp-lib/authn"
+	"vigilprotector.io/vp-lib/authz"
 	"vigilprotector.io/vp-lib/correlation"
 	ginlogging "vigilprotector.io/vp-lib/gin/logging"
 	"vigilprotector.io/vp-lib/gin/response"
 	vplogging "vigilprotector.io/vp-lib/logging"
+	"vigilprotector.io/vp-lib/types"
 )
 
 // RuleSetHandler handles HTTP requests for ruleset operations.
@@ -59,6 +61,31 @@ func (h *RuleSetHandler) ListRuleSets(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to extract subject")
 		response.SendError(c, http.StatusUnauthorized, "authentication_required", "Authentication required", err.Error())
+
+		return
+	}
+
+	// Authorize (AuthZ check before service access)
+	input := authz.NewInput(
+		subject,
+		types.Action("netshield.ruleset.list"),
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "ruleset",
+		},
+	)
+
+	decision, authzErr := authz.Authorize(ctx, input)
+	if authzErr != nil {
+		logger.Error(authzErr, "authorization check failed")
+		response.SendError(c, http.StatusInternalServerError, "authorization_failed", "Authorization check failed", authzErr.Error())
+
+		return
+	}
+
+	if !decision.Allow {
+		logger.V(vplogging.LogLevelInfo).Info("access denied", "reason", decision.Reason)
+		response.SendError(c, http.StatusForbidden, "access_denied", "Access denied", decision.Reason)
 
 		return
 	}

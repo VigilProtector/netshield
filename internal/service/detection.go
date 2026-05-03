@@ -360,6 +360,12 @@ func (s *DetectionService) correlateWithContext(
 		"sourceIp", detection.SourceIP,
 		"destIp", detection.DestIP)
 
+	// Skip if FlowSeeker client is not configured
+	if s.flowSeeker == nil {
+		logger.V(vplogging.LogLevelDebug).Info("flowSeeker client not configured, skipping context correlation")
+		return nil
+	}
+
 	// Skip if no IPs are available
 	if detection.SourceIP == "" && detection.DestIP == "" {
 		return nil

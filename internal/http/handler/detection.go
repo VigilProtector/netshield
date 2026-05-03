@@ -10,10 +10,12 @@ import (
 	"vigilprotector.io/netshield/internal/models"
 	"vigilprotector.io/netshield/internal/service"
 	"vigilprotector.io/vp-lib/authn"
+	"vigilprotector.io/vp-lib/authz"
 	"vigilprotector.io/vp-lib/correlation"
 	ginlogging "vigilprotector.io/vp-lib/gin/logging"
 	"vigilprotector.io/vp-lib/gin/response"
 	vplogging "vigilprotector.io/vp-lib/logging"
+	"vigilprotector.io/vp-lib/types"
 )
 
 // DetectionHandler handles HTTP requests for detection operations.
@@ -63,6 +65,31 @@ func (h *DetectionHandler) ListDetections(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to extract subject")
 		response.SendError(c, http.StatusUnauthorized, "authentication_required", "Authentication required", err.Error())
+
+		return
+	}
+
+	// Authorize (AuthZ check before service access)
+	input := authz.NewInput(
+		subject,
+		types.Action("netshield.detection.list"),
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "detection",
+		},
+	)
+
+	decision, authzErr := authz.Authorize(ctx, input)
+	if authzErr != nil {
+		logger.Error(authzErr, "authorization check failed")
+		response.SendError(c, http.StatusInternalServerError, "authorization_failed", "Authorization check failed", authzErr.Error())
+
+		return
+	}
+
+	if !decision.Allow {
+		logger.V(vplogging.LogLevelInfo).Info("access denied", "reason", decision.Reason)
+		response.SendError(c, http.StatusForbidden, "access_denied", "Access denied", decision.Reason)
 
 		return
 	}
@@ -183,6 +210,32 @@ func (h *DetectionHandler) GetDetection(c *gin.Context) {
 		return
 	}
 
+	// Authorize (AuthZ check before service access)
+	input := authz.NewInput(
+		subject,
+		types.Action("netshield.detection.read"),
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "detection",
+			ResourceRef:  detectionID,
+		},
+	)
+
+	decision, authzErr := authz.Authorize(ctx, input)
+	if authzErr != nil {
+		logger.Error(authzErr, "authorization check failed")
+		response.SendError(c, http.StatusInternalServerError, "authorization_failed", "Authorization check failed", authzErr.Error())
+
+		return
+	}
+
+	if !decision.Allow {
+		logger.V(vplogging.LogLevelInfo).Info("access denied", "reason", decision.Reason)
+		response.SendError(c, http.StatusForbidden, "access_denied", "Access denied", decision.Reason)
+
+		return
+	}
+
 	// Call service
 	detection, err := h.service.Get(ctx, logger, subject, detectionID)
 	if err != nil {
@@ -230,6 +283,31 @@ func (h *DetectionHandler) CreateDetection(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to extract subject")
 		response.SendError(c, http.StatusUnauthorized, "authentication_required", "Authentication required", err.Error())
+
+		return
+	}
+
+	// Authorize (AuthZ check before service access)
+	input := authz.NewInput(
+		subject,
+		types.Action("netshield.detection.create"),
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "detection",
+		},
+	)
+
+	decision, authzErr := authz.Authorize(ctx, input)
+	if authzErr != nil {
+		logger.Error(authzErr, "authorization check failed")
+		response.SendError(c, http.StatusInternalServerError, "authorization_failed", "Authorization check failed", authzErr.Error())
+
+		return
+	}
+
+	if !decision.Allow {
+		logger.V(vplogging.LogLevelInfo).Info("access denied", "reason", decision.Reason)
+		response.SendError(c, http.StatusForbidden, "access_denied", "Access denied", decision.Reason)
 
 		return
 	}
@@ -314,6 +392,32 @@ func (h *DetectionHandler) ProcessDetection(c *gin.Context) {
 		return
 	}
 
+	// Authorize (AuthZ check before service access)
+	input := authz.NewInput(
+		subject,
+		types.Action("netshield.detection.process"),
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "detection",
+			ResourceRef:  detectionID,
+		},
+	)
+
+	decision, authzErr := authz.Authorize(ctx, input)
+	if authzErr != nil {
+		logger.Error(authzErr, "authorization check failed")
+		response.SendError(c, http.StatusInternalServerError, "authorization_failed", "Authorization check failed", authzErr.Error())
+
+		return
+	}
+
+	if !decision.Allow {
+		logger.V(vplogging.LogLevelInfo).Info("access denied", "reason", decision.Reason)
+		response.SendError(c, http.StatusForbidden, "access_denied", "Access denied", decision.Reason)
+
+		return
+	}
+
 	// Call service
 	finding, err := h.service.ProcessDetection(ctx, logger, subject, detectionID)
 	if err != nil {
@@ -377,6 +481,32 @@ func (h *DetectionHandler) MarkAsProcessed(c *gin.Context) {
 	if detectionID == "" {
 		logger.V(vplogging.LogLevelInfo).Error(nil, "missing detectionId parameter")
 		response.SendError(c, http.StatusBadRequest, "invalid_request", "detectionId is required", nil)
+
+		return
+	}
+
+	// Authorize (AuthZ check before service access)
+	input := authz.NewInput(
+		subject,
+		types.Action("netshield.detection.update"),
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "detection",
+			ResourceRef:  detectionID,
+		},
+	)
+
+	decision, authzErr := authz.Authorize(ctx, input)
+	if authzErr != nil {
+		logger.Error(authzErr, "authorization check failed")
+		response.SendError(c, http.StatusInternalServerError, "authorization_failed", "Authorization check failed", authzErr.Error())
+
+		return
+	}
+
+	if !decision.Allow {
+		logger.V(vplogging.LogLevelInfo).Info("access denied", "reason", decision.Reason)
+		response.SendError(c, http.StatusForbidden, "access_denied", "Access denied", decision.Reason)
 
 		return
 	}
@@ -447,6 +577,32 @@ func (h *DetectionHandler) GetDetectionsBySensor(c *gin.Context) {
 	if sensorID == "" {
 		logger.V(vplogging.LogLevelInfo).Error(nil, "missing sensorId parameter")
 		response.SendError(c, http.StatusBadRequest, "invalid_request", "sensorId is required", nil)
+
+		return
+	}
+
+	// Authorize (AuthZ check before service access)
+	input := authz.NewInput(
+		subject,
+		types.Action("netshield.detection.list"),
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "detection",
+			ResourceRef:  sensorID,
+		},
+	)
+
+	decision, authzErr := authz.Authorize(ctx, input)
+	if authzErr != nil {
+		logger.Error(authzErr, "authorization check failed")
+		response.SendError(c, http.StatusInternalServerError, "authorization_failed", "Authorization check failed", authzErr.Error())
+
+		return
+	}
+
+	if !decision.Allow {
+		logger.V(vplogging.LogLevelInfo).Info("access denied", "reason", decision.Reason)
+		response.SendError(c, http.StatusForbidden, "access_denied", "Access denied", decision.Reason)
 
 		return
 	}
@@ -572,6 +728,32 @@ func (h *DetectionHandler) GetDetectionsByPicket(c *gin.Context) {
 		return
 	}
 
+	// Authorize (AuthZ check before service access)
+	input := authz.NewInput(
+		subject,
+		types.Action("netshield.detection.list"),
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "detection",
+			ResourceRef:  picketID,
+		},
+	)
+
+	decision, authzErr := authz.Authorize(ctx, input)
+	if authzErr != nil {
+		logger.Error(authzErr, "authorization check failed")
+		response.SendError(c, http.StatusInternalServerError, "authorization_failed", "Authorization check failed", authzErr.Error())
+
+		return
+	}
+
+	if !decision.Allow {
+		logger.V(vplogging.LogLevelInfo).Info("access denied", "reason", decision.Reason)
+		response.SendError(c, http.StatusForbidden, "access_denied", "Access denied", decision.Reason)
+
+		return
+	}
+
 	// Parse query parameters
 	var filter models.DetectionFilter
 	if sensorID := c.Query("sensorId"); sensorID != "" {
@@ -689,6 +871,32 @@ func (h *DetectionHandler) GetDetectionsByRuleSet(c *gin.Context) {
 	if ruleSetID == "" {
 		logger.V(vplogging.LogLevelInfo).Error(nil, "missing ruleSetId parameter")
 		response.SendError(c, http.StatusBadRequest, "invalid_request", "ruleSetId is required", nil)
+
+		return
+	}
+
+	// Authorize (AuthZ check before service access)
+	input := authz.NewInput(
+		subject,
+		types.Action("netshield.detection.list"),
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "detection",
+			ResourceRef:  ruleSetID,
+		},
+	)
+
+	decision, authzErr := authz.Authorize(ctx, input)
+	if authzErr != nil {
+		logger.Error(authzErr, "authorization check failed")
+		response.SendError(c, http.StatusInternalServerError, "authorization_failed", "Authorization check failed", authzErr.Error())
+
+		return
+	}
+
+	if !decision.Allow {
+		logger.V(vplogging.LogLevelInfo).Info("access denied", "reason", decision.Reason)
+		response.SendError(c, http.StatusForbidden, "access_denied", "Access denied", decision.Reason)
 
 		return
 	}
@@ -814,6 +1022,32 @@ func (h *DetectionHandler) GetDetectionsByRule(c *gin.Context) {
 		return
 	}
 
+	// Authorize (AuthZ check before service access)
+	input := authz.NewInput(
+		subject,
+		types.Action("netshield.detection.list"),
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "detection",
+			ResourceRef:  ruleID,
+		},
+	)
+
+	decision, authzErr := authz.Authorize(ctx, input)
+	if authzErr != nil {
+		logger.Error(authzErr, "authorization check failed")
+		response.SendError(c, http.StatusInternalServerError, "authorization_failed", "Authorization check failed", authzErr.Error())
+
+		return
+	}
+
+	if !decision.Allow {
+		logger.V(vplogging.LogLevelInfo).Info("access denied", "reason", decision.Reason)
+		response.SendError(c, http.StatusForbidden, "access_denied", "Access denied", decision.Reason)
+
+		return
+	}
+
 	// Parse query parameters
 	var filter models.DetectionFilter
 	if sensorID := c.Query("sensorId"); sensorID != "" {
@@ -921,6 +1155,31 @@ func (h *DetectionHandler) GetUnprocessedDetections(c *gin.Context) {
 	if err != nil {
 		logger.Error(err, "failed to extract subject")
 		response.SendError(c, http.StatusUnauthorized, "authentication_required", "Authentication required", err.Error())
+
+		return
+	}
+
+	// Authorize (AuthZ check before service access)
+	input := authz.NewInput(
+		subject,
+		types.Action("netshield.detection.list"),
+		types.Scope{
+			BCRef:        "stratoward",
+			ResourceKind: "detection",
+		},
+	)
+
+	decision, authzErr := authz.Authorize(ctx, input)
+	if authzErr != nil {
+		logger.Error(authzErr, "authorization check failed")
+		response.SendError(c, http.StatusInternalServerError, "authorization_failed", "Authorization check failed", authzErr.Error())
+
+		return
+	}
+
+	if !decision.Allow {
+		logger.V(vplogging.LogLevelInfo).Info("access denied", "reason", decision.Reason)
+		response.SendError(c, http.StatusForbidden, "access_denied", "Access denied", decision.Reason)
 
 		return
 	}
