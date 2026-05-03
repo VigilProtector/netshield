@@ -52,6 +52,7 @@ import (
 	"vigilprotector.io/netshield/internal/http/router"
 	"vigilprotector.io/netshield/internal/service"
 	"vigilprotector.io/netshield/internal/store"
+	"vigilprotector.io/vp-lib/findings/pullcursor"
 	vplogging "vigilprotector.io/vp-lib/logging"
 )
 
@@ -66,6 +67,7 @@ func main() {
 	}
 }
 
+//nolint:funlen // Main server function with comprehensive setup logic including FlowSeeker wiring
 func runServer() error {
 	cfg, err := config.LoadConfig()
 	if err != nil {
@@ -129,8 +131,45 @@ func runServer() error {
 		os.Exit(1)
 	}
 
+	// Initialize FlowSeeker subscription client (NH-LM-005)
+	var flowSeekerClient *pullcursor.SubscriptionClient
+
+	var flowSeekerConsumer *service.FlowSeekerConsumer
+
+	if cfg.FlowSeeker.BaseURL != "" {
+		httpClient := &http.Client{
+			Timeout: 30 * time.Second,
+		}
+
+		cursorStore := &pullcursor.InMemoryCursorStore{}
+
+		subscriptionConfig := pullcursor.SubscriptionClientConfig{
+			BaseURL:      cfg.FlowSeeker.BaseURL,
+			HTTPClient:   httpClient,
+			CursorStore:  cursorStore,
+			PollInterval: cfg.FlowSeeker.PollInterval,
+			BatchSize:    cfg.FlowSeeker.BatchSize,
+		}
+
+		var err error
+
+		flowSeekerClient, err = pullcursor.NewSubscriptionClient(subscriptionConfig)
+		if err != nil {
+			logger.Error(err, "failed to create FlowSeeker subscription client")
+			os.Exit(1)
+		}
+
+		logger.V(vplogging.LogLevelInfo).Info("FlowSeeker subscription client configured",
+			"baseURL", cfg.FlowSeeker.BaseURL,
+			"pollInterval", cfg.FlowSeeker.PollInterval,
+			"batchSize", cfg.FlowSeeker.BatchSize)
+	}
+
 	// Initialize services
-	// Note: FlowSeeker client is nil for now, will be implemented in future phase
+	// Note: FlowSeekerClient for detectionService (correlation) is separate from
+	// FlowSeekerConsumer (subscription). For now, detectionService uses nil for
+	// correlation (NH-CC-005 not yet implemented), while FlowSeekerConsumer
+	// handles finding subscription (NH-LM-005/006).
 	sensorService := service.NewSensorService(
 		sensorStore,
 		nil, // VigilNetClient - will be wired in future
@@ -148,9 +187,20 @@ func runServer() error {
 	detectionService := service.NewDetectionService(
 		detectionStore,
 		findingStore,
-		nil, // FlowSeekerClient - will be wired in future
+		nil, // FlowSeekerClient for correlation (NH-CC-005) - not yet implemented
 		logger,
 	)
+
+	// Initialize and start FlowSeekerConsumer if subscription client is configured
+	// Implements NH-LM-005: FlowSeeker-Finding-Subscription via VL-FC-002
+	if flowSeekerClient != nil {
+		flowSeekerConsumer = service.NewFlowSeekerConsumer(
+			flowSeekerClient,
+			detectionService,
+			logger,
+			cfg.FlowSeeker.PollInterval,
+		)
+	}
 
 	// Initialize handlers
 	sensorHandler := handler.NewSensorHandler(sensorService)
@@ -176,6 +226,22 @@ func runServer() error {
 		WriteTimeout:      30 * time.Second,
 	}
 
+	// Start FlowSeekerConsumer if configured (NH-LM-005)
+	var flowSeekerCtx context.Context
+
+	var flowSeekerCancel context.CancelFunc
+
+	if flowSeekerConsumer != nil {
+		flowSeekerCtx, flowSeekerCancel = context.WithCancel(context.Background())
+		go func() {
+			logger.V(vplogging.LogLevelInfo).Info("starting FlowSeeker consumer")
+
+			if err := flowSeekerConsumer.Start(flowSeekerCtx); err != nil {
+				logger.Error(err, "FlowSeeker consumer failed")
+			}
+		}()
+	}
+
 	go func() {
 		logger.V(vplogging.LogLevelInfo).Info("starting http server", "port", cfg.Server.Port)
 
@@ -191,6 +257,11 @@ func runServer() error {
 	<-quit
 
 	logger.V(vplogging.LogLevelInfo).Info("shutting down server")
+
+	// Cancel FlowSeekerConsumer context
+	if flowSeekerCancel != nil {
+		flowSeekerCancel()
+	}
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), cfg.Server.ShutdownTimeout)
 	defer cancel()
