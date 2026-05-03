@@ -105,7 +105,4 @@ require (
 	sigs.k8s.io/yaml v1.6.0 // indirect
 )
 
-// Replace directives to use local development versions
-replace vigilprotector.io/vigilnet => ../../vigilnet/vigilnet
 
-replace vigilprotector.io/vp-lib => ../../vp-lib

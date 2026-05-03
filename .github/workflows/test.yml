@@ -31,18 +31,26 @@ jobs:
         run: |
           export PATH="/home/tofi/go/go1.26.0/bin:$PATH"
           export GOPRIVATE="vigilprotector.io,github.com"
+          export GONOSUMDB="vigilprotector.io,github.com"
+          export GONOPROXY="vigilprotector.io,github.com"
           go mod download
           go mod tidy
 
       - name: Run Linter
         run: |
           export PATH="/home/tofi/go/go1.26.0/bin:$PATH"
+          export GOPRIVATE="vigilprotector.io,github.com"
+          export GONOSUMDB="vigilprotector.io,github.com"
+          export GONOPROXY="vigilprotector.io,github.com"
           go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
           golangci-lint run --config .golangci.yaml ./...
 
       - name: Run Tests with Race Detector
         run: |
           export PATH="/home/tofi/go/go1.26.0/bin:$PATH"
+          export GOPRIVATE="vigilprotector.io,github.com"
+          export GONOSUMDB="vigilprotector.io,github.com"
+          export GONOPROXY="vigilprotector.io,github.com"
           go test -v -race -coverprofile=coverage.out ./...
 
       - name: Upload Coverage
