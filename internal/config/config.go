@@ -35,6 +35,7 @@ type Config struct {
 	Server      ServerConfig
 	Metrics     MetricsConfig
 	Database    DatabaseConfig
+	FlowSeeker  FlowSeekerConfig
 	Environment string
 	LogLevel    int8
 	LogEncoding string
@@ -61,6 +62,16 @@ type DatabaseConfig struct {
 	IdleTimeout time.Duration
 }
 
+// FlowSeekerConfig holds FlowSeeker subscription configuration.
+type FlowSeekerConfig struct {
+	// BaseURL is the FlowSeeker subscription endpoint root URL.
+	BaseURL string
+	// PollInterval is the interval between polls for new findings.
+	PollInterval time.Duration
+	// BatchSize is the number of findings to fetch per request.
+	BatchSize int
+}
+
 // LoadConfig loads configuration from environment variables.
 func LoadConfig() (*Config, error) {
 	cfg := &Config{
@@ -78,6 +89,11 @@ func LoadConfig() (*Config, error) {
 			MaxPool:     config.ParseIntOrDefault("MONGODB_MAX_POOL", 100),
 			MinPool:     config.ParseIntOrDefault("MONGODB_MIN_POOL", 5),
 			IdleTimeout: config.ParseDurationOrDefault("MONGODB_IDLE_TIMEOUT", "30s"),
+		},
+		FlowSeeker: FlowSeekerConfig{
+			BaseURL:      config.GetEnvOrDefault("FLOWSEEKER_BASE_URL", ""),
+			PollInterval: config.ParseDurationOrDefault("FLOWSEEKER_POLL_INTERVAL", "5s"),
+			BatchSize:    config.ParseIntOrDefault("FLOWSEEKER_BATCH_SIZE", 100),
 		},
 		Environment: config.GetEnvOrDefault("ENVIRONMENT", "production"),
 		LogLevel:    config.ParseInt8OrDefault("LOG_LEVEL", DefaultLogLevel),
