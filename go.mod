@@ -7,7 +7,7 @@ require (
 	github.com/go-logr/logr v1.4.3
 	github.com/stretchr/testify v1.11.1
 	go.mongodb.org/mongo-driver/v2 v2.5.1
-	vigilprotector.io/vp-lib v0.28.0
+	vigilprotector.io/vp-lib v0.29.0
 )
 
 require (
