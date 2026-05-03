@@ -553,7 +553,7 @@ func (h *DetectionHandler) MarkAsProcessed(c *gin.Context) {
 // @Failure      401 {object} response.ErrorResponse
 // @Failure      404 {object} response.ErrorResponse
 // @Failure      500 {object} response.ErrorResponse
-// @Router       /netshield/v1/sensors/{sensorId}/detections [get]
+// @Router       /netshield/v1/sensors/{picketId}/detections [get]
 func (h *DetectionHandler) GetDetectionsBySensor(c *gin.Context) {
 	// Get logger (ALWAYS first line)
 	logger := ginlogging.GetLogger(c)
@@ -572,11 +572,11 @@ func (h *DetectionHandler) GetDetectionsBySensor(c *gin.Context) {
 		return
 	}
 
-	// Get sensor ID from path
-	sensorID := c.Param("sensorId")
+	// Get picket ID from path (sensors are identified by Picket ID)
+	sensorID := c.Param("picketId")
 	if sensorID == "" {
-		logger.V(vplogging.LogLevelInfo).Error(nil, "missing sensorId parameter")
-		response.SendError(c, http.StatusBadRequest, "invalid_request", "sensorId is required", nil)
+		logger.V(vplogging.LogLevelInfo).Error(nil, "missing picketId parameter")
+		response.SendError(c, http.StatusBadRequest, "invalid_request", "picketId is required", nil)
 
 		return
 	}
