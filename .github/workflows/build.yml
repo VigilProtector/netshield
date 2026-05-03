@@ -11,7 +11,7 @@ on:
 jobs:
   build:
     env:
-      GOPRIVATE: "vigilprotector.io,github.com"
+      GOPRIVATE: "github.com,vigilprotector.io"
       GH_ACCESS_TOKEN: ${{ secrets.PIPELINE_TOKEN }}
     name: Build Docker Image
     runs-on: ubuntu-latest
