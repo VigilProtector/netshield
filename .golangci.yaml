@@ -2,6 +2,7 @@
 # The configuration is based on the VigilProtector platform standard.
 # See: https://github.com/golangci/golangci-lint
 
+version: "2"
 run:
   # Timeout for analysis, e.g. 30s, 5m.
   timeout: 5m
@@ -47,9 +48,7 @@ linters:
     - funlen
     - gochecknoinits
     - gocyclo
-    - gofmt
     - gosec
-    - gosimple
     - govet
     - ineffassign
     - lll
@@ -59,8 +58,6 @@ linters:
     - rowserrcheck
     - sqlclosecheck
     - staticcheck
-    - stylecheck
-    - typecheck
     - unconvert
     - unused
     - whitespace
