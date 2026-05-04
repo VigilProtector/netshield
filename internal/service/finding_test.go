@@ -871,9 +871,10 @@ func TestFindingService_GetByType(t *testing.T) {
 
 			if tc.expectedError {
 				require.Error(t, err)
-				if tc.name == "store error" {
+				switch tc.name {
+				case "store error":
 					assert.Contains(t, err.Error(), "failed to get findings by type")
-				} else if tc.name == "invalid finding type" {
+				case "invalid finding type":
 					assert.Contains(t, err.Error(), "invalid finding type")
 				}
 			} else {

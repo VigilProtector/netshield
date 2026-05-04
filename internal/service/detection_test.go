@@ -418,9 +418,10 @@ func TestDetectionService_Create(t *testing.T) {
 
 			if tc.expectedError {
 				require.Error(t, err)
-				if tc.name == "store error" {
+				switch tc.name {
+				case "store error":
 					assert.Contains(t, err.Error(), "failed to create detection")
-				} else if tc.name == "detection already exists" {
+				case "detection already exists":
 					assert.Contains(t, err.Error(), "detection already exists")
 				}
 			} else {
