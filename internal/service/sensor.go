@@ -291,8 +291,11 @@ func (s *SensorService) Register(
 		return nil, fmt.Errorf("defconId is required: %w", ErrInvalidStatus)
 	}
 
+	// Create a copy to avoid modifying the input parameter (fixes race conditions in parallel tests)
+	sensorCopy := *sensor
+
 	// Check if sensor already exists
-	existing, err := s.store.GetByPicketID(ctx, sensor.PicketID)
+	existing, err := s.store.GetByPicketID(ctx, sensorCopy.PicketID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check for existing sensor: %w", err)
 	}
@@ -303,34 +306,34 @@ func (s *SensorService) Register(
 
 	// Set timestamps
 	now := time.Now().UTC()
-	sensor.CreatedAt = now
-	sensor.UpdatedAt = now
+	sensorCopy.CreatedAt = now
+	sensorCopy.UpdatedAt = now
 
 	// Set default status if not set
-	if sensor.Status == "" {
-		sensor.Status = models.SensorStatusPending
+	if sensorCopy.Status == "" {
+		sensorCopy.Status = models.SensorStatusPending
 	}
 
 	// Set default health if not set
-	if sensor.Health == "" {
-		sensor.Health = models.SensorHealthUnknown
+	if sensorCopy.Health == "" {
+		sensorCopy.Health = models.SensorHealthUnknown
 	}
 
 	// Enrich Defcon name
-	if sensor.DefconName == "" && sensor.DefconID != "" {
-		defconName, err := s.vigilNetClient.GetDefconName(ctx, sensor.DefconID)
+	if sensorCopy.DefconName == "" && sensorCopy.DefconID != "" {
+		defconName, err := s.vigilNetClient.GetDefconName(ctx, sensorCopy.DefconID)
 		if err != nil {
 			logger.V(vplogging.LogLevelDebug).Info("failed to get defcon name for new sensor",
-				"defconId", sensor.DefconID, "error", err)
+				"defconId", sensorCopy.DefconID, "error", err)
 			// Continue with DefconID as name
-			sensor.DefconName = sensor.DefconID
+			sensorCopy.DefconName = sensorCopy.DefconID
 		} else if defconName != "" {
-			sensor.DefconName = defconName
+			sensorCopy.DefconName = defconName
 		}
 	}
 
 	// Persist sensor
-	err = s.store.Create(ctx, sensor)
+	err = s.store.Create(ctx, &sensorCopy)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create sensor: %w", err)
 	}
@@ -404,15 +407,18 @@ func (s *SensorService) UpdateStatus(
 		return nil, ErrSensorNotFound
 	}
 
+	// Create a copy to avoid modifying the input parameter (fixes race conditions in parallel tests)
+	sensorCopy := *sensor
+
 	// Update status and health
-	oldStatus := sensor.Status
-	oldHealth := sensor.Health
-	sensor.Status = status
-	sensor.Health = health
-	sensor.UpdatedAt = time.Now().UTC()
+	oldStatus := sensorCopy.Status
+	oldHealth := sensorCopy.Health
+	sensorCopy.Status = status
+	sensorCopy.Health = health
+	sensorCopy.UpdatedAt = time.Now().UTC()
 
 	// Persist update
-	err = s.store.Update(ctx, sensor)
+	err = s.store.Update(ctx, &sensorCopy)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update sensor: %w", err)
 	}
@@ -424,9 +430,9 @@ func (s *SensorService) UpdateStatus(
 		"previousHealth": string(oldHealth),
 		"newHealth":      string(health),
 	}
-	s.emitSensorAuditEventWithMeta(ctx, subject, "netshield.sensor.status.update", *sensor, meta)
+	s.emitSensorAuditEventWithMeta(ctx, subject, "netshield.sensor.status.update", sensorCopy, meta)
 
-	return sensor, nil
+	return &sensorCopy, nil
 }
 
 // UpdateLastSeen updates the last seen timestamp for a sensor.
@@ -470,20 +476,23 @@ func (s *SensorService) UpdateLastSeen(
 		return nil, ErrSensorNotFound
 	}
 
+	// Create a copy to avoid modifying the input parameter (fixes race conditions in parallel tests)
+	sensorCopy := *sensor
+
 	// Update last seen timestamp
 	now := time.Now().UTC()
-	oldLastSeen := sensor.LastSeen
-	sensor.LastSeen = now
-	sensor.UpdatedAt = now
+	oldLastSeen := sensorCopy.LastSeen
+	sensorCopy.LastSeen = now
+	sensorCopy.UpdatedAt = now
 
 	// Update health based on lastSeen (simplified logic)
 	// If we're updating lastSeen, the sensor is at least somewhat healthy
-	if sensor.Health == models.SensorHealthUnknown {
-		sensor.Health = models.SensorHealthHealthy
+	if sensorCopy.Health == models.SensorHealthUnknown {
+		sensorCopy.Health = models.SensorHealthHealthy
 	}
 
 	// Persist update
-	err = s.store.Update(ctx, sensor)
+	err = s.store.Update(ctx, &sensorCopy)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update sensor lastSeen: %w", err)
 	}
@@ -493,9 +502,9 @@ func (s *SensorService) UpdateLastSeen(
 		"previousLastSeen": oldLastSeen.Format(time.RFC3339),
 		"newLastSeen":      now.Format(time.RFC3339),
 	}
-	s.emitSensorAuditEventWithMeta(ctx, subject, "netshield.sensor.lastseen.update", *sensor, meta)
+	s.emitSensorAuditEventWithMeta(ctx, subject, "netshield.sensor.lastseen.update", sensorCopy, meta)
 
-	return sensor, nil
+	return &sensorCopy, nil
 }
 
 // UpdateRuleVersion updates the rule version for a sensor.
@@ -542,13 +551,16 @@ func (s *SensorService) UpdateRuleVersion(
 		return nil, ErrSensorNotFound
 	}
 
+	// Create a copy to avoid modifying the input parameter (fixes race conditions in parallel tests)
+	sensorCopy := *sensor
+
 	// Update rule version
-	oldVersion := sensor.RuleVersion
-	sensor.RuleVersion = version
-	sensor.UpdatedAt = time.Now().UTC()
+	oldVersion := sensorCopy.RuleVersion
+	sensorCopy.RuleVersion = version
+	sensorCopy.UpdatedAt = time.Now().UTC()
 
 	// Persist update
-	err = s.store.Update(ctx, sensor)
+	err = s.store.Update(ctx, &sensorCopy)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update sensor ruleVersion: %w", err)
 	}
@@ -558,9 +570,9 @@ func (s *SensorService) UpdateRuleVersion(
 		"previousVersion": oldVersion,
 		"newVersion":      version,
 	}
-	s.emitSensorAuditEventWithMeta(ctx, subject, "netshield.sensor.ruleversion.update", *sensor, meta)
+	s.emitSensorAuditEventWithMeta(ctx, subject, "netshield.sensor.ruleversion.update", sensorCopy, meta)
 
-	return sensor, nil
+	return &sensorCopy, nil
 }
 
 // GetSensorsByDefcon returns all sensors for a specific Defcon.
