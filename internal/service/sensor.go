@@ -339,9 +339,9 @@ func (s *SensorService) Register(
 	}
 
 	// Emit audit event for sensor registration (NH-SM-008)
-	s.emitSensorAuditEvent(ctx, subject, "netshield.sensor.register", *sensor)
+	s.emitSensorAuditEvent(ctx, subject, "netshield.sensor.register", sensorCopy)
 
-	return sensor, nil
+	return &sensorCopy, nil
 }
 
 // UpdateStatus updates the operational status and health of a sensor.

@@ -293,13 +293,17 @@ func (s *DetectionService) Create(
 		return nil, fmt.Errorf("event type %q is not a detection event: %w", detection.EventType, ErrNotDetectionEvent)
 	}
 
+	// Create a copy to avoid modifying the input parameter (fixes race conditions in parallel tests)
+	// This is critical: Production-Code must not mutate caller's data (ADR-0027/28)
+	detectionCopy := *detection
+
 	// Set timestamps
 	now := time.Now().UTC()
-	detection.CreatedAt = now
-	detection.UpdatedAt = now
+	detectionCopy.CreatedAt = now
+	detectionCopy.UpdatedAt = now
 
 	// Check if detection already exists
-	existing, err := s.store.GetByDetectionID(ctx, detection.DetectionID)
+	existing, err := s.store.GetByDetectionID(ctx, detectionCopy.DetectionID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check for existing detection: %w", err)
 	}
@@ -309,15 +313,15 @@ func (s *DetectionService) Create(
 	}
 
 	// Persist detection
-	err = s.store.Create(ctx, detection)
+	err = s.store.Create(ctx, &detectionCopy)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create detection: %w", err)
 	}
 
 	// Emit audit event for detection creation
-	s.emitDetectionAuditEvent(ctx, subject, "netshield.detection.create", *detection)
+	s.emitDetectionAuditEvent(ctx, subject, "netshield.detection.create", detectionCopy)
 
-	return detection, nil
+	return &detectionCopy, nil
 }
 
 // ProcessDetection processes a detection and creates a finding if appropriate.
@@ -483,25 +487,29 @@ func (s *DetectionService) correlateWithContext(
 		return nil
 	}
 
-	// Enrich detection with flow context
+	// Create a copy to avoid modifying the input parameter (fixes race conditions in parallel tests)
+	// This is critical: Production-Code must not mutate caller's data (ADR-0027/28)
+	detectionCopy := *detection
+
+	// Enrich detection copy with flow context
 	if flowCtx.AssetID != "" {
-		detection.AssetID = flowCtx.AssetID
+		detectionCopy.AssetID = flowCtx.AssetID
 	}
 
 	if flowCtx.DefconID != "" {
-		detection.DefconID = flowCtx.DefconID
+		detectionCopy.DefconID = flowCtx.DefconID
 	}
 
-	// Update detection with enriched context
-	detection.UpdatedAt = time.Now().UTC()
+	// Update detection copy with enriched context
+	detectionCopy.UpdatedAt = time.Now().UTC()
 
-	err = s.store.Update(ctx, detection)
+	err = s.store.Update(ctx, &detectionCopy)
 	if err != nil {
 		return fmt.Errorf("failed to update detection with context: %w", err)
 	}
 
 	logger.V(vplogging.LogLevelVerbose).Info("detection correlated with flow context",
-		"detectionId", detection.DetectionID,
+		"detectionId", detectionCopy.DetectionID,
 		"assetId", flowCtx.AssetID,
 		"defconId", flowCtx.DefconID,
 		"zone", flowCtx.Zone)
@@ -548,17 +556,21 @@ func (s *DetectionService) MarkAsProcessed(
 		return ErrDetectionNotFound
 	}
 
+	// Create a copy to avoid modifying the input parameter (fixes race conditions in parallel tests)
+	// This is critical: Production-Code must not mutate caller's data (ADR-0027/28)
+	detectionCopy := *detection
+
 	// Update timestamp to mark as processed
-	detection.UpdatedAt = time.Now().UTC()
+	detectionCopy.UpdatedAt = time.Now().UTC()
 
 	// Persist update
-	err = s.store.Update(ctx, detection)
+	err = s.store.Update(ctx, &detectionCopy)
 	if err != nil {
 		return fmt.Errorf("failed to mark detection as processed: %w", err)
 	}
 
 	// Emit audit event for marking as processed
-	s.emitDetectionAuditEvent(ctx, subject, "netshield.detection.processed", *detection)
+	s.emitDetectionAuditEvent(ctx, subject, "netshield.detection.processed", detectionCopy)
 
 	return nil
 }
