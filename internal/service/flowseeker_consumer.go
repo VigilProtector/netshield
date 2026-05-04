@@ -168,7 +168,7 @@ func (c *FlowSeekerConsumer) Start(ctx context.Context) error {
 		select {
 		case <-ctx.Done():
 			c.logger.V(vplogging.LogLevelInfo).Info("FlowSeeker consumer shutting down")
-			c.subscriptionClient.Close() //nolint:errcheck
+			c.subscriptionClient.Close() //nolint:errcheck // gRPC client Close errors during shutdown are non-critical
 
 			return nil
 		default:
@@ -178,7 +178,7 @@ func (c *FlowSeekerConsumer) Start(ctx context.Context) error {
 				// Apply backoff on error
 				select {
 				case <-ctx.Done():
-					c.subscriptionClient.Close() //nolint:errcheck
+					c.subscriptionClient.Close() //nolint:errcheck // MongoDB cursor or gRPC client Close errors are non-critical and can be ignored
 					return nil
 				case <-time.After(c.pollInterval):
 				}
@@ -190,7 +190,7 @@ func (c *FlowSeekerConsumer) Start(ctx context.Context) error {
 				// No finding available, wait for interval
 				select {
 				case <-ctx.Done():
-					c.subscriptionClient.Close() //nolint:errcheck
+					c.subscriptionClient.Close() //nolint:errcheck // MongoDB cursor or gRPC client Close errors are non-critical and can be ignored
 					return nil
 				case <-time.After(c.pollInterval):
 				}

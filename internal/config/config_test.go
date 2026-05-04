@@ -20,20 +20,20 @@ func TestLoadConfig(t *testing.T) {
 		for _, e := range oldEnv {
 			parts := splitEnv(e)
 			if len(parts) == 2 {
-				//nolint:errcheck
+				//nolint:errcheck // Test setup - errors are acceptable in test environment
 				os.Setenv(parts[0], parts[1])
 			}
 		}
 	}()
 
 	// Set minimal required environment variables
-	//nolint:errcheck
+	//nolint:errcheck // Test setup - errors are acceptable in test environment
 	os.Setenv("NETSHIELD_SERVER_PORT", "8900")
-	//nolint:errcheck
+	//nolint:errcheck // Test setup - errors are acceptable in test environment
 	os.Setenv("NETSHIELD_DATABASE_URI", "mongodb://localhost:27017")
-	//nolint:errcheck
+	//nolint:errcheck // Test setup - errors are acceptable in test environment
 	os.Setenv("NETSHIELD_DATABASE_NAME", "netshield")
-	//nolint:errcheck
+	//nolint:errcheck // MongoDB cursor or gRPC client Close errors are non-critical and can be ignored
 	os.Setenv("NETSHIELD_LOG_LEVEL", "info")
 
 	cfg, err := LoadConfig()
@@ -71,7 +71,7 @@ func TestConfigDefaults(t *testing.T) {
 		for _, e := range oldEnv {
 			parts := splitEnv(e)
 			if len(parts) == 2 {
-				//nolint:errcheck
+				//nolint:errcheck // MongoDB cursor or gRPC client Close errors are non-critical and can be ignored
 				os.Setenv(parts[0], parts[1])
 			}
 		}

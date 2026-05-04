@@ -117,7 +117,7 @@ func (c *FlowSeekerHTTPClient) GetFlowContext(
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute request: %w", err)
 	}
-	defer resp.Body.Close() //nolint:errcheck
+	defer resp.Body.Close() //nolint:errcheck // HTTP response Body Close errors are non-critical and can be ignored
 
 	// Check status code
 	if resp.StatusCode != http.StatusOK {
