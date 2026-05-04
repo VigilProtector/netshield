@@ -89,7 +89,7 @@ func (s *SensorStore) List(
 	if err != nil {
 		return nil, fmt.Errorf("failed to find sensors: %w", err)
 	}
-	defer cursor.Close(ctx)
+	defer cursor.Close(ctx) //nolint:errcheck
 
 	// Decode results
 	sensors := make([]*models.Sensor, 0)
@@ -222,7 +222,7 @@ func (s *SensorStore) GetByDefconID(
 	if err != nil {
 		return nil, fmt.Errorf("failed to find sensors by defconId: %w", err)
 	}
-	defer cursor.Close(ctx)
+	defer cursor.Close(ctx) //nolint:errcheck
 
 	sensors := make([]*models.Sensor, 0)
 

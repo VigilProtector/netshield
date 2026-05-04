@@ -149,7 +149,7 @@ func (s *FindingStore) List(
 	if err != nil {
 		return nil, fmt.Errorf("failed to find findings: %w", err)
 	}
-	defer cursor.Close(ctx)
+	defer cursor.Close(ctx) //nolint:errcheck
 
 	// Decode results
 	findings := make([]*models.Finding, 0)
@@ -402,7 +402,7 @@ func (s *FindingStore) GetByAssetID(
 	if err != nil {
 		return nil, fmt.Errorf("failed to find findings by asset: %w", err)
 	}
-	defer cursor.Close(ctx)
+	defer cursor.Close(ctx) //nolint:errcheck
 
 	// Decode results
 	findings := make([]*models.Finding, 0)
@@ -495,7 +495,7 @@ func (s *FindingStore) GetByDefconID(
 	if err != nil {
 		return nil, fmt.Errorf("failed to find findings by defcon: %w", err)
 	}
-	defer cursor.Close(ctx)
+	defer cursor.Close(ctx) //nolint:errcheck
 
 	// Decode results
 	findings := make([]*models.Finding, 0)
@@ -592,7 +592,7 @@ func (s *FindingStore) GetByFindingType(
 	if err != nil {
 		return nil, fmt.Errorf("failed to find findings by type: %w", err)
 	}
-	defer cursor.Close(ctx)
+	defer cursor.Close(ctx) //nolint:errcheck
 
 	// Decode results
 	findings := make([]*models.Finding, 0)
@@ -688,7 +688,7 @@ func (s *FindingStore) GetStale(
 	if err != nil {
 		return nil, fmt.Errorf("failed to find stale findings: %w", err)
 	}
-	defer cursor.Close(ctx)
+	defer cursor.Close(ctx) //nolint:errcheck
 
 	// Decode results
 	findings := make([]*models.Finding, 0)

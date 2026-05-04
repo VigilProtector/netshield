@@ -75,12 +75,6 @@ func initTestAuthz(allow bool, reason string, err error) func() {
 	}
 }
 
-// createTestRequest creates a test HTTP request.
-func createTestRequest(method, path string) *httptest.ResponseRecorder {
-	w := httptest.NewRecorder()
-	return w
-}
-
 // createAuthRequest creates an HTTP request with authentication context and correlation ID.
 func createAuthRequest(method, path string) *http.Request {
 	ctx := context.Background()
