@@ -502,5 +502,8 @@ func (c *FlowSeekerConsumer) enrichWithCrossBCContext(
 
 // Close closes the underlying subscription client.
 func (c *FlowSeekerConsumer) Close() error {
+	if c.subscriptionClient == nil {
+		return nil
+	}
 	return c.subscriptionClient.Close()
 }
