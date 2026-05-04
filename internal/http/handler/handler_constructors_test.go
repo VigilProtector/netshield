@@ -11,6 +11,26 @@ import (
 // Handler Constructor Tests
 // =============================================================================
 
+func TestBoolPtr(t *testing.T) {
+	t.Parallel()
+
+	t.Run("true value", func(t *testing.T) {
+		t.Parallel()
+
+		ptr := boolPtr(true)
+		assert.NotNil(t, ptr)
+		assert.True(t, *ptr)
+	})
+
+	t.Run("false value", func(t *testing.T) {
+		t.Parallel()
+
+		ptr := boolPtr(false)
+		assert.NotNil(t, ptr)
+		assert.False(t, *ptr)
+	})
+}
+
 func TestNewDetectionHandler(t *testing.T) {
 	t.Parallel()
 
