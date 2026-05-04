@@ -344,6 +344,54 @@ func TestDetectionService_Create(t *testing.T) {
 			storeErr:      errors.New("store error"),
 			expectedError: true,
 		},
+		{
+			name:          "missing detectionId",
+			detection:     &models.Detection{
+				SensorID:   "sensor-1",
+				PicketID:   "picket-1",
+				EventType:  models.DetectionEventTypeAlert,
+				Timestamp:  time.Now().UTC(),
+			},
+			storeErr:      nil,
+			expectedError: true,
+		},
+		{
+			name:          "missing sensorId and picketId",
+			detection:     &models.Detection{
+				DetectionID: "detection-1",
+				EventType:   models.DetectionEventTypeAlert,
+				Timestamp:   time.Now().UTC(),
+			},
+			storeErr:      nil,
+			expectedError: true,
+		},
+		{
+			name:          "missing eventType",
+			detection:     &models.Detection{
+				DetectionID: "detection-1",
+				SensorID:    "sensor-1",
+				Timestamp:   time.Now().UTC(),
+			},
+			storeErr:      nil,
+			expectedError: true,
+		},
+		{
+			name:          "invalid eventType",
+			detection:     &models.Detection{
+				DetectionID: "detection-1",
+				SensorID:    "sensor-1",
+				EventType:   models.DetectionEventTypeFlow,
+				Timestamp:   time.Now().UTC(),
+			},
+			storeErr:      nil,
+			expectedError: true,
+		},
+		{
+			name:          "detection already exists",
+			detection:     testDetection,
+			storeErr:      nil,
+			expectedError: true,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -352,7 +400,11 @@ func TestDetectionService_Create(t *testing.T) {
 
 			store := &mockDetectionStore{
 				getByDetectionIDFunc: func(ctx context.Context, detectionID string) (*models.Detection, error) {
-					// Return nil to indicate detection doesn't exist
+					// For "detection already exists" test case, return the detection
+					if tc.name == "detection already exists" {
+						return testDetection, nil
+					}
+					// Otherwise return nil to indicate detection doesn't exist
 					return nil, nil
 				},
 				createFunc: func(ctx context.Context, detection *models.Detection) error {
@@ -366,7 +418,11 @@ func TestDetectionService_Create(t *testing.T) {
 
 			if tc.expectedError {
 				require.Error(t, err)
-				assert.Contains(t, err.Error(), "failed to create detection")
+				if tc.name == "store error" {
+					assert.Contains(t, err.Error(), "failed to create detection")
+				} else if tc.name == "detection already exists" {
+					assert.Contains(t, err.Error(), "detection already exists")
+				}
 			} else {
 				require.NoError(t, err)
 				assert.NotNil(t, result)
