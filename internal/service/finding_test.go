@@ -262,22 +262,80 @@ func TestFindingService_Create(t *testing.T) {
 	testFinding := newTestFinding("finding-1")
 
 	testCases := []struct {
-		name          string
-		finding       *models.Finding
-		storeErr      error
+		name           string
+		finding        *models.Finding
+		storeErr       error
 		expectedError bool
+		errorContains string
 	}{
 		{
-			name:          "successful create",
-			finding:       testFinding,
-			storeErr:      nil,
+			name:           "successful create",
+			finding:        testFinding,
+			storeErr:       nil,
 			expectedError: false,
 		},
 		{
-			name:          "store error",
-			finding:       testFinding,
-			storeErr:      errors.New("store error"),
+			name:           "store error",
+			finding:        testFinding,
+			storeErr:       errors.New("store error"),
 			expectedError: true,
+			errorContains: "failed to create finding",
+		},
+		{
+			name:           "empty findingId",
+			finding:        &models.Finding{FindingType: models.FindingTypeKnownAttackPatternDetected, Severity: models.FindingSeverityHigh, Title: "test"},
+			storeErr:       nil,
+			expectedError: true,
+			errorContains: "findingId is required",
+		},
+		{
+			name:           "empty findingType",
+			finding:        &models.Finding{FindingID: "finding-1", Severity: models.FindingSeverityHigh, Title: "test"},
+			storeErr:       nil,
+			expectedError: true,
+			errorContains: "findingType is required",
+		},
+		{
+			name:           "empty severity",
+			finding:        &models.Finding{FindingID: "finding-1", FindingType: models.FindingTypeKnownAttackPatternDetected, Title: "test"},
+			storeErr:       nil,
+			expectedError: true,
+			errorContains: "severity is required",
+		},
+		{
+			name:           "empty title",
+			finding:        &models.Finding{FindingID: "finding-1", FindingType: models.FindingTypeKnownAttackPatternDetected, Severity: models.FindingSeverityHigh},
+			storeErr:       nil,
+			expectedError: true,
+			errorContains: "title is required",
+		},
+		{
+			name:           "invalid finding type",
+			finding:        &models.Finding{FindingID: "finding-1", FindingType: "invalid", Severity: models.FindingSeverityHigh, Title: "test"},
+			storeErr:       nil,
+			expectedError: true,
+			errorContains: "invalid finding type",
+		},
+		{
+			name:           "invalid severity",
+			finding:        &models.Finding{FindingID: "finding-1", FindingType: models.FindingTypeKnownAttackPatternDetected, Severity: "invalid", Title: "test"},
+			storeErr:       nil,
+			expectedError: true,
+			errorContains: "invalid severity",
+		},
+		{
+			name:           "invalid lifecycle status",
+			finding:        &models.Finding{FindingID: "finding-1", FindingType: models.FindingTypeKnownAttackPatternDetected, Severity: models.FindingSeverityHigh, Title: "test", Lifecycle: models.FindingLifecycle{Status: "invalid"}},
+			storeErr:       nil,
+			expectedError: true,
+			errorContains: "invalid lifecycle status",
+		},
+		{
+			name:           "invalid verification status",
+			finding:        &models.Finding{FindingID: "finding-1", FindingType: models.FindingTypeKnownAttackPatternDetected, Severity: models.FindingSeverityHigh, Title: "test", Verification: models.FindingVerification{Status: "invalid"}},
+			storeErr:       nil,
+			expectedError: true,
+			errorContains: "invalid verification status",
 		},
 	}
 
@@ -301,7 +359,9 @@ func TestFindingService_Create(t *testing.T) {
 
 			if tc.expectedError {
 				require.Error(t, err)
-				assert.Contains(t, err.Error(), "failed to create finding")
+				if tc.errorContains != "" {
+					assert.Contains(t, err.Error(), tc.errorContains)
+				}
 			} else {
 				require.NoError(t, err)
 				assert.NotNil(t, result)
