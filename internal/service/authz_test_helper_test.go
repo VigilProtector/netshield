@@ -21,7 +21,7 @@ func (c *testAllowClient) Evaluate(_ context.Context, _ authz.Input) (*authz.Dec
 // init initializes the authz client for tests.
 // This ensures all authorization checks pass during testing.
 //
-//nolint:gochecknoinits
+//nolint:gochecknoinits // Required for test setup - initializes mock authz client
 func init() {
 	authz.ResetClient()
 	authz.InitClient(&testAllowClient{})

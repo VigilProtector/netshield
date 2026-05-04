@@ -89,7 +89,7 @@ func (s *SensorStore) List(
 	if err != nil {
 		return nil, fmt.Errorf("failed to find sensors: %w", err)
 	}
-	defer cursor.Close(ctx) //nolint:errcheck
+	defer cursor.Close(ctx) //nolint:errcheck // MongoDB cursor or gRPC client Close errors are non-critical and can be ignored
 
 	// Decode results
 	sensors := make([]*models.Sensor, 0)
@@ -222,7 +222,7 @@ func (s *SensorStore) GetByDefconID(
 	if err != nil {
 		return nil, fmt.Errorf("failed to find sensors by defconId: %w", err)
 	}
-	defer cursor.Close(ctx) //nolint:errcheck
+	defer cursor.Close(ctx) //nolint:errcheck // MongoDB cursor or gRPC client Close errors are non-critical and can be ignored
 
 	sensors := make([]*models.Sensor, 0)
 
