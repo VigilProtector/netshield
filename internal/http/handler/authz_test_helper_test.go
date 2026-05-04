@@ -112,8 +112,12 @@ func (m *mockDetectionService) Get(_ context.Context, _ logr.Logger, _ *types.Su
 }
 
 // Create implements service.DetectionServiceInterface.
-func (m *mockDetectionService) Create(_ context.Context, _ logr.Logger, _ *types.Subject, _ *models.Detection) (*models.Detection, error) {
-	return nil, nil
+func (m *mockDetectionService) Create(_ context.Context, _ logr.Logger, _ *types.Subject, detection *models.Detection) (*models.Detection, error) {
+	// Return the same detection with an ID set if not already set
+	if detection.DetectionID == "" {
+		detection.DetectionID = "det-123"
+	}
+	return detection, nil
 }
 
 // ProcessDetection implements service.DetectionServiceInterface.
