@@ -77,6 +77,7 @@ func runServer() error {
 	}
 
 	logger := initializeLogger(cfg)
+
 	logger.V(vplogging.LogLevelInfo).Info("Starting NetShield API server", "version", version)
 
 	// Initialize MongoDB client

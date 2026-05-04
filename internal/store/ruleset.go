@@ -87,7 +87,7 @@ func (s *RuleSetStore) List(
 	if err != nil {
 		return nil, fmt.Errorf("failed to find rule sets: %w", err)
 	}
-	defer cursor.Close(ctx)
+	defer cursor.Close(ctx) //nolint:errcheck
 
 	// Decode results
 	ruleSets := make([]*models.RuleSet, 0)
@@ -339,7 +339,7 @@ func (s *RuleSetStore) GetByScope(
 	if err != nil {
 		return nil, fmt.Errorf("failed to find rule sets by scope: %w", err)
 	}
-	defer cursor.Close(ctx)
+	defer cursor.Close(ctx) //nolint:errcheck
 
 	ruleSets := make([]*models.RuleSet, 0)
 

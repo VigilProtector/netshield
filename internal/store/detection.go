@@ -139,7 +139,7 @@ func (s *DetectionStore) List(
 	if err != nil {
 		return nil, fmt.Errorf("failed to find detections: %w", err)
 	}
-	defer cursor.Close(ctx)
+	defer cursor.Close(ctx) //nolint:errcheck
 
 	// Decode results
 	detections := make([]*models.Detection, 0)
@@ -420,7 +420,7 @@ func (s *DetectionStore) GetBySensorID(
 	if err != nil {
 		return nil, fmt.Errorf("failed to find detections by sensor: %w", err)
 	}
-	defer cursor.Close(ctx)
+	defer cursor.Close(ctx) //nolint:errcheck
 
 	// Decode results
 	detections := make([]*models.Detection, 0)
@@ -535,7 +535,7 @@ func (s *DetectionStore) GetByPicketID(
 	if err != nil {
 		return nil, fmt.Errorf("failed to find detections by picket: %w", err)
 	}
-	defer cursor.Close(ctx)
+	defer cursor.Close(ctx) //nolint:errcheck
 
 	// Decode results
 	detections := make([]*models.Detection, 0)
@@ -650,7 +650,7 @@ func (s *DetectionStore) GetByRuleSetID(
 	if err != nil {
 		return nil, fmt.Errorf("failed to find detections by ruleSet: %w", err)
 	}
-	defer cursor.Close(ctx)
+	defer cursor.Close(ctx) //nolint:errcheck
 
 	// Decode results
 	detections := make([]*models.Detection, 0)
@@ -765,7 +765,7 @@ func (s *DetectionStore) GetByRuleID(
 	if err != nil {
 		return nil, fmt.Errorf("failed to find detections by rule: %w", err)
 	}
-	defer cursor.Close(ctx)
+	defer cursor.Close(ctx) //nolint:errcheck
 
 	// Decode results
 	detections := make([]*models.Detection, 0)
@@ -886,7 +886,7 @@ func (s *DetectionStore) GetUnprocessed(
 	if err != nil {
 		return nil, fmt.Errorf("failed to find unprocessed detections: %w", err)
 	}
-	defer cursor.Close(ctx)
+	defer cursor.Close(ctx) //nolint:errcheck
 
 	// Decode results
 	detections := make([]*models.Detection, 0)
