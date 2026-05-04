@@ -1,12 +1,145 @@
 package service
 
 import (
+	"context"
+	"net/http"
 	"testing"
 
+	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 
 	"vigilprotector.io/netshield/internal/models"
 )
+
+// getTestLogger returns a no-op logger for testing
+func getTestLogger() logr.Logger {
+	return logr.Discard()
+}
+
+func TestAegisClientAdapter_GetAsset(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	// Test nil client returns nil
+	adapter := &AegisClientAdapter{client: nil}
+	asset, err := adapter.GetAsset(ctx, "asset-001")
+
+	assert.Nil(t, asset)
+	assert.Nil(t, err)
+}
+
+func TestNetSentinelClientAdapter_GetDeviceFacts(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	// Test nil client returns nil
+	adapter := &NetSentinelClientAdapter{client: nil}
+	facts, err := adapter.GetDeviceFacts(ctx, "192.168.1.1")
+
+	assert.Nil(t, facts)
+	assert.Nil(t, err)
+}
+
+func TestNetSentinelClientAdapter_GetInterfaceFacts(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	// Test nil client returns nil
+	adapter := &NetSentinelClientAdapter{client: nil}
+	facts, err := adapter.GetInterfaceFacts(ctx, "192.168.1.1")
+
+	assert.Nil(t, facts)
+	assert.Nil(t, err)
+}
+
+func TestNetSentinelClientAdapter_GetIPAddresses(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	// Test nil client returns nil
+	adapter := &NetSentinelClientAdapter{client: nil}
+	addresses, err := adapter.GetIPAddresses(ctx, "192.168.1.1")
+
+	assert.Nil(t, addresses)
+	assert.Nil(t, err)
+}
+
+func TestNetAtlasClientAdapter_GetTopologyPath(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	// Test nil client returns nil
+	adapter := &NetAtlasClientAdapter{client: nil}
+	path, err := adapter.GetTopologyPath(ctx, "asset-001", "asset-002")
+
+	assert.Nil(t, path)
+	assert.Nil(t, err)
+}
+
+func TestNetAtlasClientAdapter_GetZoneForAsset(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	// Test nil client returns nil
+	adapter := &NetAtlasClientAdapter{client: nil}
+	zone, err := adapter.GetZoneForAsset(ctx, "asset-001")
+
+	assert.Nil(t, zone)
+	assert.Nil(t, err)
+}
+
+func TestNetAtlasClientAdapter_GetLatestSnapshot(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	// Test nil client returns nil
+	adapter := &NetAtlasClientAdapter{client: nil}
+	snapshot, err := adapter.GetLatestSnapshot(ctx)
+
+	assert.Nil(t, snapshot)
+	assert.Nil(t, err)
+}
+
+func TestNewFlowSeekerHTTPClient(t *testing.T) {
+	t.Parallel()
+
+	logger := getTestLogger()
+
+	t.Run("creates client with valid parameters", func(t *testing.T) {
+		t.Parallel()
+
+		client := NewFlowSeekerHTTPClient("http://flowseeker:8080", &http.Client{}, logger)
+
+		assert.NotNil(t, client)
+		assert.Equal(t, "http://flowseeker:8080", client.baseURL)
+		assert.NotNil(t, client.httpClient)
+	})
+
+	t.Run("creates client with empty baseURL", func(t *testing.T) {
+		t.Parallel()
+
+		client := NewFlowSeekerHTTPClient("", &http.Client{}, logger)
+
+		assert.NotNil(t, client)
+		assert.Equal(t, "", client.baseURL)
+	})
+
+	t.Run("creates client with nil http client", func(t *testing.T) {
+		t.Parallel()
+
+		client := NewFlowSeekerHTTPClient("http://flowseeker:8080", nil, logger)
+
+		assert.NotNil(t, client)
+		assert.Nil(t, client.httpClient)
+	})
+}
 
 func TestShouldProcessFinding(t *testing.T) {
 	t.Parallel()
