@@ -40,6 +40,10 @@ func SetupRouter(
 		// NH-SM-001: Sensor-Management
 		v1.GET("/sensors", sensorHandler.ListSensors)
 		v1.GET("/sensors/:picketId", sensorHandler.GetSensor)
+		// NH-SM-006: Automatic Picket registration via webhook
+		v1.POST("/sensors/webhook", sensorHandler.RegisterSensorViaWebhook)
+		// NH-SM-007: Picket-Health-Tracking
+		v1.PUT("/sensors/:picketId/lastseen", sensorHandler.UpdateLastSeen)
 
 		// RuleSet endpoints
 		// NH-RD-001..007: Regelset-Management-APIs
