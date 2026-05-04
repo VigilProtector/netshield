@@ -250,46 +250,50 @@ func (s *FindingService) Create(
 		return nil, fmt.Errorf("invalid severity %q: %w", finding.Severity, ErrInvalidSeverity)
 	}
 
-	// Validate lifecycle
-	if finding.Lifecycle.Status == "" {
-		finding.Lifecycle.Status = models.FindingLifecycleStatusOpen
+	// Create a copy to avoid modifying the input parameter (fixes race conditions in parallel tests)
+	// This is critical: Production-Code must not mutate caller's data (ADR-0027/28)
+	findingCopy := *finding
+
+	// Validate lifecycle - use copy from now on
+	if findingCopy.Lifecycle.Status == "" {
+		findingCopy.Lifecycle.Status = models.FindingLifecycleStatusOpen
 	}
 
-	if !s.IsValidLifecycleStatus(finding.Lifecycle.Status) {
-		return nil, fmt.Errorf("invalid lifecycle status %q: %w", finding.Lifecycle.Status, ErrInvalidLifecycleTransition)
+	if !s.IsValidLifecycleStatus(findingCopy.Lifecycle.Status) {
+		return nil, fmt.Errorf("invalid lifecycle status %q: %w", findingCopy.Lifecycle.Status, ErrInvalidLifecycleTransition)
 	}
 
 	// Validate verification
-	if finding.Verification.Status == "" {
-		finding.Verification.Status = models.FindingVerificationStatusUnverified
+	if findingCopy.Verification.Status == "" {
+		findingCopy.Verification.Status = models.FindingVerificationStatusUnverified
 	}
 
-	if !s.IsValidVerificationStatus(finding.Verification.Status) {
-		return nil, fmt.Errorf("invalid verification status %q: %w", finding.Verification.Status, ErrInvalidVerificationStatus)
+	if !s.IsValidVerificationStatus(findingCopy.Verification.Status) {
+		return nil, fmt.Errorf("invalid verification status %q: %w", findingCopy.Verification.Status, ErrInvalidVerificationStatus)
 	}
 
 	// Validate freshness
-	if finding.Freshness.Status == "" {
-		finding.Freshness.Status = models.FindingFreshnessStatusFresh
+	if findingCopy.Freshness.Status == "" {
+		findingCopy.Freshness.Status = models.FindingFreshnessStatusFresh
 	}
 
-	if !s.IsValidFreshnessStatus(finding.Freshness.Status) {
-		return nil, fmt.Errorf("invalid freshness status %q: %w", finding.Freshness.Status, ErrInvalidFreshnessStatus)
+	if !s.IsValidFreshnessStatus(findingCopy.Freshness.Status) {
+		return nil, fmt.Errorf("invalid freshness status %q: %w", findingCopy.Freshness.Status, ErrInvalidFreshnessStatus)
 	}
 
 	// Set timestamps
 	now := time.Now().UTC()
-	finding.CreatedAt = now
-	finding.UpdatedAt = now
-	finding.SchemaVersion = models.FindingContractVersion
+	findingCopy.CreatedAt = now
+	findingCopy.UpdatedAt = now
+	findingCopy.SchemaVersion = models.FindingContractVersion
 
 	// Set default window if not provided
-	if finding.Window == nil && finding.OccurredAt.IsZero() {
-		finding.OccurredAt = now
+	if findingCopy.Window == nil && findingCopy.OccurredAt.IsZero() {
+		findingCopy.OccurredAt = now
 	}
 
 	// Check if finding already exists
-	existing, err := s.store.GetByFindingID(ctx, finding.FindingID)
+	existing, err := s.store.GetByFindingID(ctx, findingCopy.FindingID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check for existing finding: %w", err)
 	}
@@ -299,15 +303,15 @@ func (s *FindingService) Create(
 	}
 
 	// Persist finding
-	err = s.store.Create(ctx, finding)
+	err = s.store.Create(ctx, &findingCopy)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create finding: %w", err)
 	}
 
 	// Emit audit event for finding creation
-	s.emitFindingAuditEvent(ctx, subject, "netshield.finding.create", *finding)
+	s.emitFindingAuditEvent(ctx, subject, "netshield.finding.create", findingCopy)
 
-	return finding, nil
+	return &findingCopy, nil
 }
 
 // UpdateLifecycle updates the lifecycle status of a finding.
@@ -367,19 +371,23 @@ func (s *FindingService) UpdateLifecycle(
 	// Store old status for audit
 	oldStatus := finding.Lifecycle.Status
 
+	// Create a copy to avoid modifying the input parameter (fixes race conditions in parallel tests)
+	// This is critical: Production-Code must not mutate caller's data (ADR-0027/28)
+	findingCopy := *finding
+
 	// Update lifecycle
-	finding.Lifecycle.Status = req.Status
-	finding.Lifecycle.TransitionedAt = pointerToTime(time.Now().UTC())
-	finding.Lifecycle.TransitionedBy = req.TransitionedBy
+	findingCopy.Lifecycle.Status = req.Status
+	findingCopy.Lifecycle.TransitionedAt = pointerToTime(time.Now().UTC())
+	findingCopy.Lifecycle.TransitionedBy = req.TransitionedBy
 
 	if req.Reason != "" {
-		finding.Lifecycle.Reason = req.Reason
+		findingCopy.Lifecycle.Reason = req.Reason
 	}
 
-	finding.UpdatedAt = time.Now().UTC()
+	findingCopy.UpdatedAt = time.Now().UTC()
 
 	// Persist update
-	err = s.store.Update(ctx, finding)
+	err = s.store.Update(ctx, &findingCopy)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update finding lifecycle: %w", err)
 	}
@@ -391,9 +399,9 @@ func (s *FindingService) UpdateLifecycle(
 		"reason":         req.Reason,
 		"transitionedBy": req.TransitionedBy,
 	}
-	s.emitFindingAuditEventWithMeta(ctx, subject, "netshield.finding.lifecycle.update", *finding, meta)
+	s.emitFindingAuditEventWithMeta(ctx, subject, "netshield.finding.lifecycle.update", findingCopy, meta)
 
-	return finding, nil
+	return &findingCopy, nil
 }
 
 // UpdateVerification updates the verification status of a finding.
@@ -448,16 +456,20 @@ func (s *FindingService) UpdateVerification(
 	// Store old status for audit
 	oldStatus := finding.Verification.Status
 
+	// Create a copy to avoid modifying the input parameter (fixes race conditions in parallel tests)
+	// This is critical: Production-Code must not mutate caller's data (ADR-0027/28)
+	findingCopy := *finding
+
 	// Update verification
-	finding.Verification.Status = req.Status
-	finding.Verification.VerifiedAt = pointerToTime(time.Now().UTC())
-	finding.Verification.VerifiedBy = req.VerifiedBy
-	finding.Verification.Method = req.Method
-	finding.Verification.Notes = req.Notes
-	finding.UpdatedAt = time.Now().UTC()
+	findingCopy.Verification.Status = req.Status
+	findingCopy.Verification.VerifiedAt = pointerToTime(time.Now().UTC())
+	findingCopy.Verification.VerifiedBy = req.VerifiedBy
+	findingCopy.Verification.Method = req.Method
+	findingCopy.Verification.Notes = req.Notes
+	findingCopy.UpdatedAt = time.Now().UTC()
 
 	// Persist update
-	err = s.store.Update(ctx, finding)
+	err = s.store.Update(ctx, &findingCopy)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update finding verification: %w", err)
 	}
@@ -470,9 +482,9 @@ func (s *FindingService) UpdateVerification(
 		"notes":          req.Notes,
 		"verifiedBy":     req.VerifiedBy,
 	}
-	s.emitFindingAuditEventWithMeta(ctx, subject, "netshield.finding.verification.update", *finding, meta)
+	s.emitFindingAuditEventWithMeta(ctx, subject, "netshield.finding.verification.update", findingCopy, meta)
 
-	return finding, nil
+	return &findingCopy, nil
 }
 
 // MarkStale marks findings as stale based on freshness thresholds.

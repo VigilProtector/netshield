@@ -373,25 +373,29 @@ func (s *RuleSetService) Update(
 	oldScope := ruleSet.Scope
 	oldRules := ruleSet.Rules
 
+	// Create a copy to avoid modifying the input parameter (fixes race conditions in parallel tests)
+	// This is critical: Production-Code must not mutate caller's data (ADR-0027/28)
+	ruleSetCopy := *ruleSet
+
 	// Update fields from request using helper method to reduce complexity
-	if err := s.applyUpdateRequest(ruleSet, &req); err != nil {
+	if err := s.applyUpdateRequest(&ruleSetCopy, &req); err != nil {
 		return nil, err
 	}
 
-	ruleSet.UpdatedAt = time.Now().UTC()
-	ruleSet.UpdatedBy = subject.ID
+	ruleSetCopy.UpdatedAt = time.Now().UTC()
+	ruleSetCopy.UpdatedBy = subject.ID
 
 	// Persist update
-	err = s.ruleSetStore.Update(ctx, ruleSet)
+	err = s.ruleSetStore.Update(ctx, &ruleSetCopy)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update rule set: %w", err)
 	}
 
 	// Emit audit event for rule set update (NH-RD-011)
 	// Check if scope changed by comparing individual fields
-	scopeChanged := oldScope.Type != ruleSet.Scope.Type ||
-		oldScope.Namespace != ruleSet.Scope.Namespace ||
-		len(oldScope.DefconIDs) != len(ruleSet.Scope.DefconIDs)
+	scopeChanged := oldScope.Type != ruleSetCopy.Scope.Type ||
+		oldScope.Namespace != ruleSetCopy.Scope.Namespace ||
+		len(oldScope.DefconIDs) != len(ruleSetCopy.Scope.DefconIDs)
 
 	if !scopeChanged && len(oldScope.DefconIDs) > 0 {
 		// Check if DefconIDs are the same (order-independent)
@@ -400,7 +404,7 @@ func (s *RuleSetService) Update(
 			defconMap[id] = true
 		}
 
-		for _, id := range ruleSet.Scope.DefconIDs {
+		for _, id := range ruleSetCopy.Scope.DefconIDs {
 			if !defconMap[id] {
 				scopeChanged = true
 				break
@@ -408,19 +412,19 @@ func (s *RuleSetService) Update(
 		}
 	}
 
-	rulesChanged := len(oldRules) != len(ruleSet.Rules)
+	rulesChanged := len(oldRules) != len(ruleSetCopy.Rules)
 
 	if !rulesChanged && len(oldRules) > 0 {
 		// Check if rules are the same
 		for i, oldRule := range oldRules {
-			if i >= len(ruleSet.Rules) {
+			if i >= len(ruleSetCopy.Rules) {
 				rulesChanged = true
 				break
 			}
 
-			if oldRule.RuleID != ruleSet.Rules[i].RuleID ||
-				oldRule.Enabled != ruleSet.Rules[i].Enabled ||
-				oldRule.Threshold != ruleSet.Rules[i].Threshold {
+			if oldRule.RuleID != ruleSetCopy.Rules[i].RuleID ||
+				oldRule.Enabled != ruleSetCopy.Rules[i].Enabled ||
+				oldRule.Threshold != ruleSetCopy.Rules[i].Threshold {
 				rulesChanged = true
 				break
 			}
@@ -429,19 +433,19 @@ func (s *RuleSetService) Update(
 
 	meta := map[string]string{
 		"previousName":        oldName,
-		"newName":             ruleSet.Name,
+		"newName":             ruleSetCopy.Name,
 		"previousVersion":     oldVersion,
-		"newVersion":          ruleSet.Version,
+		"newVersion":          ruleSetCopy.Version,
 		"previousDescription": oldDescription,
-		"newDescription":      ruleSet.Description,
+		"newDescription":      ruleSetCopy.Description,
 		"previousEnabled":     fmt.Sprintf("%t", oldEnabled),
-		"newEnabled":          fmt.Sprintf("%t", ruleSet.Enabled),
+		"newEnabled":          fmt.Sprintf("%t", ruleSetCopy.Enabled),
 		"scopeChanged":        fmt.Sprintf("%t", scopeChanged),
 		"rulesChanged":        fmt.Sprintf("%t", rulesChanged),
 	}
-	s.emitRuleSetAuditEventWithMeta(ctx, subject, "netshield.ruleset.update", *ruleSet, meta)
+	s.emitRuleSetAuditEventWithMeta(ctx, subject, "netshield.ruleset.update", ruleSetCopy, meta)
 
-	return ruleSet, nil
+	return &ruleSetCopy, nil
 }
 
 // Delete deletes a rule set by its ID.
