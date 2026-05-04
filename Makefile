@@ -16,7 +16,6 @@ build:
 
 test:
 	$(GOTEST) -v -race -coverprofile=coverage.out ./...
-	test -pass -run TestHelper $$(go list ./... | grep -v /vendor/ | grep -v _test) || true
 
 swag:
 	go tool swag init -pd --generalInfo cmd/$(APP_NAME)/main.go

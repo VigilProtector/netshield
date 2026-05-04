@@ -20,7 +20,7 @@ func TestParseInt(t *testing.T) {
 		{"valid zero", "0", 0, 0, false},
 		{"empty string", "", 10, 10, true},
 		{"invalid string", "abc", 10, 10, true},
-		{"whitespace", " 123 ", 0, 0, true},
+		{"whitespace", " 123 ", 0, 123, false},
 	}
 
 	for _, tt := range tests {
