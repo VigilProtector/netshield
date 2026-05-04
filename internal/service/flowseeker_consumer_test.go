@@ -4,11 +4,13 @@ import (
 	"context"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 
 	"vigilprotector.io/netshield/internal/models"
+	"vigilprotector.io/vp-lib/findings/pullcursor"
 )
 
 // getTestLogger returns a no-op logger for testing
@@ -141,15 +143,6 @@ func TestNewFlowSeekerHTTPClient(t *testing.T) {
 	})
 }
 
-func TestShouldProcessFinding(t *testing.T) {
-	t.Parallel()
-
-	// shouldProcessFinding is private, so we can only test it indirectly
-	// through the public interface or by testing the logic directly
-	// For now, we skip this test as it requires complex mocking
-	t.Skip("shouldProcessFinding is private - cannot test directly")
-}
-
 func TestMapFlowSeekerFindingType(t *testing.T) {
 	t.Parallel()
 
@@ -208,4 +201,72 @@ func TestMapFlowSeekerFindingType(t *testing.T) {
 			assert.Equal(t, tc.expected, result)
 		})
 	}
+}
+
+func TestNewFlowSeekerConsumer(t *testing.T) {
+	t.Parallel()
+
+	logger := getTestLogger()
+
+	t.Run("creates consumer with valid parameters", func(t *testing.T) {
+		t.Parallel()
+
+		consumer := NewFlowSeekerConsumer(
+			nil, // subscriptionClient
+			nil, // detectionService
+			nil, // findingService
+			nil, // flowSeekerClient
+			nil, // lateralMovementDetector
+			LateralMovementConfig{}, // lateralMovementConfig
+			nil, // aegisClient
+			nil, // netSentinelClient
+			nil, // netAtlasClient
+			logger,
+			5*time.Second, // pollInterval
+		)
+
+		assert.NotNil(t, consumer)
+		assert.Equal(t, 5*time.Second, consumer.pollInterval)
+	})
+
+	t.Run("creates consumer with nil parameters", func(t *testing.T) {
+		t.Parallel()
+
+		consumer := NewFlowSeekerConsumer(
+			nil, nil, nil, nil, nil, LateralMovementConfig{}, nil, nil, nil, logger, 0)
+
+		assert.NotNil(t, consumer)
+	})
+}
+
+func TestClose(t *testing.T) {
+	t.Parallel()
+
+	logger := getTestLogger()
+
+	t.Run("closes without error with nil subscription client", func(t *testing.T) {
+		t.Parallel()
+
+		consumer := &FlowSeekerConsumer{
+			subscriptionClient: nil,
+			logger:              logger,
+		}
+
+		err := consumer.Close()
+		assert.NoError(t, err, "Close should not return error with nil subscription client")
+	})
+
+	t.Run("closes without error with mock subscription client", func(t *testing.T) {
+		t.Parallel()
+
+		// Create a mock subscription client
+		// In a real test, we would use a mock framework
+		consumer := &FlowSeekerConsumer{
+			subscriptionClient: &pullcursor.SubscriptionClient{},
+			logger:              logger,
+		}
+
+		err := consumer.Close()
+		assert.NoError(t, err, "Close should not return error")
+	})
 }
