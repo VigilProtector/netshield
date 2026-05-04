@@ -272,7 +272,7 @@ func (f *Finding) ToAPI() *FindingAPI {
 
 	evidenceRefs := make([]EvidenceRefAPI, len(f.EvidenceRefs))
 	for i, ref := range f.EvidenceRefs {
-		//nolint:gosimple // direct struct literal is clearer than conversion function
+		//nolint:staticcheck // direct struct literal is clearer than conversion function
 		evidenceRefs[i] = EvidenceRefAPI{
 			Type: ref.Type,
 			Ref:  ref.Ref,
@@ -384,7 +384,7 @@ func (f *FindingAPI) FromAPI() (*Finding, error) {
 
 	evidenceRefs := make([]EvidenceRef, len(f.EvidenceRefs))
 	for i, ref := range f.EvidenceRefs {
-		//nolint:gosimple // direct struct literal is clearer than conversion function
+		//nolint:staticcheck // direct struct literal is clearer than conversion function
 		evidenceRefs[i] = EvidenceRef{
 			Type: ref.Type,
 			Ref:  ref.Ref,

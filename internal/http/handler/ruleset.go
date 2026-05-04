@@ -105,9 +105,10 @@ func (h *RuleSetHandler) ListRuleSets(c *gin.Context) {
 	}
 
 	if enabled := c.Query("enabled"); enabled != "" {
-		if enabled == "true" {
+		switch enabled {
+		case "true":
 			filter.Enabled = boolPtr(true)
-		} else if enabled == "false" {
+		case "false":
 			filter.Enabled = boolPtr(false)
 		}
 	}

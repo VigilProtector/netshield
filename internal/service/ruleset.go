@@ -272,7 +272,7 @@ func (s *RuleSetService) Create(
 	// Convert rules from API to domain model
 	rules := make([]models.RuleRef, len(req.Rules))
 	for i, rule := range req.Rules {
-		//nolint:gosimple // direct struct literal is clearer than conversion function
+		//nolint:staticcheck // direct struct literal is clearer than conversion function
 		rules[i] = models.RuleRef{
 			RuleID:    rule.RuleID,
 			Enabled:   rule.Enabled,
@@ -844,7 +844,7 @@ func (s *RuleSetService) applyUpdateRequest(
 	if len(req.Rules) > 0 {
 		rules := make([]models.RuleRef, len(req.Rules))
 		for i, rule := range req.Rules {
-			//nolint:gosimple // direct struct literal is clearer than conversion function
+			//nolint:staticcheck // direct struct literal is clearer than conversion function
 			rules[i] = models.RuleRef{
 				RuleID:    rule.RuleID,
 				Enabled:   rule.Enabled,
