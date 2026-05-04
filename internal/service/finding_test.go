@@ -844,6 +844,15 @@ func TestFindingService_GetByType(t *testing.T) {
 			expectedCount: 0,
 			expectedError: true,
 		},
+		{
+			name:          "invalid finding type",
+			findingType:   models.FindingType("invalid-type"),
+			opts:          models.ListFindingsOptions{},
+			storeList:     nil,
+			storeListErr:  nil,
+			expectedCount: 0,
+			expectedError: true,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -862,7 +871,11 @@ func TestFindingService_GetByType(t *testing.T) {
 
 			if tc.expectedError {
 				require.Error(t, err)
-				assert.Contains(t, err.Error(), "failed to get findings by type")
+				if tc.name == "store error" {
+					assert.Contains(t, err.Error(), "failed to get findings by type")
+				} else if tc.name == "invalid finding type" {
+					assert.Contains(t, err.Error(), "invalid finding type")
+				}
 			} else {
 				require.NoError(t, err)
 				assert.NotNil(t, result)
