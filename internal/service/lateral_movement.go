@@ -8,16 +8,22 @@ import (
 
 	"github.com/go-logr/logr"
 
+	"vigilprotector.io/netshield/internal/client"
 	"vigilprotector.io/netshield/internal/models"
 	vplogging "vigilprotector.io/vp-lib/logging"
 )
 
+// BaselineProvider is an interface for accessing StratoSage baselines.
+// This is re-exported from client package for convenience.
+type BaselineProvider = client.BaselineProvider
+
 // LateralMovementDetector implements lateral movement detection logic.
 // Implements NH-LM-001: Featuremodell for lateral movement detection.
 // Implements NH-LM-002: Zeitfensterbewertung (time window evaluation).
-// Implements NH-LM-003: Baseline-Abweichung against StratoSage.
+// Implements NH-LM-003: Baseline-Abweichung against StratoSage (via SS-BP-004).
 // Implements NH-LM-004: Reason-Codes for lateral movement.
 type LateralMovementDetector struct {
+	baselineProvider BaselineProvider
 	baselineThreshold float64
 	logger            logr.Logger
 }
@@ -29,6 +35,8 @@ type LateralMovementConfig struct {
 	PortDivergenceThreshold    int
 	AssetContextHopsThreshold  int
 	BaselineDeviationThreshold float64
+	// StratoSageBaseURL is the base URL for StratoSage API (SS-BP-004)
+	StratoSageBaseURL string
 }
 
 // DefaultLateralMovementConfig returns default configuration.
@@ -43,13 +51,25 @@ func DefaultLateralMovementConfig() LateralMovementConfig {
 }
 
 // NewLateralMovementDetector creates a new LateralMovementDetector.
+// If StratoSageBaseURL is provided in config, it will create a StratoSageClient
+// as the baseline provider (SS-BP-004). Otherwise, baselineProvider can be injected directly.
 func NewLateralMovementDetector(
 	cfg LateralMovementConfig,
 	logger logr.Logger,
+	baselineProvider BaselineProvider,
 ) *LateralMovementDetector {
+	// If no baseline provider is given but StratoSage URL is configured, create one
+	if baselineProvider == nil && cfg.StratoSageBaseURL != "" {
+		// Create HTTP client adapter using vp-lib
+		httpClient := client.NewHTTPClientWithTimeout(30*time.Second, logger)
+		// Create StratoSage client as baseline provider
+		baselineProvider = client.NewStratoSageClient(cfg.StratoSageBaseURL, httpClient, logger)
+	}
+
 	return &LateralMovementDetector{
+		baselineProvider:  baselineProvider,
 		baselineThreshold: cfg.BaselineDeviationThreshold,
-		logger:            logger.WithName("lateral-movement-detector"),
+		logger:           logger.WithName("lateral-movement-detector"),
 	}
 }
 
@@ -171,19 +191,66 @@ func (d *LateralMovementDetector) EvaluateLateralMovement(
 		logger.V(vplogging.LogLevelDebug).Info("detection within time window")
 	}
 
-	// NH-LM-003: Baseline-Abweichung
-	baseline := Baseline{
-		AvgPeerFanOut:       2.0,
-		AvgPortDivergence:   1.0,
-		AvgAssetContextHops: 0.5,
+	// NH-LM-003: Baseline-Abweichung (SS-BP-004: Uses StratoSage baseline instead of local heuristic)
+	// If baseline provider is available, fetch baseline from StratoSage
+	var baseline *client.Baseline
+	var fetchErr error
+	if d.baselineProvider != nil {
+		// Use scope from detection or flow context as scopeRef
+		scopeRef := detection.AssetID
+		if flowCtx != nil && flowCtx.AssetID != "" {
+			scopeRef = flowCtx.AssetID
+		}
+		// For now, use a generic feature set
+		// In a real implementation, this would be determined from the detection type
+		featureSet := "lateral_movement"
+
+		baseline, fetchErr = d.baselineProvider.GetBaseline(ctx, scopeRef, featureSet)
+		if fetchErr != nil {
+			logger.V(vplogging.LogLevelDebug).Error(fetchErr, "Failed to fetch baseline from StratoSage",
+				"scopeRef", scopeRef, "featureSet", featureSet)
+			// Fall back to default baseline values
+		}
 	}
 
-	peerDeviation := float64(peerFanOut) / baseline.AvgPeerFanOut
+	// Use StratoSage baseline if available, otherwise fall back to defaults
+	if baseline != nil && baseline.Stats != nil {
+		// SS-BP-004: Use values from StratoSage baseline
+		avgPeerFanOut := baseline.Stats["avgPeerFanOut"]
+		avgPortDivergence := baseline.Stats["avgPortDivergence"]
+		avgAssetContextHops := baseline.Stats["avgAssetContextHops"]
 
-	if peerDeviation > d.baselineThreshold {
-		reasons = append(reasons, ReasonBaselineDeviationExceeded)
+		// Avoid division by zero
+		if avgPeerFanOut > 0 {
+			peerDeviation := float64(peerFanOut) / avgPeerFanOut
+			if peerDeviation > d.baselineThreshold {
+				reasons = append(reasons, ReasonBaselineDeviationExceeded)
+				logger.V(vplogging.LogLevelInfo).Info("peer fan-out baseline deviation exceeded",
+					"current", peerFanOut, "baseline", avgPeerFanOut, "deviation", peerDeviation)
+			}
+		}
 
-		logger.V(vplogging.LogLevelInfo).Info("peer fan-out baseline deviation exceeded")
+		// TODO: Add similar checks for port divergence and asset context hops
+		// based on StratoSage baseline values
+		_ = avgPortDivergence
+		_ = avgAssetContextHops
+	} else {
+		// Fallback to local heuristic thresholds (NH-LM-003 original behavior)
+		// This maintains backward compatibility when StratoSage is not available
+		defaultBaseline := client.Baseline{
+			Stats: map[string]float64{
+				"avgPeerFanOut":       2.0,
+				"avgPortDivergence":   1.0,
+				"avgAssetContextHops": 0.5,
+			},
+		}
+
+		peerDeviation := float64(peerFanOut) / defaultBaseline.Stats["avgPeerFanOut"]
+
+		if peerDeviation > d.baselineThreshold {
+			reasons = append(reasons, ReasonBaselineDeviationExceeded)
+			logger.V(vplogging.LogLevelInfo).Info("peer fan-out baseline deviation exceeded (fallback)")
+		}
 	}
 
 	if len(reasons) > 0 {

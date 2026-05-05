@@ -249,9 +249,16 @@ func runServer() error {
 
 	// Initialize Lateral Movement Detector (NH-LM-001..007)
 	lateralMovementConfig := service.DefaultLateralMovementConfig()
+	// SS-BP-004: Create StratoSage baseline provider if configured
+	var baselineProvider service.BaselineProvider
+	if lateralMovementConfig.StratoSageBaseURL != "" {
+		// HTTP client will be created automatically by NewLateralMovementDetector
+		// if StratoSageBaseURL is set in config
+	}
 	lateralMovementDetector := service.NewLateralMovementDetector(
 		lateralMovementConfig,
 		logger,
+		baselineProvider,
 	)
 
 	// Initialize and start FlowSeekerConsumer if subscription client is configured
