@@ -25,7 +25,7 @@ func TestNewLateralMovementDetector(t *testing.T) {
 	cfg := DefaultLateralMovementConfig()
 	logger := zap.New(zap.UseDevMode(true))
 
-	detector := NewLateralMovementDetector(cfg, logger)
+	detector := NewLateralMovementDetector(cfg, logger, nil)
 
 	assert.NotNil(t, detector, "Detector should not be nil")
 	assert.Equal(t, cfg.BaselineDeviationThreshold, detector.baselineThreshold, "baselineThreshold should match config")
@@ -34,7 +34,7 @@ func TestNewLateralMovementDetector(t *testing.T) {
 func TestEvaluateLateralMovement_NoFlowContext(t *testing.T) {
 	cfg := DefaultLateralMovementConfig()
 	logger := zap.New(zap.UseDevMode(true))
-	detector := NewLateralMovementDetector(cfg, logger)
+	detector := NewLateralMovementDetector(cfg, logger, nil)
 
 	detection := &models.Detection{
 		DetectionID: "test-detection-1",
@@ -62,7 +62,7 @@ func TestEvaluateLateralMovement_PeerFanOutExceeded(t *testing.T) {
 		BaselineDeviationThreshold: 2.0,
 	}
 	logger := zap.New(zap.UseDevMode(true))
-	detector := NewLateralMovementDetector(cfg, logger)
+	detector := NewLateralMovementDetector(cfg, logger, nil)
 
 	detection := &models.Detection{
 		DetectionID: "test-detection-1",
@@ -93,7 +93,7 @@ func TestEvaluateLateralMovement_PortDivergenceExceeded(t *testing.T) {
 		BaselineDeviationThreshold: 2.0,
 	}
 	logger := zap.New(zap.UseDevMode(true))
-	detector := NewLateralMovementDetector(cfg, logger)
+	detector := NewLateralMovementDetector(cfg, logger, nil)
 
 	detection := &models.Detection{
 		DetectionID: "test-detection-1",
@@ -126,7 +126,7 @@ func TestEvaluateLateralMovement_AssetContextHopsExceeded(t *testing.T) {
 		BaselineDeviationThreshold: 2.0,
 	}
 	logger := zap.New(zap.UseDevMode(true))
-	detector := NewLateralMovementDetector(cfg, logger)
+	detector := NewLateralMovementDetector(cfg, logger, nil)
 
 	detection := &models.Detection{
 		DetectionID: "test-detection-1",
@@ -158,7 +158,7 @@ func TestEvaluateLateralMovement_BaselineDeviationExceeded(t *testing.T) {
 		BaselineDeviationThreshold: 0.5, // Set very low threshold for testing (peerDeviation = 2/2 = 1 > 0.5)
 	}
 	logger := zap.New(zap.UseDevMode(true))
-	detector := NewLateralMovementDetector(cfg, logger)
+	detector := NewLateralMovementDetector(cfg, logger, nil)
 
 	detection := &models.Detection{
 		DetectionID: "test-detection-1",
@@ -184,7 +184,7 @@ func TestEvaluateLateralMovement_BaselineDeviationExceeded(t *testing.T) {
 func TestEvaluateLateralMovement_NoThresholdsExceeded(t *testing.T) {
 	cfg := DefaultLateralMovementConfig()
 	logger := zap.New(zap.UseDevMode(true))
-	detector := NewLateralMovementDetector(cfg, logger)
+	detector := NewLateralMovementDetector(cfg, logger, nil)
 
 	detection := &models.Detection{
 		DetectionID: "test-detection-1",
@@ -217,7 +217,7 @@ func TestDetectLateralMovement(t *testing.T) {
 		BaselineDeviationThreshold: 2.0,
 	}
 	logger := zap.New(zap.UseDevMode(true))
-	detector := NewLateralMovementDetector(cfg, logger)
+	detector := NewLateralMovementDetector(cfg, logger, nil)
 
 	detection := &models.Detection{
 		DetectionID: "test-detection-1",
@@ -241,7 +241,7 @@ func TestDetectLateralMovement(t *testing.T) {
 func TestDetectLateralMovement_NoMovement(t *testing.T) {
 	cfg := DefaultLateralMovementConfig()
 	logger := zap.New(zap.UseDevMode(true))
-	detector := NewLateralMovementDetector(cfg, logger)
+	detector := NewLateralMovementDetector(cfg, logger, nil)
 
 	detection := &models.Detection{
 		DetectionID: "test-detection-1",
@@ -274,7 +274,7 @@ func TestProcessDetectionForLateralMovement(t *testing.T) {
 		BaselineDeviationThreshold: 2.0,
 	}
 	logger := zap.New(zap.UseDevMode(true))
-	detector := NewLateralMovementDetector(cfg, logger)
+	detector := NewLateralMovementDetector(cfg, logger, nil)
 
 	detection := &models.Detection{
 		DetectionID: "test-detection-1",
@@ -305,7 +305,7 @@ func TestProcessDetectionForLateralMovement(t *testing.T) {
 func TestProcessDetectionForLateralMovement_NoMovement(t *testing.T) {
 	cfg := DefaultLateralMovementConfig()
 	logger := zap.New(zap.UseDevMode(true))
-	detector := NewLateralMovementDetector(cfg, logger)
+	detector := NewLateralMovementDetector(cfg, logger, nil)
 
 	detection := &models.Detection{
 		DetectionID: "test-detection-1",
