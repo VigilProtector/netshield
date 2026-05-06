@@ -39,6 +39,7 @@ type Config struct {
 	Aegis       AegisConfig
 	NetSentinel NetSentinelConfig
 	NetAtlas    NetAtlasConfig
+	StratoSage  StratoSageConfig
 	Environment string
 	LogLevel    int8
 	LogEncoding string
@@ -99,6 +100,17 @@ type NetAtlasConfig struct {
 	Timeout time.Duration
 }
 
+// StratoSageConfig holds StratoSage service configuration for baseline consumption.
+// SS-BP-004: Used for baseline-based evaluation instead of local heuristic thresholds.
+type StratoSageConfig struct {
+	// BaseURL is the StratoSage API root URL (e.g., "http://stratosage.stratoward:8080")
+	BaseURL string
+	// Timeout is the HTTP client timeout for StratoSage requests
+	Timeout time.Duration
+	// Enabled controls whether StratoSage baseline consumption is active
+	Enabled bool
+}
+
 // LoadConfig loads configuration from environment variables.
 func LoadConfig() (*Config, error) {
 	cfg := &Config{
@@ -133,6 +145,11 @@ func LoadConfig() (*Config, error) {
 		NetAtlas: NetAtlasConfig{
 			BaseURL: config.GetEnvOrDefault("NETATLAS_BASE_URL", ""),
 			Timeout: config.ParseDurationOrDefault("NETATLAS_TIMEOUT", "10s"),
+		},
+		StratoSage: StratoSageConfig{
+			BaseURL:  config.GetEnvOrDefault("STRATOSAGE_URL", ""),
+			Timeout: config.ParseDurationOrDefault("STRATOSAGE_TIMEOUT", "30s"),
+			Enabled: config.ParseBoolOrDefault("STRATOSAGE_ENABLED", true),
 		},
 		Environment: config.GetEnvOrDefault("ENVIRONMENT", "production"),
 		LogLevel:    config.ParseInt8OrDefault("LOG_LEVEL", DefaultLogLevel),

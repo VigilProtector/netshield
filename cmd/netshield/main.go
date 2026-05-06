@@ -249,12 +249,48 @@ func runServer() error {
 
 	// Initialize Lateral Movement Detector (NH-LM-001..007)
 	lateralMovementConfig := service.DefaultLateralMovementConfig()
-	// SS-BP-004: Create StratoSage baseline provider if configured
+	
+	// SS-BP-004: Create StratoSage baseline provider with caching if configured
 	var baselineProvider service.BaselineProvider
-	if lateralMovementConfig.StratoSageBaseURL != "" {
-		// HTTP client will be created automatically by NewLateralMovementDetector
-		// if StratoSageBaseURL is set in config
+	if cfg.StratoSage.Enabled && cfg.StratoSage.BaseURL != "" {
+		// Override config with actual StratoSage URL from environment
+		lateralMovementConfig.StratoSageBaseURL = cfg.StratoSage.BaseURL
+		
+		// Create HTTP client for StratoSage
+		stratoSageHTTPClient := client.NewHTTPClientWithTimeout(cfg.StratoSage.Timeout, logger)
+		
+		// Create StratoSage client
+		stratoSageClient := client.NewStratoSageClient(
+			cfg.StratoSage.BaseURL,
+			stratoSageHTTPClient,
+			logger,
+		)
+		
+		// Wrap with cache for performance
+		// Default TTL of 5 minutes to reduce API calls
+		baselineProvider = client.NewBaselineCache(client.BaselineCacheConfig{
+			Provider: stratoSageClient,
+			TTL:      client.DefaultBaselineCacheTTL,
+			Logger:   logger,
+		})
+		
+		// Start periodic cleanup of expired cache entries
+		// Cleanup runs at half the TTL interval
+		cleanupStop := baselineProvider.(*client.BaselineCache).StartCleanupLoop(
+			client.DefaultBaselineCacheTTL / 2,
+		)
+		// Store cleanup stop function for potential future use
+		// In a real implementation, this would be managed with the server lifecycle
+		_ = cleanupStop
+		
+		logger.Info("StratoSage baseline provider initialized with caching",
+			"baseURL", cfg.StratoSage.BaseURL,
+			"timeout", cfg.StratoSage.Timeout,
+			"cacheTTL", client.DefaultBaselineCacheTTL)
+	} else {
+		logger.Info("StratoSage baseline consumption is disabled or not configured")
 	}
+	
 	lateralMovementDetector := service.NewLateralMovementDetector(
 		lateralMovementConfig,
 		logger,
