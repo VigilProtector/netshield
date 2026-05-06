@@ -1,0 +1,29 @@
+# Coverage reports
+coverage_*.out
+
+# Binaries
+netshield
+*.test
+
+# Build output
+build/
+!build/Dockerfile
+
+# Deployment
+deploy/
+
+# IDE
+.idea/
+
+# Dependency directories
+vendor/
+
+# Go workspace file
+go.work
+
+# Test coverage
+go.cover
+
+# OS generated files
+.DS_Store
+Thumbs.db
