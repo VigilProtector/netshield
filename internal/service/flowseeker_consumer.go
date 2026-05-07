@@ -263,8 +263,8 @@ func (c *FlowSeekerConsumer) processNextFinding(ctx context.Context) (bool, erro
 		logger.Error(err, "failed to create detection from finding",
 			"findingId", envelope.FindingID,
 			"detectionId", detection.DetectionID)
-		// Don't acknowledge - we'll retry on next poll
-		return true, nil
+		// Don't acknowledge - we'll retry on next poll with backoff
+		return false, fmt.Errorf("detection creation failed: %w", err)
 	}
 
 	// NH-LM-006: Event-driven Enrichment-Pipeline
@@ -370,9 +370,12 @@ func (c *FlowSeekerConsumer) shouldProcessFinding(envelope findings.Envelope) bo
 	case "network.anomaly":
 		return true
 	default:
-		// For now, accept all FlowSeeker findings
-		// In production, this should be more restrictive based on NH-SG-009
-		return true
+		// Reject unsupported finding types early to avoid downstream processing errors
+		// NH-SG-009: Only alert/anomaly/lateral_movement events are routed to NetShield
+		logger.V(vplogging.LogLevelDebug).Info("rejecting unsupported FlowSeeker finding type",
+			"findingType", envelope.FindingType,
+			"findingId", envelope.FindingID)
+		return false
 	}
 }
 
