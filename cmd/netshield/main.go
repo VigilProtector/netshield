@@ -249,13 +249,12 @@ func runServer() error {
 
 	// Initialize Lateral Movement Detector (NH-LM-001..007)
 	lateralMovementConfig := service.DefaultLateralMovementConfig()
+	// SS-BP-004: Always wire StratoSage URL from config to lateral movement config
+	lateralMovementConfig.StratoSageBaseURL = cfg.StratoSage.BaseURL
 	
 	// SS-BP-004: Create StratoSage baseline provider with caching if configured
 	var baselineProvider service.BaselineProvider
 	if cfg.StratoSage.Enabled && cfg.StratoSage.BaseURL != "" {
-		// Override config with actual StratoSage URL from environment
-		lateralMovementConfig.StratoSageBaseURL = cfg.StratoSage.BaseURL
-		
 		// Create HTTP client for StratoSage
 		stratoSageHTTPClient := client.NewHTTPClientWithTimeout(cfg.StratoSage.Timeout, logger)
 		
