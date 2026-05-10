@@ -51,6 +51,7 @@ import (
 	"vigilprotector.io/netshield/internal/config"
 	"vigilprotector.io/netshield/internal/http/handler"
 	"vigilprotector.io/netshield/internal/http/router"
+	"vigilprotector.io/netshield/internal/models"
 	"vigilprotector.io/netshield/internal/service"
 	"vigilprotector.io/netshield/internal/store"
 	baselinepullcursor "vigilprotector.io/vp-lib/baselines/pullcursor"
@@ -232,9 +233,17 @@ func runServer() error {
 	// Note: FlowSeekerClient for detectionService (correlation) is separate from
 	// FlowSeekerConsumer (subscription). FlowSeekerConsumer handles finding subscription
 	// (NH-LM-005/006), while FlowSeekerClient handles correlation (NH-CC-001..004).
-	sensorService := service.NewSensorService(
+	// NH-RD-002 / VP-2231: SensorService consumes the active default
+	// ruleset on Register so a freshly registered Picket lands in
+	// SuricataGate distribution with a known starting policy. The
+	// adapter wraps ruleSetStore.GetDefault directly so this internal
+	// enrichment bypasses user-side AuthZ.
+	defaultRuleSetProvider := defaultRuleSetAdapter{store: ruleSetStore}
+
+	sensorService := service.NewSensorServiceWithDefaultRuleSet(
 		sensorStore,
 		nil, // VigilNetClient - will be wired in future
+		defaultRuleSetProvider,
 		logger,
 	)
 	ruleSetService := service.NewRuleSetService(
@@ -406,6 +415,23 @@ func runServer() error {
 	logger.V(vplogging.LogLevelInfo).Info("Server exited gracefully")
 
 	return nil
+}
+
+// defaultRuleSetAdapter satisfies service.DefaultRuleSetProvider by
+// delegating to ruleSetStore.GetDefault. Keeping it as an inline adapter
+// avoids leaking the store type into the service package while still
+// reusing the existing default-lookup query.
+type defaultRuleSetAdapter struct {
+	store *store.RuleSetStore
+}
+
+func (a defaultRuleSetAdapter) GetDefaultRuleSet(ctx context.Context) (*models.RuleSet, error) {
+	rs, err := a.store.GetDefault(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("default ruleset lookup: %w", err)
+	}
+
+	return rs, nil
 }
 
 // initializeMongoDB initializes the MongoDB client.

@@ -73,14 +73,30 @@ type VigilNetClient interface {
 	GetDefconName(ctx context.Context, defconID string) (string, error)
 }
 
-// SensorService implements business logic for sensor operations.
-type SensorService struct {
-	store          SensorStorer
-	vigilNetClient VigilNetClient
-	logger         logr.Logger
+// DefaultRuleSetProvider exposes the active default ruleset (typically
+// ET-Open) so SensorService can seed Sensor.RuleVersion at register time.
+// NH-RD-002 / VP-2231: a freshly registered Picket must reach the
+// SuricataGate distribution loop with a known starting policy instead of
+// "no version" until the next NetWraith pull tick.
+//
+// The interface is intentionally narrow: it does NOT take a subject
+// because the lookup is a system-side enrichment, not a user-driven read.
+// Implementations bypass AuthZ and read from the ruleset store directly.
+type DefaultRuleSetProvider interface {
+	GetDefaultRuleSet(ctx context.Context) (*models.RuleSet, error)
 }
 
-// NewSensorService creates a new SensorService.
+// SensorService implements business logic for sensor operations.
+type SensorService struct {
+	store              SensorStorer
+	vigilNetClient     VigilNetClient
+	defaultRuleSetProv DefaultRuleSetProvider
+	logger             logr.Logger
+}
+
+// NewSensorService creates a SensorService without a default-ruleset
+// provider. Used by tests and callers that don't need NH-RD-002 behaviour;
+// most production wiring should prefer NewSensorServiceWithDefaultRuleSet.
 func NewSensorService(
 	store SensorStorer,
 	vigilNetClient VigilNetClient,
@@ -90,6 +106,23 @@ func NewSensorService(
 		store:          store,
 		vigilNetClient: vigilNetClient,
 		logger:         logger,
+	}
+}
+
+// NewSensorServiceWithDefaultRuleSet creates a SensorService that
+// auto-assigns the active default ruleset version on Register when the
+// caller did not provide one. Implements NH-RD-002 / VP-2231.
+func NewSensorServiceWithDefaultRuleSet(
+	store SensorStorer,
+	vigilNetClient VigilNetClient,
+	defaultRuleSetProvider DefaultRuleSetProvider,
+	logger logr.Logger,
+) *SensorService {
+	return &SensorService{
+		store:              store,
+		vigilNetClient:     vigilNetClient,
+		defaultRuleSetProv: defaultRuleSetProvider,
+		logger:             logger,
 	}
 }
 
@@ -329,6 +362,28 @@ func (s *SensorService) Register(
 			sensorCopy.DefconName = sensorCopy.DefconID
 		} else if defconName != "" {
 			sensorCopy.DefconName = defconName
+		}
+	}
+
+	// NH-RD-002 / VP-2231: assign the active default ruleset (typically
+	// ET-Open) so the Picket reaches SuricataGate with a known policy
+	// version instead of an empty RuleVersion that the distribution loop
+	// would have to special-case. A missing or unconfigured default
+	// provider is non-fatal: the sensor still registers, just without
+	// pre-populated RuleVersion (current behaviour).
+	if sensorCopy.RuleVersion == "" && s.defaultRuleSetProv != nil {
+		defaultRS, defaultErr := s.defaultRuleSetProv.GetDefaultRuleSet(ctx)
+		if defaultErr != nil {
+			logger.V(vplogging.LogLevelDebug).Info("failed to look up default ruleset for new sensor",
+				"picketId", sensorCopy.PicketID,
+				"error", defaultErr)
+		} else if defaultRS != nil {
+			sensorCopy.RuleVersion = defaultRS.Version
+			logger.V(vplogging.LogLevelInfo).Info("assigned default ruleset to new sensor",
+				"picketId", sensorCopy.PicketID,
+				"ruleSetName", defaultRS.Name,
+				"version", defaultRS.Version,
+				"source", string(defaultRS.Source))
 		}
 	}
 
