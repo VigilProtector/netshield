@@ -370,11 +370,10 @@ func (c *FlowSeekerConsumer) shouldProcessFinding(envelope findings.Envelope) bo
 	case "network.anomaly":
 		return true
 	default:
-		// Reject unsupported finding types early to avoid downstream processing errors
-		// NH-SG-009: Only alert/anomaly/lateral_movement events are routed to NetShield
-		logger.V(vplogging.LogLevelDebug).Info("rejecting unsupported FlowSeeker finding type",
-			"findingType", envelope.FindingType,
-			"findingId", envelope.FindingID)
+		// Reject unsupported finding types early to avoid downstream processing errors.
+		// NH-SG-009: Only alert/anomaly/lateral_movement events are routed to NetShield.
+		// Caller (processNextFinding) already logs the skip with full context, so we
+		// silently return false here to keep this predicate side-effect-free.
 		return false
 	}
 }

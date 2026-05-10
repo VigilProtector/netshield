@@ -1,0 +1,48 @@
+# This file contains the configuration for golangci-lint v2.
+# The configuration is based on the VigilProtector platform standard.
+# See: https://github.com/golangci/golangci-lint
+
+version: "2"
+
+run:
+  timeout: 5m
+  issues-exit-code: 1
+  tests: true
+
+linters:
+  enable:
+    - bodyclose
+    - dogsled
+    - errcheck
+    - exhaustive
+    - gochecknoinits
+    - gocyclo
+    - govet
+    - ineffassign
+    - misspell
+    - nakedret
+    - nolintlint
+    - rowserrcheck
+    - sqlclosecheck
+    - staticcheck
+    - unconvert
+    - unused
+    - whitespace
+
+  settings:
+    gocyclo:
+      min-complexity: 30
+
+    goconst:
+      min-len: 3
+      min-occurrences: 3
+
+    lll:
+      line-length: 200
+
+    nolintlint:
+      require-explanation: true
+      require-specific: true
+
+severity:
+  default: error
