@@ -2,6 +2,7 @@
 package service
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -297,9 +298,61 @@ func TestProcessDetectionForLateralMovement(t *testing.T) {
 	assert.True(t, isLateralMovement, "Should detect lateral movement")
 	assert.NotNil(t, finding, "Should return a finding when lateral movement detected")
 	assert.Equal(t, models.FindingTypeLateralMovementSuspected, finding.FindingType, "Finding type should be lateral movement suspected")
-	assert.Equal(t, models.FindingSeverityCritical, finding.Severity, "Severity should be critical")
+	assert.Equal(t, models.FindingSeverityCritical, finding.Severity, "Severity should be critical (highest reason wins)")
 	assert.Equal(t, float64(0.9), finding.Confidence, "Confidence should be 0.9")
 	assert.Contains(t, finding.Attributes, "detectionId", "Should contain detectionId in attributes")
+
+	// NH-LM-004 / VP-2234: reason codes that fired must surface on the Finding.
+	assert.Contains(t, finding.Attributes, "reasonCodes", "Should expose reasonCodes attribute")
+	assert.NotEmpty(t, finding.Attributes["reasonCodes"], "reasonCodes attribute must not be empty when finding is emitted")
+	assert.Contains(t, finding.Attributes["reasonCodes"], ReasonInternalLateralMovement.Code,
+		"reasonCodes should contain the umbrella ILM-006 code when reasons fired")
+	assert.True(t, strings.Contains(finding.Description, ReasonInternalLateralMovement.Code),
+		"Description should reference the reason code")
+}
+
+// TestProcessDetectionForLateralMovement_ReasonCodesPropagated focusses on NH-LM-004
+// (VP-2234): every reason that fires inside EvaluateLateralMovement must end up on the
+// emitted Finding so the worklist consumer can render an explanation without re-running
+// detection. Severity must be the highest severity across the reasons.
+func TestProcessDetectionForLateralMovement_ReasonCodesPropagated(t *testing.T) {
+	cfg := LateralMovementConfig{
+		TimeWindow:                 5 * time.Minute,
+		PeerFanOutThreshold:        1,
+		PortDivergenceThreshold:    1,
+		AssetContextHopsThreshold:  10,
+		BaselineDeviationThreshold: 2.0,
+	}
+	logger := zap.New(zap.UseDevMode(true))
+	detector := NewLateralMovementDetector(cfg, logger, nil)
+
+	detection := &models.Detection{
+		DetectionID: "test-detection-multi",
+		Timestamp:   time.Now().UTC(),
+		SourceIP:    "192.168.1.1",
+		DestIP:      "192.168.1.2",
+		DestPort:    443,
+		AssetID:     "asset-1",
+		DefconID:    "defcon-1",
+	}
+	flowCtx := &FlowContext{
+		DestIP:   "192.168.1.99",
+		DestPort: 8080,
+	}
+
+	finding, isLateralMovement := detector.ProcessDetectionForLateralMovement(
+		t.Context(), logger, detection, flowCtx, cfg,
+	)
+
+	assert.True(t, isLateralMovement)
+	assert.NotNil(t, finding)
+
+	codes := finding.Attributes["reasonCodes"]
+	assert.Contains(t, codes, ReasonPeerFanOutExceeded.Code, "PFO-001 must be in reasonCodes")
+	assert.Contains(t, codes, ReasonPortDivergenceExceeded.Code, "PD-002 must be in reasonCodes")
+	assert.Contains(t, codes, ReasonInternalLateralMovement.Code, "ILM-006 umbrella must be in reasonCodes")
+	assert.Equal(t, models.FindingSeverityCritical, finding.Severity,
+		"highest reason severity (ILM-006 critical) must dominate")
 }
 
 func TestProcessDetectionForLateralMovement_NoMovement(t *testing.T) {

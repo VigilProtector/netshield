@@ -4,6 +4,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -281,6 +282,11 @@ func (d *LateralMovementDetector) DetectLateralMovement(
 
 // ProcessDetectionForLateralMovement processes a detection through the lateral movement pipeline.
 // Implements NH-LM-005/006/007: FlowSeeker-Subscription, Event-driven Enrichment, Emission.
+// Implements NH-LM-004 (VP-2234): the reason codes that fired are surfaced on the
+// emitted Finding (Attributes["reasonCodes"] + human-readable Description) and the
+// Finding's severity/confidence are derived from the highest-severity reason rather
+// than hard-coded — so downstream worklists can prioritise correctly and an analyst
+// can answer "why did this fire?" without re-running the detector.
 func (d *LateralMovementDetector) ProcessDetectionForLateralMovement(
 	ctx context.Context,
 	logger logr.Logger,
@@ -288,13 +294,18 @@ func (d *LateralMovementDetector) ProcessDetectionForLateralMovement(
 	flowCtx *FlowContext,
 	cfg LateralMovementConfig,
 ) (*models.Finding, bool) {
-	isLateralMovement := d.DetectLateralMovement(ctx, logger, detection, flowCtx, cfg)
-
-	if !isLateralMovement {
+	reasons := d.EvaluateLateralMovement(ctx, logger, detection, flowCtx, cfg)
+	if len(reasons) == 0 {
 		return nil, false
 	}
 
-	// NH-LM-007: Emission network.lateral_movement_suspected
+	logger.V(vplogging.LogLevelInfo).Info("lateral movement suspected",
+		"reasonCount", len(reasons),
+	)
+
+	severity, confidence := aggregateReasonSeverity(reasons)
+	codes := reasonCodes(reasons)
+
 	finding := &models.Finding{
 		FindingID:     fmt.Sprintf("lm-%s", detection.DetectionID),
 		SchemaVersion: "2.0",
@@ -303,11 +314,11 @@ func (d *LateralMovementDetector) ProcessDetectionForLateralMovement(
 		AssetID:       detection.AssetID,
 		DefconID:      detection.DefconID,
 		OccurredAt:    detection.Timestamp,
-		Severity:      models.FindingSeverityCritical,
-		Confidence:    0.9,
+		Severity:      severity,
+		Confidence:    confidence,
 		Title:         "Lateral Movement Suspected",
-		Description: fmt.Sprintf("Lateral movement detected from %s to %s",
-			detection.SourceIP, detection.DestIP),
+		Description: fmt.Sprintf("Lateral movement detected from %s to %s (reasons: %s)",
+			detection.SourceIP, detection.DestIP, strings.Join(codes, ",")),
 		Attributes:   make(map[string]string),
 		EvidenceRefs: []models.EvidenceRef{},
 		Correlation:  nil,
@@ -327,6 +338,50 @@ func (d *LateralMovementDetector) ProcessDetectionForLateralMovement(
 	finding.Attributes["detectionId"] = detection.DetectionID
 	finding.Attributes["sourceIp"] = detection.SourceIP
 	finding.Attributes["destIp"] = detection.DestIP
+	finding.Attributes["reasonCodes"] = strings.Join(codes, ",")
 
 	return finding, true
+}
+
+// reasonCodes returns the unique, order-preserving Code list from reasons.
+func reasonCodes(reasons []LateralMovementReason) []string {
+	seen := make(map[string]struct{}, len(reasons))
+	codes := make([]string, 0, len(reasons))
+
+	for _, r := range reasons {
+		if _, ok := seen[r.Code]; ok {
+			continue
+		}
+
+		seen[r.Code] = struct{}{}
+		codes = append(codes, r.Code)
+	}
+
+	return codes
+}
+
+// aggregateReasonSeverity picks the highest severity across reasons and the
+// matching confidence. The severity ordering follows models.FindingSeverity:
+// Critical > High > Medium > Low.
+func aggregateReasonSeverity(reasons []LateralMovementReason) (models.FindingSeverity, float64) {
+	rank := map[models.FindingSeverity]int{
+		models.FindingSeverityLow:      1,
+		models.FindingSeverityMedium:   2,
+		models.FindingSeverityHigh:     3,
+		models.FindingSeverityCritical: 4,
+	}
+
+	severity := models.FindingSeverityLow
+	confidence := 0.0
+
+	for _, r := range reasons {
+		if rank[r.Severity] > rank[severity] {
+			severity = r.Severity
+			confidence = r.Confidence
+		} else if rank[r.Severity] == rank[severity] && r.Confidence > confidence {
+			confidence = r.Confidence
+		}
+	}
+
+	return severity, confidence
 }
