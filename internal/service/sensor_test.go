@@ -54,6 +54,15 @@ func (m *mockVigilNetClient) GetDefconName(ctx context.Context, defconID string)
 	return m.getDefconNameFunc(ctx, defconID)
 }
 
+// mockDefaultRuleSetProvider implements service.DefaultRuleSetProvider.
+type mockDefaultRuleSetProvider struct {
+	getFunc func(ctx context.Context) (*models.RuleSet, error)
+}
+
+func (m *mockDefaultRuleSetProvider) GetDefaultRuleSet(ctx context.Context) (*models.RuleSet, error) {
+	return m.getFunc(ctx)
+}
+
 // Helper to create a test sensor
 func newTestSensor(picketID string) *models.Sensor {
 	now := time.Now().UTC()
@@ -341,6 +350,141 @@ func TestSensorService_Register(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestSensorService_RegisterAssignsDefaultRuleSet covers NH-RD-002 / VP-2231:
+// when a Sensor without an explicit RuleVersion is registered through the
+// service constructed with a DefaultRuleSetProvider, the active default
+// ruleset's Version must be copied onto the persisted sensor so the Picket
+// reaches SuricataGate distribution with a known starting policy. The
+// store also receives the sensor *with* the assigned RuleVersion so this
+// is observable end-to-end, not just in the returned struct.
+func TestSensorService_RegisterAssignsDefaultRuleSet(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	logger := logr.Discard()
+	subject := &types.Subject{Type: "human", ID: "test-user"}
+
+	defaultRS := &models.RuleSet{
+		Name:    "ET-Open Baseline",
+		Version: "v2026.05.10",
+		Source:  models.RuleSetSourceETOpen,
+	}
+
+	var persisted *models.Sensor
+
+	store := &mockSensorStore{
+		getByPicketIDFunc: func(_ context.Context, _ string) (*models.Sensor, error) {
+			return nil, nil //nolint:nilnil // mock returns "no sensor / no ruleset" via the (nil, nil) contract
+		},
+		createFunc: func(_ context.Context, sensor *models.Sensor) error {
+			persisted = sensor
+
+			return nil
+		},
+	}
+
+	vigilNet := &mockVigilNetClient{
+		getDefconNameFunc: func(_ context.Context, _ string) (string, error) {
+			return "", nil
+		},
+	}
+
+	provider := &mockDefaultRuleSetProvider{
+		getFunc: func(_ context.Context) (*models.RuleSet, error) {
+			return defaultRS, nil
+		},
+	}
+
+	svc := service.NewSensorServiceWithDefaultRuleSet(store, vigilNet, provider, logger)
+
+	input := &models.Sensor{PicketID: "picket-default", DefconID: "defcon-1"}
+
+	result, err := svc.Register(ctx, logger, subject, input)
+	require.NoError(t, err)
+
+	assert.Equal(t, defaultRS.Version, result.RuleVersion,
+		"returned sensor must carry the default ruleset Version")
+	require.NotNil(t, persisted)
+	assert.Equal(t, defaultRS.Version, persisted.RuleVersion,
+		"persisted sensor must carry the default ruleset Version (observable end-to-end)")
+	assert.Empty(t, input.RuleVersion,
+		"the caller's input struct must not be mutated (Register copies before assigning)")
+}
+
+// TestSensorService_RegisterRespectsExplicitRuleVersion covers the
+// override path: if the caller already set Sensor.RuleVersion, the
+// default-ruleset lookup must NOT overwrite it. This keeps the migration
+// path open for callers that want to seed a non-default ruleset
+// explicitly.
+func TestSensorService_RegisterRespectsExplicitRuleVersion(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	logger := logr.Discard()
+	subject := &types.Subject{Type: "human", ID: "test-user"}
+
+	store := &mockSensorStore{
+		getByPicketIDFunc: func(_ context.Context, _ string) (*models.Sensor, error) {
+			return nil, nil //nolint:nilnil // mock returns "no sensor / no ruleset" via the (nil, nil) contract
+		},
+		createFunc: func(_ context.Context, _ *models.Sensor) error { return nil },
+	}
+
+	provider := &mockDefaultRuleSetProvider{
+		getFunc: func(_ context.Context) (*models.RuleSet, error) {
+			t.Errorf("default-ruleset lookup must not happen when RuleVersion is preset")
+
+			return nil, nil //nolint:nilnil // mock returns "no sensor / no ruleset" via the (nil, nil) contract
+		},
+	}
+
+	svc := service.NewSensorServiceWithDefaultRuleSet(store, &mockVigilNetClient{
+		getDefconNameFunc: func(_ context.Context, _ string) (string, error) { return "", nil },
+	}, provider, logger)
+
+	input := &models.Sensor{PicketID: "picket-explicit", DefconID: "defcon-1", RuleVersion: "v1.2.3"}
+
+	result, err := svc.Register(ctx, logger, subject, input)
+	require.NoError(t, err)
+	assert.Equal(t, "v1.2.3", result.RuleVersion)
+}
+
+// TestSensorService_RegisterToleratesMissingDefault covers the warmup
+// path: a fresh deployment may not have an ET-Open default ruleset
+// loaded yet. Register must succeed with empty RuleVersion rather than
+// failing — the next NetWraith pull tick will populate it via
+// UpdateRuleVersion.
+func TestSensorService_RegisterToleratesMissingDefault(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	logger := logr.Discard()
+	subject := &types.Subject{Type: "human", ID: "test-user"}
+
+	store := &mockSensorStore{
+		getByPicketIDFunc: func(_ context.Context, _ string) (*models.Sensor, error) {
+			return nil, nil //nolint:nilnil // mock returns "no sensor / no ruleset" via the (nil, nil) contract
+		},
+		createFunc: func(_ context.Context, _ *models.Sensor) error { return nil },
+	}
+
+	provider := &mockDefaultRuleSetProvider{
+		getFunc: func(_ context.Context) (*models.RuleSet, error) {
+			return nil, nil //nolint:nilnil // no default seeded yet
+		},
+	}
+
+	svc := service.NewSensorServiceWithDefaultRuleSet(store, &mockVigilNetClient{
+		getDefconNameFunc: func(_ context.Context, _ string) (string, error) { return "", nil },
+	}, provider, logger)
+
+	input := &models.Sensor{PicketID: "picket-warmup", DefconID: "defcon-1"}
+
+	result, err := svc.Register(ctx, logger, subject, input)
+	require.NoError(t, err)
+	assert.Empty(t, result.RuleVersion, "missing default must yield empty RuleVersion, not an error")
 }
 
 func TestSensorService_UpdateStatus(t *testing.T) {
