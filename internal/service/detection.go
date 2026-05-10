@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-logr/logr"
 
+	"vigilprotector.io/netshield/internal/crossbc"
 	"vigilprotector.io/netshield/internal/models"
 	"vigilprotector.io/vp-lib/authz"
 	"vigilprotector.io/vp-lib/correlation"
@@ -122,6 +123,12 @@ type FlowContext struct {
 	Zone string
 	// Criticality is the criticality of the source asset.
 	Criticality string
+	// Enrichment is the cross-BC resolver outcome attached after
+	// enrichWithCrossBCContext has run. nil means enrichment hasn't
+	// executed yet (e.g. legacy paths in tests). Consumers that need
+	// conflict provenance read it via flowCtx.Enrichment.Conflicts.
+	// NH-CC-003 / VP-2235.
+	Enrichment *crossbc.EnrichmentResult
 }
 
 // DetectionService implements business logic for detection operations.

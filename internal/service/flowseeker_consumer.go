@@ -443,6 +443,13 @@ func mapFlowSeekerFindingType(findingType string) models.DetectionEventType {
 
 // enrichWithCrossBCContext enriches the detection with cross-BC context information.
 // Implements NH-CC-005: Synchrone Cross-BC-Query-Zugriffe.
+// Implements NH-CC-003 (VP-2235): conflicting answers from Aegis / NetAtlas /
+// NetSentinel / FlowSeeker are no longer silently overwritten by "whichever
+// adapter ran last". Inputs are funnelled into crossbc.Resolver, which applies
+// an explicit precedence (Aegis > NetAtlas > FlowSeeker for zone, Aegis >
+// FlowSeeker for asset identity) and records every disagreement on the
+// flowCtx.Enrichment field together with a Confidence number consumers can
+// gate on.
 func (c *FlowSeekerConsumer) enrichWithCrossBCContext(
 	ctx context.Context,
 	logger logr.Logger,
@@ -453,52 +460,64 @@ func (c *FlowSeekerConsumer) enrichWithCrossBCContext(
 		return
 	}
 
-	// Enrich with Aegis asset information
+	input := crossbc.EnrichmentInput{
+		FlowSeekerAssetID: flowCtx.AssetID,
+		FlowSeekerZone:    flowCtx.Zone,
+	}
+
 	if flowCtx.AssetID != "" && c.aegisClient != nil {
 		aegisAsset, aegisErr := c.aegisClient.GetAsset(ctx, flowCtx.AssetID)
-		if aegisErr == nil && aegisAsset != nil {
-			// Enrich detection with asset identity and criticality
-			if aegisAsset.Hostname != "" {
-				detection.AssetID = aegisAsset.ID
-			}
-
-			if aegisAsset.Criticality != "" {
-				// Map criticality to detection severity if needed
-				logger.V(vplogging.LogLevelDebug).Info("enriched with Aegis asset info",
-					"assetId", aegisAsset.ID,
-					"criticality", aegisAsset.Criticality)
-			} else {
-				logger.V(vplogging.LogLevelDebug).Info("Aegis asset not found for flow context",
-					"assetId", flowCtx.AssetID)
-			}
+		if aegisErr != nil {
+			logger.V(vplogging.LogLevelDebug).Error(aegisErr, "Aegis lookup failed",
+				"assetId", flowCtx.AssetID)
+		} else if aegisAsset != nil {
+			input.AegisAsset = aegisAsset
 		}
 	}
 
-	// Enrich with NetSentinel device metrics
 	if flowCtx.DestIP != "" && c.netSentinelClient != nil {
 		deviceFacts, nsErr := c.netSentinelClient.GetDeviceFacts(ctx, flowCtx.DestIP)
-		if nsErr == nil && deviceFacts != nil {
-			logger.V(vplogging.LogLevelDebug).Info("enriched with NetSentinel device facts",
-				"deviceIp", deviceFacts.DeviceIP,
-				"sysName", deviceFacts.SysName,
-				"freshness", deviceFacts.Freshness)
-		} else {
-			logger.V(vplogging.LogLevelDebug).Info("NetSentinel device facts not found",
+		if nsErr != nil {
+			logger.V(vplogging.LogLevelDebug).Error(nsErr, "NetSentinel device-facts lookup failed",
 				"deviceIp", flowCtx.DestIP)
+		} else if deviceFacts != nil {
+			input.NetSentinelDevice = deviceFacts
 		}
 	}
 
-	// Enrich with NetAtlas zone information
 	if flowCtx.AssetID != "" && c.netAtlasClient != nil {
 		zoneInfo, naErr := c.netAtlasClient.GetZoneForAsset(ctx, flowCtx.AssetID)
-		if naErr == nil && zoneInfo != nil {
-			logger.V(vplogging.LogLevelDebug).Info("enriched with NetAtlas zone info",
-				"assetId", flowCtx.AssetID,
-				"zoneAssetId", zoneInfo.AssetID)
-		} else {
-			logger.V(vplogging.LogLevelDebug).Info("NetAtlas zone not found for asset",
+		if naErr != nil {
+			logger.V(vplogging.LogLevelDebug).Error(naErr, "NetAtlas zone lookup failed",
 				"assetId", flowCtx.AssetID)
+		} else if zoneInfo != nil {
+			input.NetAtlasZone = zoneInfo.AssetID
 		}
+	}
+
+	result := crossbc.NewResolver().Resolve(input)
+	flowCtx.Enrichment = &result
+
+	if result.ResolvedAssetID != "" {
+		detection.AssetID = result.ResolvedAssetID
+	}
+
+	if result.ResolvedZone != "" {
+		flowCtx.Zone = result.ResolvedZone
+	}
+
+	if result.ResolvedCriticality != "" {
+		flowCtx.Criticality = result.ResolvedCriticality
+	}
+
+	if len(result.Conflicts) > 0 {
+		logger.V(vplogging.LogLevelInfo).Info("cross-BC enrichment conflicts resolved",
+			"conflictCount", len(result.Conflicts),
+			"resolvedAssetId", result.ResolvedAssetID,
+			"resolvedZone", result.ResolvedZone,
+			"confidence", result.Confidence,
+			"conflicts", result.ConflictCodes(),
+		)
 	}
 }
 

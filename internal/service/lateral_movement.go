@@ -340,6 +340,19 @@ func (d *LateralMovementDetector) ProcessDetectionForLateralMovement(
 	finding.Attributes["destIp"] = detection.DestIP
 	finding.Attributes["reasonCodes"] = strings.Join(codes, ",")
 
+	// NH-CC-003 / VP-2235: surface cross-BC enrichment conflicts on the
+	// emitted Finding so downstream worklists can flag low-trust evidence
+	// without re-running the resolver. Confidence is reduced multiplicatively.
+	if flowCtx != nil && flowCtx.Enrichment != nil {
+		enrichment := flowCtx.Enrichment
+		if len(enrichment.Conflicts) > 0 {
+			finding.Attributes["crossbc.conflicts"] = strings.Join(enrichment.ConflictCodes(), ",")
+		}
+
+		finding.Attributes["crossbc.confidence"] = fmt.Sprintf("%.2f", enrichment.Confidence)
+		finding.Confidence *= enrichment.Confidence
+	}
+
 	return finding, true
 }
 
