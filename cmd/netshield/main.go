@@ -53,6 +53,7 @@ import (
 	"vigilprotector.io/netshield/internal/http/router"
 	"vigilprotector.io/netshield/internal/service"
 	"vigilprotector.io/netshield/internal/store"
+	baselinepullcursor "vigilprotector.io/vp-lib/baselines/pullcursor"
 	"vigilprotector.io/vp-lib/findings/pullcursor"
 	vplogging "vigilprotector.io/vp-lib/logging"
 )
@@ -79,6 +80,11 @@ func runServer() error {
 	logger := initializeLogger(cfg)
 
 	logger.V(vplogging.LogLevelInfo).Info("Starting NetShield API server", "version", version)
+
+	// Root context for background goroutines (baseline subscriber, etc.)
+	// — cancelled on shutdown signal so subscribers exit cleanly.
+	serverCtx, serverCancel := context.WithCancel(context.Background())
+	defer serverCancel()
 
 	// Initialize MongoDB client
 	mongoClient, err := initializeMongoDB(cfg)
@@ -252,40 +258,46 @@ func runServer() error {
 	// SS-BP-004: Always wire StratoSage URL from config to lateral movement config
 	lateralMovementConfig.StratoSageBaseURL = cfg.StratoSage.BaseURL
 	
-	// SS-BP-004: Create StratoSage baseline provider with caching if configured
+	// SS-BP-004 / VP-2225 + NH-LM-003 / VP-2233: replace the historic
+	// TTL-driven HTTP cache (BaselineCache wrapping StratoSageClient.Get)
+	// with a real pull-cursor consumer. The provider's in-memory map is
+	// populated by a background goroutine draining
+	// /baselines/subscription on StratoSage; GetBaseline is then a
+	// constant-time read with no hidden HTTP fan-out.
 	var baselineProvider service.BaselineProvider
 	if cfg.StratoSage.Enabled && cfg.StratoSage.BaseURL != "" {
-		// Create HTTP client for StratoSage
-		stratoSageHTTPClient := client.NewHTTPClientWithTimeout(cfg.StratoSage.Timeout, logger)
-		
-		// Create StratoSage client
-		stratoSageClient := client.NewStratoSageClient(
-			cfg.StratoSage.BaseURL,
-			stratoSageHTTPClient,
-			logger,
-		)
-		
-		// Wrap with cache for performance
-		// Default TTL of 5 minutes to reduce API calls
-		baselineProvider = client.NewBaselineCache(client.BaselineCacheConfig{
-			Provider: stratoSageClient,
-			TTL:      client.DefaultBaselineCacheTTL,
-			Logger:   logger,
+		baselineHTTPClient := &http.Client{Timeout: cfg.StratoSage.Timeout}
+
+		subscription, subErr := baselinepullcursor.NewSubscriptionClient(baselinepullcursor.SubscriptionClientConfig{
+			BaseURL:      cfg.StratoSage.BaseURL + "/stratosage/v1",
+			HTTPClient:   baselineHTTPClient,
+			CursorStore:  &baselinepullcursor.InMemoryCursorStore{},
+			PollInterval: 30 * time.Second,
 		})
-		
-		// Start periodic cleanup of expired cache entries
-		// Cleanup runs at half the TTL interval
-		cleanupStop := baselineProvider.(*client.BaselineCache).StartCleanupLoop(
-			client.DefaultBaselineCacheTTL / 2,
-		)
-		// Store cleanup stop function for potential future use
-		// In a real implementation, this would be managed with the server lifecycle
-		_ = cleanupStop
-		
-		logger.Info("StratoSage baseline provider initialized with caching",
-			"baseURL", cfg.StratoSage.BaseURL,
-			"timeout", cfg.StratoSage.Timeout,
-			"cacheTTL", client.DefaultBaselineCacheTTL)
+		if subErr != nil {
+			logger.Error(subErr, "failed to construct StratoSage baseline subscription; lateral movement detector will fall back to local heuristic")
+		} else {
+			provider, providerErr := client.NewSubscribingBaselineProvider(client.SubscribingBaselineProviderConfig{
+				Subscription: subscription,
+				Logger:       logger,
+				RetryDelay:   10 * time.Second,
+			})
+			if providerErr != nil {
+				logger.Error(providerErr, "failed to construct subscribing baseline provider; lateral movement detector will fall back to local heuristic")
+			} else {
+				baselineProvider = provider
+
+				go func() {
+					if runErr := provider.Run(serverCtx); runErr != nil {
+						logger.Error(runErr, "baseline subscription consumer stopped with error")
+					}
+				}()
+
+				logger.Info("StratoSage baseline pull-cursor subscriber started",
+					"baseURL", cfg.StratoSage.BaseURL,
+					"timeout", cfg.StratoSage.Timeout)
+			}
+		}
 	} else {
 		logger.Info("StratoSage baseline consumption is disabled or not configured")
 	}

@@ -2,12 +2,14 @@ package service
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"testing"
 	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"vigilprotector.io/netshield/internal/models"
 	"vigilprotector.io/vp-lib/findings/pullcursor"
@@ -256,17 +258,37 @@ func TestClose(t *testing.T) {
 		assert.NoError(t, err, "Close should not return error with nil subscription client")
 	})
 
-	t.Run("closes without error with mock subscription client", func(t *testing.T) {
+	t.Run("closes without error with real subscription client", func(t *testing.T) {
 		t.Parallel()
 
-		// Create a mock subscription client
-		// In a real test, we would use a mock framework
+		// Build a real (but never started) SubscriptionClient. After the
+		// vp-lib v0.31 refactor, the public type wraps an inner generic
+		// client; constructing it via NewSubscriptionClient ensures the
+		// internal pointer is non-nil so Close is well-defined whether
+		// or not Next has ever been called.
+		subClient, err := pullcursor.NewSubscriptionClient(pullcursor.SubscriptionClientConfig{
+			BaseURL:     "http://test.invalid",
+			HTTPClient:  &fakeHTTPDoer{},
+			CursorStore: &pullcursor.InMemoryCursorStore{},
+		})
+		require.NoError(t, err)
+
 		consumer := &FlowSeekerConsumer{
-			subscriptionClient: &pullcursor.SubscriptionClient{},
-			logger:              logger,
+			subscriptionClient: subClient,
+			logger:             logger,
 		}
 
-		err := consumer.Close()
+		err = consumer.Close()
 		assert.NoError(t, err, "Close should not return error")
 	})
 }
+
+// fakeHTTPDoer is a minimal HTTPDoer used only to construct a
+// SubscriptionClient that never actually sends a request.
+type fakeHTTPDoer struct{}
+
+func (f *fakeHTTPDoer) Do(_ *http.Request) (*http.Response, error) {
+	return nil, errClosedFake
+}
+
+var errClosedFake = errors.New("fake doer: not used")
