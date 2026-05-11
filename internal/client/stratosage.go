@@ -61,7 +61,13 @@ func (s *StratoSageClient) GetBaseline(
 	start := time.Now()
 
 	// Encode scopeRef and featureSet for URL
-	path := fmt.Sprintf("/stratosage/v1/baselines/query?scopeRef=%s&featureSet=%s",
+	// VP-2252: canonical /api/stratoward/v1/stratosage/... prefix per the
+	// platform schema /api/<capability>/<version>/<subcapability> where
+	// the StratoWard suite is the capability and `stratosage` is the
+	// sub-capability. The server still serves the legacy /stratosage/v1
+	// prefix during the migration window, but new code points at the
+	// canonical path.
+	path := fmt.Sprintf("/api/stratoward/v1/stratosage/baselines/query?scopeRef=%s&featureSet=%s",
 		scopeRef, featureSet)
 
 	resp, err := s.httpClient.Get(ctx, path)
@@ -107,7 +113,7 @@ func (s *StratoSageClient) GetBaselinesForScope(
 ) ([]*Baseline, error) {
 	start := time.Now()
 
-	path := fmt.Sprintf("/stratosage/v1/baselines?scopeRef=%s", scopeRef)
+	path := fmt.Sprintf("/api/stratoward/v1/stratosage/baselines?scopeRef=%s", scopeRef)
 
 	resp, err := s.httpClient.Get(ctx, path)
 	s.logger.V(logging.LogLevelDebug).Info("StratoSage API call",
