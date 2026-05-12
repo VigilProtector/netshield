@@ -315,6 +315,7 @@ func runServer() error {
 		lateralMovementConfig,
 		logger,
 		baselineProvider,
+		detectionStore,
 	)
 
 	// Initialize and start FlowSeekerConsumer if subscription client is configured

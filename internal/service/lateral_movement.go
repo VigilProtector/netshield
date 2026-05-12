@@ -24,10 +24,37 @@ type BaselineProvider = client.BaselineProvider
 // Implements NH-LM-003: Baseline-Abweichung against StratoSage (via SS-BP-004).
 // Implements NH-LM-004: Reason-Codes for lateral movement.
 type LateralMovementDetector struct {
-	baselineProvider BaselineProvider
+	baselineProvider  BaselineProvider
+	recentDetections  RecentDetectionsLister
 	baselineThreshold float64
 	logger            logr.Logger
 }
+
+// RecentDetectionsLister returns recent detections matching a source IP,
+// used by the lateral-movement detector to aggregate features over the
+// configured time window (peer-fan-out = distinct destIPs,
+// port-divergence = distinct destPorts, asset-context-hops = distinct
+// destAssetIDs).
+//
+// Consumer-defined interface — the production binding is
+// *store.DetectionStore; tests inject a fake.
+//
+// Returning a nil slice / nil error is interpreted as "no recent
+// activity" and the detector falls back to the single-detection view.
+type RecentDetectionsLister interface {
+	ListBySource(
+		ctx context.Context,
+		sourceIP string,
+		since time.Time,
+		maxItems int,
+	) ([]models.Detection, error)
+}
+
+// maxRecentDetectionsPerWindow caps the per-cycle aggregation work. A
+// noisy source bursting 10k events in 5 minutes is still bounded; the
+// feature counts saturate at this value, which is well above any
+// realistic threshold.
+const maxRecentDetectionsPerWindow = 1000
 
 // LateralMovementConfig holds configuration for lateral movement detection.
 type LateralMovementConfig struct {
@@ -54,10 +81,16 @@ func DefaultLateralMovementConfig() LateralMovementConfig {
 // NewLateralMovementDetector creates a new LateralMovementDetector.
 // If StratoSageBaseURL is provided in config, it will create a StratoSageClient
 // as the baseline provider (SS-BP-004). Otherwise, baselineProvider can be injected directly.
+//
+// recentDetections is the source for the time-window feature aggregation
+// (NH-LM-001 + NH-LM-002). May be nil; in that case the detector logs a
+// warning on first use and falls back to the single-detection view —
+// which is only meaningful for unit tests, never production.
 func NewLateralMovementDetector(
 	cfg LateralMovementConfig,
 	logger logr.Logger,
 	baselineProvider BaselineProvider,
+	recentDetections RecentDetectionsLister,
 ) *LateralMovementDetector {
 	// If no baseline provider is given but StratoSage URL is configured, create one
 	if baselineProvider == nil && cfg.StratoSageBaseURL != "" {
@@ -69,8 +102,9 @@ func NewLateralMovementDetector(
 
 	return &LateralMovementDetector{
 		baselineProvider:  baselineProvider,
+		recentDetections:  recentDetections,
 		baselineThreshold: cfg.BaselineDeviationThreshold,
-		logger:           logger.WithName("lateral-movement-detector"),
+		logger:            logger.WithName("lateral-movement-detector"),
 	}
 }
 
@@ -148,48 +182,55 @@ func (d *LateralMovementDetector) EvaluateLateralMovement(
 		return reasons
 	}
 
-	// NH-LM-001: Featuremodell - evaluate peer fan-out
-	peerFanOut := 1
-	if flowCtx.DestIP != "" && flowCtx.DestIP != detection.DestIP {
-		peerFanOut = 2
+	// NH-LM-002: Zeitfensterbewertung — anchor on the current detection's
+	// timestamp so the window slides correctly even when detections arrive
+	// out of order.
+	windowEnd := detection.Timestamp
+	if windowEnd.IsZero() {
+		windowEnd = time.Now().UTC()
 	}
+
+	windowStart := windowEnd.Add(-cfg.TimeWindow)
+
+	// NH-LM-001: Featuremodell — aggregate over all detections from the
+	// same sourceIP within the time window. Single-detection comparison
+	// against flowCtx (the pre-fix behaviour) reduced features to {0,1,2}
+	// which can never cross the production thresholds; counting distinct
+	// destIPs / destPorts / destAssetIDs over the window gives the real
+	// cardinality the threshold semantics actually expect.
+	peerFanOut, portDivergence, assetContextHops := d.computeFeatures(
+		ctx, logger, detection, flowCtx, windowStart,
+	)
+
+	logger.V(vplogging.LogLevelDebug).Info(
+		"lateral-movement features",
+		"sourceIp", detection.SourceIP,
+		"peerFanOut", peerFanOut,
+		"portDivergence", portDivergence,
+		"assetContextHops", assetContextHops,
+		"windowStart", windowStart,
+		"windowEnd", windowEnd,
+	)
 
 	if peerFanOut > cfg.PeerFanOutThreshold {
 		reasons = append(reasons, ReasonPeerFanOutExceeded)
 
-		logger.V(vplogging.LogLevelInfo).Info("peer fan-out threshold exceeded")
-	}
-
-	// NH-LM-001: Featuremodell - evaluate port divergence
-	portDivergence := 1
-	if flowCtx.DestPort > 0 && flowCtx.DestPort != detection.DestPort {
-		portDivergence = 2
+		logger.V(vplogging.LogLevelInfo).Info("peer fan-out threshold exceeded",
+			"value", peerFanOut, "threshold", cfg.PeerFanOutThreshold)
 	}
 
 	if portDivergence > cfg.PortDivergenceThreshold {
 		reasons = append(reasons, ReasonPortDivergenceExceeded)
 
-		logger.V(vplogging.LogLevelInfo).Info("port divergence threshold exceeded")
-	}
-
-	// NH-LM-001: Featuremodell - evaluate asset context hops
-	assetContextHops := 0
-	if flowCtx.AssetID != "" && flowCtx.AssetID != detection.AssetID {
-		assetContextHops = 1
+		logger.V(vplogging.LogLevelInfo).Info("port divergence threshold exceeded",
+			"value", portDivergence, "threshold", cfg.PortDivergenceThreshold)
 	}
 
 	if assetContextHops > cfg.AssetContextHopsThreshold {
 		reasons = append(reasons, ReasonAssetContextHopsExceeded)
 
-		logger.V(vplogging.LogLevelInfo).Info("asset context hops threshold exceeded")
-	}
-
-	// NH-LM-002: Zeitfensterbewertung
-	now := time.Now().UTC()
-	timeWindowStart := now.Add(-cfg.TimeWindow)
-
-	if detection.Timestamp.After(timeWindowStart) {
-		logger.V(vplogging.LogLevelDebug).Info("detection within time window")
+		logger.V(vplogging.LogLevelInfo).Info("asset context hops threshold exceeded",
+			"value", assetContextHops, "threshold", cfg.AssetContextHopsThreshold)
 	}
 
 	// NH-LM-003: Baseline-Abweichung (SS-BP-004: Uses StratoSage baseline instead of local heuristic)
@@ -397,4 +438,84 @@ func aggregateReasonSeverity(reasons []LateralMovementReason) (models.FindingSev
 	}
 
 	return severity, confidence
+}
+
+// computeFeatures aggregates the three NH-LM-001 features across all
+// detections from the same sourceIP within the time window. Each
+// feature is the cardinality of a distinct value set:
+//
+//   - peerFanOut       = |distinct destIP|
+//   - portDivergence   = |distinct destPort|
+//   - assetContextHops = |distinct destAssetID|
+//
+// The current detection is always included so the feature counts
+// reflect "what we know right now", not "what was in the DB before
+// this detection".
+//
+// If no RecentDetectionsLister is configured (unit-test setup), only
+// the current detection contributes — the feature counts are 1/1/1 or
+// 1/1/0 depending on whether AssetID is set. This is loud and useless
+// for production, which is why the production wiring in cmd/main.go
+// must inject the real DetectionStore.
+func (d *LateralMovementDetector) computeFeatures(
+	ctx context.Context,
+	logger logr.Logger,
+	detection *models.Detection,
+	flowCtx *FlowContext,
+	windowStart time.Time,
+) (peerFanOut, portDivergence, assetContextHops int) {
+	destIPs := make(map[string]struct{}, 4)
+	destPorts := make(map[int]struct{}, 4)
+	destAssets := make(map[string]struct{}, 4)
+
+	addCurrent := func(destIP string, destPort int, assetID string) {
+		if destIP != "" {
+			destIPs[destIP] = struct{}{}
+		}
+
+		if destPort > 0 {
+			destPorts[destPort] = struct{}{}
+		}
+
+		if assetID != "" && assetID != detection.AssetID {
+			destAssets[assetID] = struct{}{}
+		}
+	}
+
+	addCurrent(detection.DestIP, detection.DestPort, detection.AssetID)
+
+	if flowCtx != nil {
+		addCurrent(flowCtx.DestIP, flowCtx.DestPort, flowCtx.AssetID)
+	}
+
+	if d.recentDetections != nil && detection.SourceIP != "" {
+		recent, err := d.recentDetections.ListBySource(
+			ctx,
+			detection.SourceIP,
+			windowStart,
+			maxRecentDetectionsPerWindow,
+		)
+		if err != nil {
+			logger.V(vplogging.LogLevelInfo).Error(err,
+				"failed to list recent detections for lateral-movement features",
+				"sourceIp", detection.SourceIP,
+			)
+		} else {
+			for i := range recent {
+				row := recent[i]
+
+				if row.DetectionID == detection.DetectionID {
+					continue
+				}
+
+				addCurrent(row.DestIP, row.DestPort, row.AssetID)
+			}
+		}
+	} else if d.recentDetections == nil {
+		logger.V(vplogging.LogLevelInfo).Info(
+			"no RecentDetectionsLister configured; lateral-movement features fall back to single-detection view — production must wire the DetectionStore",
+		)
+	}
+
+	return len(destIPs), len(destPorts), len(destAssets)
 }
