@@ -4,6 +4,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -388,6 +389,16 @@ func (d *LateralMovementDetector) ProcessDetectionForLateralMovement(
 		enrichment := flowCtx.Enrichment
 		if len(enrichment.Conflicts) > 0 {
 			finding.Attributes["crossbc.conflicts"] = strings.Join(enrichment.ConflictCodes(), ",")
+		}
+
+		if len(enrichment.AdapterErrors) > 0 {
+			sources := make([]string, 0, len(enrichment.AdapterErrors))
+			for source := range enrichment.AdapterErrors {
+				sources = append(sources, source)
+			}
+
+			sort.Strings(sources)
+			finding.Attributes["crossbc.adapterErrors"] = strings.Join(sources, ",")
 		}
 
 		finding.Attributes["crossbc.confidence"] = fmt.Sprintf("%.2f", enrichment.Confidence)

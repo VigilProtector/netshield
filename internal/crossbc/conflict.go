@@ -19,6 +19,14 @@ type EnrichmentInput struct {
 	NetSentinelDevice *DeviceFactsResponse
 
 	NetAtlasZone string
+
+	// AdapterErrors records sources that failed (transport / decode /
+	// auth) so the resolver can dampen confidence and emit a
+	// per-source error code on the result. Empty means every adapter
+	// either returned data or was not consulted. Keys are the Source*
+	// constants below; values are the upstream error rendered as a
+	// short string so worklists can show the cause.
+	AdapterErrors map[string]string
 }
 
 // EnrichmentResult is the post-resolution view consumers use when emitting the
@@ -33,7 +41,12 @@ type EnrichmentResult struct {
 	ResolvedSysName     string
 	DeviceFreshness     string
 	Conflicts           []Conflict
-	Confidence          float64
+	// AdapterErrors carries the per-source failure reasons forwarded
+	// from EnrichmentInput so downstream consumers can attribute
+	// missing data ("Aegis silent vs. Aegis errored"). Keys are
+	// Source* constants; values are short error strings.
+	AdapterErrors map[string]string
+	Confidence    float64
 }
 
 // Conflict is a single disagreement between two sources for one logical field.
@@ -104,6 +117,13 @@ func (r *Resolver) Resolve(input EnrichmentInput) EnrichmentResult {
 	r.resolveZone(input, &result)
 	r.resolveCriticality(input, &result)
 	r.resolveDeviceFacts(input, &result)
+
+	if len(input.AdapterErrors) > 0 {
+		result.AdapterErrors = make(map[string]string, len(input.AdapterErrors))
+		for source, message := range input.AdapterErrors {
+			result.AdapterErrors[source] = message
+		}
+	}
 
 	r.applyConfidenceDampening(&result)
 
@@ -194,9 +214,10 @@ func (r *Resolver) resolveDeviceFacts(input EnrichmentInput, result *EnrichmentR
 
 func (r *Resolver) applyConfidenceDampening(result *EnrichmentResult) {
 	const (
-		conflictPenalty = 0.05
-		stalePenalty    = 0.1
-		minConfidence   = 0.5
+		conflictPenalty     = 0.05
+		stalePenalty        = 0.1
+		adapterErrorPenalty = 0.15
+		minConfidence       = 0.5
 	)
 
 	result.Confidence -= float64(len(result.Conflicts)) * conflictPenalty
@@ -204,6 +225,14 @@ func (r *Resolver) applyConfidenceDampening(result *EnrichmentResult) {
 	if result.DeviceFreshness == FreshnessStale {
 		result.Confidence -= stalePenalty
 	}
+
+	// Adapter-error dampening: every source that failed to answer
+	// reduces confidence — silently swallowing transport errors and
+	// reporting full trust was the NH-CC-003 substanz lie the
+	// reviewer flagged. The penalty is per source, capped by
+	// minConfidence, so 2+ simultaneous outages still surface as
+	// "lowest trustworthy bucket" rather than going negative.
+	result.Confidence -= float64(len(result.AdapterErrors)) * adapterErrorPenalty
 
 	if result.Confidence < minConfidence {
 		result.Confidence = minConfidence

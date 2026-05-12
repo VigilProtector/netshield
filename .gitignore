@@ -27,3 +27,4 @@ go.cover
 # OS generated files
 .DS_Store
 Thumbs.db
+coverage.out
