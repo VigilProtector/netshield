@@ -912,6 +912,52 @@ func (s *DetectionStore) GetUnprocessed(
 	}, nil
 }
 
+// ListBySource returns detections from the given sourceIP whose timestamp
+// is at or after `since`. Used by the lateral-movement detector to
+// compute peer-fan-out / port-divergence / asset-context-hops over the
+// configured time window. Sort is descending by timestamp; caller
+// supplies maxItems to cap the result set.
+func (s *DetectionStore) ListBySource(
+	ctx context.Context,
+	sourceIP string,
+	since time.Time,
+	maxItems int,
+) ([]models.Detection, error) {
+	if sourceIP == "" {
+		return nil, nil
+	}
+
+	filter := bson.M{
+		"sourceIp":  sourceIP,
+		"timestamp": bson.M{"$gte": since},
+	}
+
+	findOpts := options.Find().
+		SetSort(bson.D{{Key: "timestamp", Value: -1}})
+
+	if maxItems > 0 {
+		findOpts = findOpts.SetLimit(int64(maxItems))
+	}
+
+	cursor, err := s.collection.Find(ctx, filter, findOpts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list detections by source: %w", err)
+	}
+
+	defer func() {
+		if closeErr := cursor.Close(ctx); closeErr != nil {
+			s.logger.V(vplogging.LogLevelDebug).Error(closeErr, "failed to close cursor")
+		}
+	}()
+
+	var detections []models.Detection
+	if err := cursor.All(ctx, &detections); err != nil {
+		return nil, fmt.Errorf("failed to decode detections: %w", err)
+	}
+
+	return detections, nil
+}
+
 // EnsureIndex creates the necessary indexes for the detection collection.
 func (s *DetectionStore) EnsureIndex(ctx context.Context) error {
 	s.logger.V(vplogging.LogLevelInfo).Info("ensuring indexes for detection collection")
