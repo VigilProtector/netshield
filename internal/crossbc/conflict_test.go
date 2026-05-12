@@ -121,3 +121,53 @@ func TestResolver_ConflictCodesShape(t *testing.T) {
 
 	assert.Equal(t, []string{"assetId:aegis", "zone:netatlas"}, codes)
 }
+
+// TestResolver_AdapterErrorDampensConfidence pins the NH-CC-003 fix:
+// an adapter that errored (transport/decode/auth) is not the same as
+// an adapter that returned an empty answer. The reviewer flagged the
+// "Vertrauenslüge" where Aegis going silent on a 500 still produced
+// Confidence=1.0; this test makes that regression impossible.
+func TestResolver_AdapterErrorDampensConfidence(t *testing.T) {
+	r := NewResolver()
+
+	withErrors := r.Resolve(EnrichmentInput{
+		FlowSeekerAssetID: "asset-1",
+		AdapterErrors: map[string]string{
+			SourceAegis:    "aegis: 503",
+			SourceNetAtlas: "netatlas: dial tcp: timeout",
+		},
+	})
+
+	withoutErrors := r.Resolve(EnrichmentInput{
+		FlowSeekerAssetID: "asset-1",
+	})
+
+	assert.Less(
+		t,
+		withErrors.Confidence,
+		withoutErrors.Confidence,
+		"adapter errors must reduce confidence below the silent-source baseline",
+	)
+	assert.Len(t, withErrors.AdapterErrors, 2,
+		"resolver must forward AdapterErrors onto the result")
+	assert.Equal(t, "aegis: 503", withErrors.AdapterErrors[SourceAegis])
+	assert.Equal(t, "netatlas: dial tcp: timeout", withErrors.AdapterErrors[SourceNetAtlas])
+}
+
+// TestResolver_AdapterErrorsRespectFloor locks down that even a flood
+// of adapter errors cannot push Confidence below 0.5 — consumers gate
+// on this floor and a negative number would silently re-enable lower-
+// trust paths.
+func TestResolver_AdapterErrorsRespectFloor(t *testing.T) {
+	r := NewResolver()
+
+	errs := map[string]string{}
+	for _, src := range []string{SourceAegis, SourceNetAtlas, SourceNetSentinel, SourceFlowSeeker} {
+		errs[src] = "boom"
+	}
+
+	result := r.Resolve(EnrichmentInput{AdapterErrors: errs})
+
+	assert.GreaterOrEqual(t, result.Confidence, 0.5,
+		"confidence floor must hold even when all adapters fail")
+}

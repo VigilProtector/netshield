@@ -463,13 +463,20 @@ func (c *FlowSeekerConsumer) enrichWithCrossBCContext(
 	input := crossbc.EnrichmentInput{
 		FlowSeekerAssetID: flowCtx.AssetID,
 		FlowSeekerZone:    flowCtx.Zone,
+		AdapterErrors:     map[string]string{},
 	}
 
 	if flowCtx.AssetID != "" && c.aegisClient != nil {
 		aegisAsset, aegisErr := c.aegisClient.GetAsset(ctx, flowCtx.AssetID)
 		if aegisErr != nil {
-			logger.V(vplogging.LogLevelDebug).Error(aegisErr, "Aegis lookup failed",
+			// Promoted from Debug to Info: NH-CC-003 contract requires
+			// adapter failures to be attributable, not swallowed at a
+			// log level no one tails. The resolver also dampens
+			// confidence per recorded adapter error.
+			logger.V(vplogging.LogLevelInfo).Error(aegisErr, "Aegis lookup failed",
 				"assetId", flowCtx.AssetID)
+
+			input.AdapterErrors[crossbc.SourceAegis] = aegisErr.Error()
 		} else if aegisAsset != nil {
 			input.AegisAsset = aegisAsset
 		}
@@ -478,8 +485,10 @@ func (c *FlowSeekerConsumer) enrichWithCrossBCContext(
 	if flowCtx.DestIP != "" && c.netSentinelClient != nil {
 		deviceFacts, nsErr := c.netSentinelClient.GetDeviceFacts(ctx, flowCtx.DestIP)
 		if nsErr != nil {
-			logger.V(vplogging.LogLevelDebug).Error(nsErr, "NetSentinel device-facts lookup failed",
+			logger.V(vplogging.LogLevelInfo).Error(nsErr, "NetSentinel device-facts lookup failed",
 				"deviceIp", flowCtx.DestIP)
+
+			input.AdapterErrors[crossbc.SourceNetSentinel] = nsErr.Error()
 		} else if deviceFacts != nil {
 			input.NetSentinelDevice = deviceFacts
 		}
@@ -488,11 +497,28 @@ func (c *FlowSeekerConsumer) enrichWithCrossBCContext(
 	if flowCtx.AssetID != "" && c.netAtlasClient != nil {
 		zoneInfo, naErr := c.netAtlasClient.GetZoneForAsset(ctx, flowCtx.AssetID)
 		if naErr != nil {
-			logger.V(vplogging.LogLevelDebug).Error(naErr, "NetAtlas zone lookup failed",
+			logger.V(vplogging.LogLevelInfo).Error(naErr, "NetAtlas zone lookup failed",
 				"assetId", flowCtx.AssetID)
+
+			input.AdapterErrors[crossbc.SourceNetAtlas] = naErr.Error()
 		} else if zoneInfo != nil {
-			input.NetAtlasZone = zoneInfo.AssetID
+			// NB: TopologyZoneAPI.AssetID is the *zone-asset's identifier*,
+			// not a zone label. Feeding it as NetAtlasZone (which the
+			// resolver compares to FlowSeeker/Aegis zone-name strings
+			// like "internal"/"dmz") creates type-mismatched conflicts
+			// and overwrites flowCtx.Zone with an opaque ID. Until
+			// NetAtlas exposes a labelled zone field, the lookup runs
+			// only for adapter-error tracking; we do NOT populate
+			// input.NetAtlasZone from AssetID.
+			logger.V(vplogging.LogLevelDebug).Info("NetAtlas zone lookup returned",
+				"zoneAssetId", zoneInfo.AssetID,
+				"memberCount", len(zoneInfo.Members),
+			)
 		}
+	}
+
+	if len(input.AdapterErrors) == 0 {
+		input.AdapterErrors = nil
 	}
 
 	result := crossbc.NewResolver().Resolve(input)
