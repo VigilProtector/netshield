@@ -31,7 +31,12 @@ jobs:
         run: git config --global url.https://$GH_ACCESS_TOKEN@github.com/.insteadOf https://github.com/
 
       - name: Install semantic-release
-        run: npm install -g semantic-release @semantic-release/changelog @semantic-release/git @semantic-release/github @semantic-release/exec
+        # conventional-changelog-conventionalcommits is referenced by
+        # .releaserc via `preset: "conventionalcommits"` and must be
+        # installed alongside the semantic-release core — otherwise
+        # commit-analyzer aborts with
+        # "Cannot find module 'conventional-changelog-conventionalcommits'".
+        run: npm install -g semantic-release @semantic-release/changelog @semantic-release/git @semantic-release/github @semantic-release/exec @semantic-release/commit-analyzer @semantic-release/release-notes-generator conventional-changelog-conventionalcommits
 
       - name: Run semantic-release
         id: semantic-release
