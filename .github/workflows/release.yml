@@ -41,7 +41,13 @@ jobs:
       - name: Run semantic-release
         id: semantic-release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # PIPELINE_TOKEN is a user-PAT with full repo scope.
+          # GITHUB_TOKEN (the runner default) cannot query
+          # repository.commit.associatedPullRequests via the GraphQL
+          # API, so semantic-release's "success" step fails with
+          # "Resource not accessible by integration" even after the
+          # tag + release have already been published.
+          GITHUB_TOKEN: ${{ secrets.PIPELINE_TOKEN }}
         run: |
           # Extract version from semantic-release dry run
           VERSION=$(npx semantic-release --dry-run | grep "next release version is" | awk 'NF>1{print $NF}' | tail -n1)
@@ -61,9 +67,16 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Downcase repository name for Docker
+        if: steps.semantic-release.outputs.new_release_version != ''
+        # ghcr.io requires lowercase image names; ${{ github.repository }}
+        # preserves the org casing ("VigilProtector/netshield") which
+        # docker build then rejects ("repository name must be lowercase").
+        run: echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+
       - name: Build Docker image with version tag
         if: steps.semantic-release.outputs.new_release_version != ''
         run: |
           VERSION=${{ steps.semantic-release.outputs.new_release_version }}
-          docker build -t ghcr.io/${{ github.repository }}:$VERSION -f build/Dockerfile .
-          docker push ghcr.io/${{ github.repository }}:$VERSION
+          docker build -t ghcr.io/${IMAGE_NAME}:$VERSION -f build/Dockerfile .
+          docker push ghcr.io/${IMAGE_NAME}:$VERSION
