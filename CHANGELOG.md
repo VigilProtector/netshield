@@ -1,3 +1,9 @@
+## [0.1.1](https://github.com/VigilProtector/netshield/compare/v0.1.0...v0.1.1) (2026-05-15)
+
+### Bug Fixes
+
+* **ci:** downcase docker image name + use PIPELINE_TOKEN for semantic-release ([fd7c5db](https://github.com/VigilProtector/netshield/commit/fd7c5dbe6d802fa2b088d35e367a35a0957d20f8))
+
 ## [0.1.0](https://github.com/VigilProtector/netshield/compare/v0.0.0...v0.1.0) (2026-05-15)
 
 ### Features
