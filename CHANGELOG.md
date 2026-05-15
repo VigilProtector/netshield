@@ -1,3 +1,9 @@
+## [0.1.5](https://github.com/VigilProtector/netshield/compare/v0.1.4...v0.1.5) (2026-05-15)
+
+### Bug Fixes
+
+* **ci:** pin semantic-release deps via package.json + lockfile ([cd48cea](https://github.com/VigilProtector/netshield/commit/cd48cea3699cadbe66bd909ce7443030cf3feaf6))
+
 ## [0.1.4](https://github.com/VigilProtector/netshield/compare/v0.1.3...v0.1.4) (2026-05-15)
 
 ### Bug Fixes
