@@ -1,3 +1,9 @@
+## [0.1.2](https://github.com/VigilProtector/netshield/compare/v0.1.1...v0.1.2) (2026-05-15)
+
+### Bug Fixes
+
+* **docker:** drop inline comments from EXPOSE + uppercase AS ([2ab90d5](https://github.com/VigilProtector/netshield/commit/2ab90d5e2c44373a9d4691965ab3ac7f71d61de6))
+
 ## [0.1.1](https://github.com/VigilProtector/netshield/compare/v0.1.0...v0.1.1) (2026-05-15)
 
 ### Bug Fixes
