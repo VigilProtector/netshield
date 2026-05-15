@@ -1,3 +1,10 @@
+## [0.1.4](https://github.com/VigilProtector/netshield/compare/v0.1.3...v0.1.4) (2026-05-15)
+
+### Bug Fixes
+
+* **ci:** adopt pulsepatrol package.json + lockfile verbatim ([f2a2702](https://github.com/VigilProtector/netshield/commit/f2a270233d610a7e228b5440b43a14c73a06985e))
+* **ci:** make semantic-release dry-run version parser specific ([b47420c](https://github.com/VigilProtector/netshield/commit/b47420c607b7653f2a05664cf133d17c7340b1c6))
+
 ## [0.1.3](https://github.com/VigilProtector/netshield/compare/v0.1.2...v0.1.3) (2026-05-15)
 
 ### Bug Fixes
