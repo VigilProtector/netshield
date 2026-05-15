@@ -2,7 +2,7 @@
 # Multi-stage build for smaller final image
 
 # Build stage
-FROM golang:1.26.0 as builder
+FROM golang:1.26.0 AS builder
 
 # Set environment variables
 ARG version=development
@@ -46,9 +46,11 @@ COPY --from=builder --chown=65532:65532 /workspace/netshield .
 # Switch to non-root user (UID 65532 is the default nonroot user in distroless)
 USER 65532:65532
 
-# Expose ports
-EXPOSE 8900  # API HTTP port
-EXPOSE 9090  # Metrics/Health port
+# Expose API HTTP port (8900) and Metrics/Health port (9090).
+# Docker rejects inline comments on EXPOSE — the trailing "# ..."
+# is parsed as part of the port literal ("invalid containerPort: #").
+EXPOSE 8900
+EXPOSE 9090
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
