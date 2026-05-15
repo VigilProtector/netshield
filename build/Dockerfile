@@ -4,25 +4,20 @@
 # Build stage
 FROM golang:1.26.0 AS builder
 
-# Set environment variables
 ARG version=development
-ARG GITHUB_TOKEN
 
 WORKDIR /workspace
 
-# Copy source files
 COPY cmd/ cmd/
 COPY internal/ internal/
 COPY go.mod go.sum ./
 COPY Makefile ./
 
-# Set GOPRIVATE to avoid Go module proxy issues
 ENV GOPRIVATE="github.com,vigilprotector.io"
 
-# Configure git to use token for private repos
-RUN git config --global url."https://${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+RUN --mount=type=secret,id=github_token \
+    git config --global url."https://$(cat /run/secrets/github_token)@github.com/".insteadOf "https://github.com/"
 
-# Download dependencies
 RUN go mod download
 
 # Build the application
