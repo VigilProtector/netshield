@@ -1,3 +1,10 @@
+## [0.1.3](https://github.com/VigilProtector/netshield/compare/v0.1.2...v0.1.3) (2026-05-15)
+
+### Bug Fixes
+
+* **ci:** drop setup-node npm cache (no package-lock.json in repo) ([f13ff72](https://github.com/VigilProtector/netshield/commit/f13ff72bf32edaae28db7e30522abe87c74440dd))
+* **ci:** port working pulsepatrol/vigilnet release pattern ([007ee37](https://github.com/VigilProtector/netshield/commit/007ee37ea62e50faac8cb5f0eaf41ccf45009ec3))
+
 ## [0.1.2](https://github.com/VigilProtector/netshield/compare/v0.1.1...v0.1.2) (2026-05-15)
 
 ### Bug Fixes
