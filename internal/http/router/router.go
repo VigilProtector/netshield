@@ -9,6 +9,7 @@ import (
 
 	"vigilprotector.io/netshield/internal/http/handler"
 	"vigilprotector.io/vp-lib/authn"
+	"vigilprotector.io/vp-lib/correlation"
 	"vigilprotector.io/vp-lib/gin/middleware/vplogger"
 )
 
@@ -123,6 +124,7 @@ func SetupRouter(
 
 	// Platform middleware (MANDATORY)
 	router.Use(gin.Recovery())
+	router.Use(correlation.Middleware())
 	router.Use(vplogger.Middleware(logger))
 
 	// Health endpoints (MANDATORY, no auth)
