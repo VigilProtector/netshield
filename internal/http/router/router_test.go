@@ -32,6 +32,7 @@ func TestSetupRouter(t *testing.T) {
 		ruleSetHandler,
 		findingHandler,
 		detectionHandler,
+		nil,
 	)
 
 	// Verify router is not nil
@@ -57,6 +58,7 @@ func TestRouterRoutes(t *testing.T) {
 		ruleSetHandler,
 		findingHandler,
 		detectionHandler,
+		nil,
 	)
 
 	// Get all routes
