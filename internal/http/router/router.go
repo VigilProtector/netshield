@@ -8,7 +8,7 @@ import (
 	"github.com/go-logr/logr"
 
 	"vigilprotector.io/netshield/internal/http/handler"
-	"vigilprotector.io/vp-lib/authn"
+	"vigilprotector.io/vp-lib/authn/jwt"
 	"vigilprotector.io/vp-lib/correlation"
 	"vigilprotector.io/vp-lib/gin/middleware/vplogger"
 )
@@ -119,6 +119,7 @@ func SetupRouter(
 	ruleSetHandler *handler.RuleSetHandler,
 	findingHandler *handler.FindingHandler,
 	detectionHandler *handler.DetectionHandler,
+	jwtValidator *jwt.Validator,
 ) *gin.Engine {
 	router := gin.New()
 
@@ -136,7 +137,7 @@ func SetupRouter(
 	// route group. Both groups call registerRoutes with the same handler
 	// pointers, so the route table stays single-sourced.
 	apiV1 := router.Group(apiPathPrefix)
-	apiV1.Use(authn.Middleware())
+	apiV1.Use(jwt.Middleware(jwtValidator))
 	registerRoutes(apiV1, sensorHandler, ruleSetHandler, findingHandler, detectionHandler)
 
 	// Legacy /netshield/v1/... route group, kept for the migration
@@ -145,7 +146,7 @@ func SetupRouter(
 	// lands.
 	legacyV1 := router.Group(legacyPathPrefix)
 	legacyV1.Use(markLegacyDeprecated())
-	legacyV1.Use(authn.Middleware())
+	legacyV1.Use(jwt.Middleware(jwtValidator))
 	registerRoutes(legacyV1, sensorHandler, ruleSetHandler, findingHandler, detectionHandler)
 
 	return router

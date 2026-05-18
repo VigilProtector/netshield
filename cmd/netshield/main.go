@@ -54,7 +54,9 @@ import (
 	"vigilprotector.io/netshield/internal/models"
 	"vigilprotector.io/netshield/internal/service"
 	"vigilprotector.io/netshield/internal/store"
+	"vigilprotector.io/vp-lib/authn/jwt"
 	baselinepullcursor "vigilprotector.io/vp-lib/baselines/pullcursor"
+	vpconfig "vigilprotector.io/vp-lib/config"
 	"vigilprotector.io/vp-lib/findings/pullcursor"
 	vplogging "vigilprotector.io/vp-lib/logging"
 )
@@ -350,6 +352,14 @@ func runServer() error {
 	findingHandler := handler.NewFindingHandler(findingService)
 	detectionHandler := handler.NewDetectionHandler(detectionService)
 
+	jwtCfg := vpconfig.GetJWTConfig()
+	jwtValidator := jwt.NewValidator(logger, jwt.Config{
+		Issuer:            jwtCfg.Issuer,
+		AdditionalIssuers: jwtCfg.AdditionalIssuers,
+		Audience:          jwtCfg.Audience,
+		JWKSEndpoint:      jwtCfg.JWKSEndpoint,
+	})
+
 	// Initialize router
 	r := router.SetupRouter(
 		logger,
@@ -357,6 +367,7 @@ func runServer() error {
 		ruleSetHandler,
 		findingHandler,
 		detectionHandler,
+		jwtValidator,
 	)
 
 	srv := &http.Server{
