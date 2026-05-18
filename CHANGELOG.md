@@ -1,3 +1,9 @@
+## [0.1.6](https://github.com/VigilProtector/netshield/compare/v0.1.5...v0.1.6) (2026-05-18)
+
+### Bug Fixes
+
+* **router:** install correlation middleware before vplogger ([246b6dd](https://github.com/VigilProtector/netshield/commit/246b6ddd2a9862621b694c0e96b2121b2788746d))
+
 ## [0.1.5](https://github.com/VigilProtector/netshield/compare/v0.1.4...v0.1.5) (2026-05-15)
 
 ### Bug Fixes
