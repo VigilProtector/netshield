@@ -1,3 +1,9 @@
+## [0.1.7](https://github.com/VigilProtector/netshield/compare/v0.1.6...v0.1.7) (2026-05-18)
+
+### Bug Fixes
+
+* **authn:** validate JWT on API routes via jwt.Middleware ([b2622f2](https://github.com/VigilProtector/netshield/commit/b2622f2522b64afa8b8156817849f58dc46281cc))
+
 ## [0.1.6](https://github.com/VigilProtector/netshield/compare/v0.1.5...v0.1.6) (2026-05-18)
 
 ### Bug Fixes
